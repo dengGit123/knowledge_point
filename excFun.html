@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .box{
+      width: 400px;
+      height: 200px;
+      display: flex;
+    }
+    .div1{
+      width: 150px;
+      /* flex: 1; */
+      flex-shrink: 1;
+      background-color: aliceblue;
+    }
+    .div2{
+      width: 200px;
+      /* flex: 2; */
+      flex-shrink: 2;
+      background-color: aqua;
+    }
+    .div3{
+      width: 150px;
+      /* flex: 1; */
+      flex-shrink: 1;
+      background-color: blueviolet;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="div1"></div>
+    <div class="div2"></div>
+    <div class="div3"></div>
+  </div>
+</body>
+</html>
