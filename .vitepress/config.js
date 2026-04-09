@@ -91,6 +91,8 @@ function generateSidebar() {
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   srcDir:'docs',
+  // 部署到 GitHub Pages 的 base 路径
+  base: '/knowledge_point/',
   title: "知识点",
   description: "学习文档",
   themeConfig: {
