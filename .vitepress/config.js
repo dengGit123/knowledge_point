@@ -21,17 +21,26 @@ function createNav() {
   let nav = []
   const directories = getDirectories('./docs')
   directories.forEach((item) => {
-    if (item === 'javascript') {
-      nav.push({
-        text: item,
-        link:'/javascript'
-      })
+    // 获取该目录下的第一个 .md 文件
+    const dirPath = path.join('./docs', item);
+    const files = fs.readdirSync(dirPath)
+      .filter(f => f.endsWith('.md') && f !== 'index.md')
+      .sort();
+
+    let link;
+    if (files.length > 0) {
+      // 指向第一个非 index.md 的文件
+      const firstFile = files[0].replace('.md', '');
+      link = `/${item}/${firstFile}`;
     } else {
-      nav.push({
-      text: item,
-      link: `/${item}`
-    })
+      // 如果没有文件，指向目录本身（会有 404 风险）
+      link = `/${item}/`;
     }
+
+    nav.push({
+      text: item,
+      link: link
+    });
   })
   return nav
 }
