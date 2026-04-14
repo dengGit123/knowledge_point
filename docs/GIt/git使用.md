@@ -120,7 +120,7 @@ git stash drop stash@{
 git stash clear             # 清空所有储藏
 ```
 
-### 合并冲突处理
+### 五。合并冲突处理
 * 当合并时发生冲突，Git 会在文件中标记冲突区域：
 ```
 //<<<<<<< HEAD
