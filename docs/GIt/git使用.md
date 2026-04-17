@@ -115,23 +115,22 @@ git stash save "描述信息"    # 添加备注（推荐做法）
 git stash list              # 查看所有储藏
 git stash pop               # 恢复最近一次储藏并删除
 git stash apply             # 恢复储藏但保留记录
-git stash drop stash@{
-   0}    # 删除指定储藏
+git stash drop stash@{0}    # 删除指定储藏
 git stash clear             # 清空所有储藏
 ```
 
 ### 五。合并冲突处理
 * 当合并时发生冲突，Git 会在文件中标记冲突区域：
-```
-//<<<<<<< HEAD
+```js
+<<<<<<< HEAD
 当前分支的内容
 =======
 被合并分支的内容
-//>>>>>>> branch-name
+>>>>>>> branch-name
 ```
 * 解决流程：
 1. 手动编辑冲突文件，删除标记符号
-2. git add <file> 标记为已解决
+2. git add `<file>` 标记为已解决
 3. git commit 完成合并
 
 > 也可使用 `git merge --abort` 终止合并并回到合并前状态
