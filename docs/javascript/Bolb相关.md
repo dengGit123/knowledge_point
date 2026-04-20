@@ -163,16 +163,17 @@ fileInput.onchange = (e) => {
     console.log(buffer.slice(0, result.written)); // Uint8Array [97, 98, 99]
   ```
 #### 2. `TextDecoder`: 将 `Uint8Array` 或 `ArrayBuffer` **解码**为字符串
-    ```js
-    /** 
+
+  ```js
+     /** 
      * `encoding`：可选，字符串，指定解码的编码格式，默认 `'utf-8'`。支持 `'utf-8'`、`'gbk'`、'`shift-jis'` 等（具体取决于浏览器实现）
      * options：可选，对象，属性：
      *          fatal：布尔值，默认 false。如果为 true，遇到非法字节序列会抛出 TypeError；否则用替换字符 � 代替。
      *          ignoreBOM：布尔值，默认 false。是否忽略字节顺序标记（BOM）
     */
     new TextDecoder(encoding, options)
-    ```
-    * `decode(buffer, options)`方法：将二进制数据**解码**为字符串
+  ```
+   * `decode(buffer, options)`方法：将二进制数据**解码**为字符串
       * `buffer`：可以是 `ArrayBuffer`、`TypedArray`（如 `Uint8Array`）、`DataView` 或包含此类对象的 `ArrayBufferView`。
       * `options`：可选对象，包含 `stream` 属性（布尔值）。当解码数据是流式分块时，设置 `{ stream: true }` 表示未结束，保留内部状态以处理跨块的多字节字符。
 #### 示例：基本解码
@@ -232,3 +233,18 @@ while (true) {
 }
 result += decoder.decode(); // 完成解码
 ```
+### 6. MIME 对应表
+|扩展名|MIME 类型|
+|:--:|:--:|
+|.txt|text/plain|
+|.html, .htm|text/html|
+|.css|text/css|
+|.js|text/javascript (或 application/javascript)|
+|.json|application/json|
+|.jpg, .jpeg|image/jpeg|
+|.png|image/png|
+|.gif|image/gif|
+|.pdf|application/pdf|
+|.zip|application/zip|
+|.mp3|audio/mpeg|
+|.mp4|video/mp4|
