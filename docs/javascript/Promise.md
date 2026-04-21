@@ -36,7 +36,7 @@ let p = new Promise((resolve,reject) => {
 	    // })
   })
 ```
-### 3. then方法
+### 3. `.then`方法
 * promise状态改变之后执行回调函数，**成功**执行第一个参数回调函数，**失败**执行第二个参数回调函数
 * 得到一个新的Promise, 状态由**回调函数返回的结果**决定
 * 可以链式调用
@@ -69,8 +69,9 @@ p.then(() => {
 2. 回调函数返回普通的数据： 得到的是成功的Promise
 3. 回调函数返回的是 Promise对象:  得到的状态 由这个Promise对象的状态决定
 ```
-### 4. catch返回
+### 4. `.catch`方法
 * 错误状态执行回调函数
+* 得到一个新的Promise,状态由返回结果决定
 ```js
 let p = new Promise((resolve,reject) =>{
   reject(值)
@@ -82,13 +83,13 @@ let newP =  p.catch(() => {
   //4. 抛出异常： 得到的是失败的Promise
 })
 ```
-### 5. finally方法
+### 5. `.finally`方法
 * 成功还是错误都会执行
 
 ### 6. 静态方法
-1. `Promise.reject(参数)` : 得到失败的Promise;
-2. `Promise.resolve(参数)`: 得到新的Promise,状态由参数决定
+#### 1. `Promise.reject(参数)` : 得到失败的Promise;
+#### 2. `Promise.resolve(参数)`: 得到新的Promise,状态由参数决定
   * 参数是**普通数据**， 状态是成功的Promise
   * 参数是**Promise**, 状态由**参数的Promise的状态**决定
-3. `Promise.all()`: 并行执行多个Promise，**全部成功**时返回成功的Promise,结果是一个数组；**任一失败则立即终止**‌，错误的Promise 结果是失败的结果
-4. `Promise.race()`: 返回**最快**改变状态的**promise**，不管是成功还是失败
+#### 3. `Promise.all()`: 并行执行多个Promise，**全部成功**时返回成功的Promise,结果是一个数组；**任一失败则立即终止**‌，错误的Promise 结果是失败的结果
+#### 4. `Promise.race()`: 返回**最快**改变状态的**promise**，不管是成功还是失败
