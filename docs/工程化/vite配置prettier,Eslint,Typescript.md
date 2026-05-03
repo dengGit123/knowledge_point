@@ -10,11 +10,24 @@ npm install -D prettier
 （https://prettier.nodejs.cn/docs/options）
 ```json
 {
-  "trailingComma": "es5",
-  "tabWidth": 4,
-  "semi": false,
-  "singleQuote": true
+  "$schema": "https://json.schemastore.org/prettierrc",
+  "printWidth": 120,
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": true,
+  "quoteProps": "as-needed",
+  "jsxSingleQuote": true,
+  "trailingComma": "none",
+  "bracketSpacing": true,
+  "objectWrap": "preserve",
+  "bracketSameLine": true,
+  "arrowParens": "always",
+  "htmlWhitespaceSensitivity": "ignore",
+  "vueIndentScriptAndStyle": true,
+  "singleAttributePerLine": true
 }
+
 ```
 
 #### 3. 第三步：创建忽略文件 `.prettierignore`
