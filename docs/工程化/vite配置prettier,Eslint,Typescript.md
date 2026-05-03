@@ -120,6 +120,27 @@ export default [
 ]
 ```
 ### 四。集成vue
+#### 1. 安装插件(https://eslint.vuejs.org/user-guide/)
+```
+# eslint-plugin-vue: 官方Vue.js ESLint插件，用于检查.vue文件
+npm install --save-dev eslint-plugin-vue
+```
+#### 2. eslint.config.js配置
+```js
+import pluginJs from "@eslint/js";
+import pluginVue from "eslint-plugin-vue";
+// 导入 `typescript-eslint` 插件（ `typescript-eslint/parser` 和 `typescript-eslint/eslint-plugin`）。提供了对 TypeScript 的支持，包括 TS 的解析器和推荐的规则集，用于在 TypeScript 文件中进行 lint 检查。
+import tseslint from "typescript-eslint";
+
+export default [
+  //... 
+  // 引入`eslint-plugin-vue` 插件的基础规则
+  ...pluginVue.configs["flat/essential"],
+  // 针对 Vue 文件配置
+  //为 `.vue` 文件指定了 TypeScript 解析器
+  {files: ["**/*.vue"], languageOptions: {parserOptions: {parser: tseslint.parser}}},
+]
+```
 ### 注意事项
 1. 不要安装 `vite-plugin-prettier`
 * 除非有特殊构建需求，否则**不要**在`vite.config.js`中引入`Prettier`插件。这会拖慢开发服务器速度。直接使用编辑器的 **‘保存时格式化’**体验最好
