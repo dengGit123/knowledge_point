@@ -1,7 +1,7 @@
-### 1. readonly修饰符
-* 修饰符readonly可以用来修饰**属性**，表示该属性只能在声明时或者在构造函数中被赋值。
+### 1. `readonly` 修饰符
+* 修饰符 `readonly` 可以用来修饰**属性**，表示该属性只能在声明时或者在构造函数中被赋值。
 
-### 2. 在类中使用
+### 2. 在类中使用 - `class`
 ```typeScript
 class Product {
   readonly id: string;
@@ -24,7 +24,7 @@ const product = new Product("P001", "Laptop");
 console.log(Product.MAX_PRICE);  // 10000
 // Product.MAX_PRICE = 20000;  // ❌ 错误：静态只读属性也不能修改
 ```
-### 3. 在接口中使用
+### 3. 在接口中使用 - `interface`
 ```typeScript
 interface Point {
   readonly x: number;
@@ -44,7 +44,7 @@ class Circle implements Point {
   ) {}
 }
 ```
-### 4. 在类型别名中使用
+### 4. 在类型别名中使用 - `type`
 ```typeScript
 type ReadonlyUser = {
   readonly id: number;

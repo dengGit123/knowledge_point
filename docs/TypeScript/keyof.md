@@ -1,4 +1,4 @@
-### 1. keyof：类型操作符
+### 1. `keyof`：类型操作符
 * 用于获取**对象类型**的所有键（属性名）组成的联合类型。
 ```typescript
 interface User {
@@ -14,7 +14,7 @@ const key3: UserKeys = "age";    // ✅ 正确
 const key4: UserKeys = "email";  // ❌ 错误，'email' 不在 User 的键中
 ```
 ### 2. 使用场景
-#### 2.1 类型安全的对象属性访问
+#### 2.1 类型安全的对象属性访问 - `getProperty`
 ```typescript
 function getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {
   return obj[key];
@@ -28,7 +28,7 @@ const age = getProperty(user, "age");    // number 类型
 
 // getProperty(user, "email");  // ❌ 编译错误，不存在此属性
 ```
-#### 2.2 约束泛型参数
+#### 2.2 约束泛型参数 - `updateProperty`
 ```typescript
 // 确保第二个参数是第一个对象的有效键
 function updateProperty<T, K extends keyof T>(
@@ -44,7 +44,7 @@ updateProperty(user, "name", "Bob");  // ✅ 正确
 // updateProperty(user, "email", "test");  // ❌ 属性不存在
 ```
 ### 3. 高级用法
-#### 3.1 与映射类型结合
+#### 3.1 与映射类型结合 - `Readonly`、`Partial`
 ```typescript
 // 创建所有属性为只读的类型
 type Readonly<T> = {
@@ -56,7 +56,7 @@ type Partial<T> = {
   [P in keyof T]?: T[P];
 };
 ```
-#### 3.2 实现 Pick 和 Omit
+#### 3.2 实现 `Pick` 和 `Omit`
 ```typescript
 // 内置 Pick 类型的实现原理
 type MyPick<T, K extends keyof T> = {
@@ -71,7 +71,7 @@ type MyOmit<T, K extends keyof any> = Pick<T, Exclude<keyof T, K>>;
 type UserWithoutAge = MyOmit<User, "age">;
 // 等价于 { id: number; name: string; }
 ```
-#### 3.3 条件类型中使用
+#### 3.3 条件类型中使用 - `FunctionKeys`
 ```typescript
 // 获取函数类型的键
 type FunctionKeys<T> = {
@@ -87,7 +87,7 @@ interface Api {
 type ApiMethods = FunctionKeys<Api>;  // "fetchData" | "update"
 ```
 ### 4. 实际应用场景
-#### 4.1 动态表单配置
+#### 4.1 动态表单配置 - `FormConfig`
 ```typescript
 interface FormValues {
   username: string;
@@ -110,7 +110,7 @@ const config: FormConfig<FormValues> = {
   // ❌ 不能添加不存在的字段
 };
 ```
-#### 4.2 API 响应包装器
+#### 4.2 API 响应包装器 - `ApiResponse`
 ```typescript
 interface UserResponse {
   id: number;
@@ -133,7 +133,7 @@ function createResponse<T>(
   // ... 实现
 }
 ```
-#### 4.3 事件处理器
+#### 4.3 事件处理器 - `EventHandlers`
 ```typescript
 interface ComponentEvents {
   click: (event: MouseEvent) => void;

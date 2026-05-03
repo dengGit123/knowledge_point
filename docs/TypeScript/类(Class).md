@@ -1,5 +1,5 @@
-### 1. 类 (Class)
-* 定义：类是具有相同`属性`和`方法`的对象的集合。它将对象所共有的特性抽取出来，进行组合，每个对象都可以看作一个实例。
+### 1. 类（`class`）
+* 定义：类是具有相同 `属性` 和 `方法` 的对象的集合。它将对象所共有的特性抽取出来，进行组合，每个对象都可以看作一个实例。
 ```typeScript
 class Person {
   // 属性声明
@@ -22,7 +22,7 @@ class Person {
 const person = new Person("Alice", 30);
 console.log(person.greet()); // "Hello, my name is Alice"
 ```
-### 2. 访问修饰符
+### 2. 访问修饰符（Access Modifiers）
 * 访问修饰符用于控制类成员的可见性。
 - 1. `public`：默认值，可以在任何地方被访问。
 - 2. `private`：只能在类内部被访问。

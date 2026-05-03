@@ -1,5 +1,5 @@
-### 1. typeof关键字(类型查询) 主要两种使用场景：
-- 1. 判断**值**的类型(与js的使用一样，返回字符串，如 "`string`", "`object`" 等)
+### 1. `typeof` 关键字（类型查询）主要两种使用场景：
+- 1. 判断**值**的类型（与 `js` 的使用一样，返回字符串，如 `"string"`、`"object"` 等）
 ```typescript
 let str = "hello";
 console.log(typeof str); // 输出 "string"
@@ -14,7 +14,7 @@ console.log(typeof []);          // "object"
 console.log(typeof function(){});// "function"
 console.log(typeof Symbol());    // "symbol"
 ```
-- 2. 在typsscript的**类型上下文**中，`typeof`关键字用于获取一个变量或属性的**类型**(即得到的是类型)。
+- 2. 在 `TypeScript` 的**类型上下文**中，`typeof` 关键字用于获取一个变量或属性的**类型**（即得到的是类型）。
 ```typescript
 const person = {
   name: "Alice",
@@ -41,7 +41,7 @@ const numbers = [1, 2, 3];
 type NumbersType = typeof numbers; // number[]
 ```
 ### 2. 类型查询的详细用法
-#### 1. 获取变量类型
+#### 1. 获取变量类型 - `typeof`
 ```typescript
 const userName = "John";
 type UserNameType = typeof userName; // string
@@ -52,7 +52,7 @@ type UserAgeType = typeof userAge; // number
 const isActive = true;
 type IsActiveType = typeof isActive; // boolean
 ```
-#### 2. 获取对象属性类型
+#### 2. 获取对象属性类型 - `typeof`
 ```typescript
 const config = {
   apiUrl: "https://api.example.com",
@@ -79,7 +79,7 @@ type ConfigType = {
 type ApiUrlType = typeof config.apiUrl; // string
 type HeadersType = typeof config.headers; // { "Content-Type": string; }
 ```
-#### 3 获取函数类型
+#### 3. 获取函数类型 - `typeof`
 ```typescript
 function greet(name: string): string {
   return `Hello, ${name}!`;
@@ -95,7 +95,7 @@ type AddFunction = typeof add; // (x: number, y: number) => number
 type GreetReturnType = ReturnType<typeof greet>; // string
 type AddReturnType = ReturnType<typeof add>; // number
 ```
-#### 4. 获取数组和元组类型
+#### 4. 获取数组和元组类型 - `typeof`
 ```typescript
 const colors = ["red", "green", "blue"];
 type ColorsType = typeof colors; // string[]
@@ -107,7 +107,7 @@ const user = ["John", 30] as const;
 type UserType = typeof user; // readonly ["John", 30]
 ```
 ### 3. 高级用法
-#### 1. 与 `keyof` 结合使用
+#### 1. 与 `keyof` 结合使用 - `typeof` + `keyof`
 ```typescript
 const user = {
   id: 1,
@@ -126,7 +126,7 @@ function getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {
 // 使用
 const userName = getProperty(user, "name"); // 类型为 string
 ```
-#### 2. 获取枚举类型
+#### 2. 获取枚举类型 - `typeof`
 ```typescript
 enum Status {
   Active = "ACTIVE",
@@ -138,7 +138,7 @@ type StatusType = typeof Status;
 // 获取枚举值的联合类型
 type StatusValues = keyof typeof Status; // "Active" | "Inactive" | "Pending"
 ```
-#### 4. 创建类型安全的配置对象
+#### 4. 创建类型安全的配置对象 - `as const`
 ```typescript
 const config = {
   server: {
@@ -170,7 +170,7 @@ function setupApp(config: Config) {
   console.log(`Server: ${config.server.host}:${config.server.port}`);
 }
 ```
-#### 5. 类型守卫中使用
+#### 5. 类型守卫中使用 - `typeof`
 ```typescript
 function processValue(value: string | number) {
   if (typeof value === "string") {
@@ -184,7 +184,7 @@ function processValue(value: string | number) {
 ```
 
 ### 4. 注意事项
-#### 1. 与 JavaScript `typeof` 的区别
+#### 1. 与 JavaScript `typeof` 的区别 - `typeof`
 ```typescript
 // TypeScript 类型查询（编译时）
 const value = "hello";
@@ -193,7 +193,7 @@ type ValueType = typeof value; // string
 // JavaScript typeof 运算符（运行时）
 const typeString = typeof value; // "string" (字符串值)
 ```
-#### 2. `const` 断言的影响
+#### 2. `const` 断言的影响 - `as const`
 ```typescript
 // 没有 as const
 const colors = ["red", "green", "blue"];
@@ -203,7 +203,7 @@ type Colors1 = typeof colors; // string[]
 const colorsConst = ["red", "green", "blue"] as const;
 type Colors2 = typeof colorsConst; // readonly ["red", "green", "blue"]
 ```
-#### 3. 不能用于类型别名,同样也不能对接口使用`typeof`
+#### 3. 不能用于类型别名，同样也不能对接口使用 `typeof`
 ```typescript
 type User = { name: string; age: number };
 // 错误用法：不能直接使用 typeof 来获取类型别名本身

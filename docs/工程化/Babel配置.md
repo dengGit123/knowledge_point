@@ -1,7 +1,8 @@
 ### 1. 安装必要的包
-- @babel/core, @babel/preset-env, babel-loader, core-js
-### 2. 创建Babel配置文件
-- `babel.config.js` 推荐
+- `@babel/core`、`@babel/preset-env`、`babel-loader`、`core-js`
+
+### 2. 创建 Babel 配置文件
+- `babel.config.js`（推荐）
 ```javascript
 module.exports = {
   presets:[
