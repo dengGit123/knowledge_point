@@ -313,12 +313,15 @@ _   下划线
 ```
 
 **效果**：
+
+```html
 <div style="color: red;">红色文字</div>
 
 <details>
   <summary>点击展开</summary>
   这是隐藏的内容
 </details>
+```
 
 ---
 
@@ -471,7 +474,7 @@ graph TD
 
 ## 19. 折叠块 (Details)
 
-```markdown
+````markdown
 <details>
 <summary>点击查看代码</summary>
 
@@ -480,9 +483,11 @@ console.log("隐藏的代码");
 ```
 
 </details>
-```
+````
 
 **效果**：
+
+````html
 <details>
 <summary>点击查看代码</summary>
 
@@ -491,6 +496,7 @@ console.log("隐藏的代码");
 ```
 
 </details>
+````
 
 ---
 
