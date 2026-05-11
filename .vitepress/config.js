@@ -104,6 +104,8 @@ export default defineConfig({
   base: '/knowledge_point/',
   title: "知识点",
   description: "学习文档",
+  // 忽略死链检查（脚注语法会被误认为是链接）
+  ignoreDeadLinks: true,
   themeConfig: {
     outline: 'deep',
     outlineTitle:'当前页',

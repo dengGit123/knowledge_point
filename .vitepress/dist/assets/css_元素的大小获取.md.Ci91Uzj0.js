@@ -1,1 +1,0 @@
-import{_ as e,c as t,o as s}from"./chunks/framework.CkyPvWOg.js";const m=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"css/元素的大小获取.md","filePath":"css/元素的大小获取.md","lastUpdated":1775704809000}'),a={name:"css/元素的大小获取.md"};function c(r,_,o,n,d,p){return s(),t("div")}const f=e(a,[["render",c]]);export{m as __pageData,f as default};
