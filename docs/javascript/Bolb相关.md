@@ -1,110 +1,220 @@
-### 一。Blob
-#### 1. 作用
-* `Blob`表示一个不可变、原始数据的类对象。可以存任意类型的二进制数据(视频，音频，图片)或者文本数据。
-* `Blob`是`File`的父类
-#### 2. 构造方法
-* `new Blob(parts, options)`
-  * 1. `parts:` 必须，一个数组：元素可以是：
-    * 字符串（会被 UTF-8 编码）
-    * `ArrayBuffer`、`TypedArray`（如 `Uint8Array`）、`DataView`
-    * 其他 `Blob` 对象
-  * 2. `options:` 可选,对象,包含：
-    * `type`: 字符串，表示生成的`Blob`的`MIME`类型(如 `'text/plain'`、`'image/png'`)。默认为空字符串。
-    * `endings`:字符串，仅当 `parts` 包含字符串时有效，控制换行符的处理。可选 `'transparent'`（默认，保持原样）或 `'native'`（转换为操作系统换行符，很少使用）
-```javascript
+# Blob、File 与二进制数据处理
+
+## 目录
+
+1. [Blob 对象](#1-blob-对象)
+2. [File 对象](#2-file-对象)
+3. [FileReader](#3-filereader)
+4. [TextEncoder 与 TextDecoder](#4-textencoder-与-textdecoder)
+5. [协同工作与最佳实践](#5-协同工作与最佳实践)
+6. [MIME 类型速查表](#6-mime-类型速查表)
+
+---
+
+## 1. Blob 对象
+
+### 1.1 什么是 Blob？
+
+```
+┌─────────────────────────────────────────┐
+│            Blob (Binary Large Object)   │
+├─────────────────────────────────────────┤
+│  📦 不可变的原始数据容器                  │
+│  📄 可以存储任何类型的数据                │
+│     - 文本、JSON、HTML                    │
+│     - 图片、音频、视频                    │
+│     - 二进制文件                         │
+└─────────────────────────────────────────┘
+```
+
+**简单理解**：Blob 就像一个**密封的箱子**，里面装着数据，你只能整体搬运或切分，不能直接修改里面的内容。
+
+### 1.2 构造函数
+
+```js
+new Blob(parts, options)
+```
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `parts` | Array | 必须。包含数据的数组，元素可以是字符串、ArrayBuffer、TypedArray、其他 Blob |
+| `options` | Object | 可选。`{ type: MIME类型, endings: 'transparent'/'native' }` |
+
+```js
+// 基础用法
 const textBlob = new Blob(['Hello, world!'], { type: 'text/plain' });
 const jsonBlob = new Blob([JSON.stringify({ a: 1 })], { type: 'application/json' });
 const htmlBlob = new Blob(['<div>test</div>'], { type: 'text/html' });
-const mixedBlob = new Blob([textBlob, ' ', jsonBlob]); // 合并多个 Blob
-```
-#### 3. 实例属性
-1. `blob.size`：只读，`Blob` 的字节长度
-2. `blob.type：`只读，`Blob` 的 `MIME` 类型（如果构造时未指定则为空字符串）
-#### 4. 实例方法
-|方法|描述|参数|返回值|
-|:--:|:--:|:--:|:--:|
-|`slice([start], [end], [contentType])`|截取部分数据生成新 Blob|`start：`起始字节索引（默认 0）
-`end：`结束字节索引（默认 size）
-`contentType：`新 Blob 的 MIME 类型|新的 Blob 对象|
-|`text()`|读取 Blob 内容为 UTF-8 字符串|无|`Promise<string>`|
-|`arrayBuffer()`|读取 Blob 内容为 ArrayBuffer|无|`Promise<ArrayBuffer>`|
-|`stream()`|返回一个可读流（ReadableStream）|无|ReadableStream|
 
-示例：分块处理大文件
-```javascript
+// 合并多个 Blob
+const mixedBlob = new Blob([textBlob, ' ', jsonBlob]);
+
+// 从 ArrayBuffer 创建
+const buffer = new Uint8Array([72, 101, 108, 108, 111]);
+const bufferBlob = new Blob([buffer]);
+```
+
+### 1.3 实例属性
+
+```js
+const blob = new Blob(['Hello'], { type: 'text/plain' });
+
+blob.size    // 5 - 字节长度（只读）
+blob.type    // "text/plain" - MIME 类型（只读）
+```
+
+### 1.4 实例方法
+
+| 方法 | 说明 | 返回值 |
+|------|------|--------|
+| `slice(start, end, contentType)` | 截取部分数据生成新 Blob | 新的 Blob |
+| `text()` | 读取为 UTF-8 字符串 | `Promise<string>` |
+| `arrayBuffer()` | 读取为 ArrayBuffer | `Promise<ArrayBuffer>` |
+| `stream()` | 返回可读流 | `ReadableStream` |
+
+```js
+// 分块处理大文件
 const largeBlob = new Blob(['a'.repeat(10 * 1024 * 1024)]); // 10MB
 const chunk = largeBlob.slice(0, 1024 * 1024); // 取前 1MB
 console.log(chunk.size); // 1048576
-```
-示例：直接读取文本（无需 FileReader）
-```javascript
+
+// 直接读取文本（无需 FileReader）
 const blob = new Blob(['你好'], { type: 'text/plain' });
 const text = await blob.text(); // "你好"
 ```
-### 二。File 对象
-#### 1. 作用
-* `File` 继承自 `Blob`，用于表示来自文件系统的**实际文件**（例如用户通过 `<input type="file">` 选择的文件，或拖拽产生的文件）。相比` Blob`，它增加了文件元数据：文件名和最后修改时间
-#### 2. 获取 File 对象的方式
 
-##### 方式一：通过 <input type="file">
-```js
+---
+
+## 2. File 对象
+
+### 2.1 什么是 File？
+
+```
+        继承关系
+    Blob (父类)
+       │
+       │ + name: 文件名
+       │ + lastModified: 修改时间
+       ▼
+    File (子类)
+```
+
+**简单理解**：File 是一个**带标签的 Blob**，不仅有数据，还有文件名和修改时间等元信息。
+
+### 2.2 获取 File 对象
+
+#### 方式一：文件选择框
+
+```html
 <input type="file" id="upload" multiple>
 <script>
   document.getElementById('upload').onchange = (e) => {
-    const fileList = e.target.files; // FileList 对象，类数组
+    const fileList = e.target.files; // FileList 对象（类数组）
     const firstFile = fileList[0];
     console.log(firstFile.name, firstFile.size, firstFile.type);
   };
 </script>
 ```
-##### 方式二：通过拖拽（Drag & Drop）
+
+#### 方式二：拖拽上传
+
 ```js
+const dropZone = document.getElementById('dropZone');
+
+dropZone.ondragover = (e) => e.preventDefault();
 dropZone.ondrop = (e) => {
   e.preventDefault();
   const file = e.dataTransfer.files[0];
-  // 处理 file
+  console.log('拖拽的文件:', file.name);
 };
 ```
-##### 方式三：手动构造 File 对象
-* new File(parts, filename, options)
-  * `parts`: 同 `Blob` 构造函数的 `parts` 参数
-  * `filename`: 字符串，文件名
-  * `options`: 可选，对象，包含：
-    * `type：``MIME` 类型（默认 ''）
-    * `lastModified：`时间戳（毫秒），默认当前时间
+
+#### 方式三：手动构造
+
 ```js
-const file = new File(['content'], 'example.txt', { type: 'text/plain', lastModified: Date.now() });
-console.log(file.name);        // "example.txt"
-console.log(file.lastModified); // 时间戳
+new File(parts, filename, options)
 ```
-#### 3. 实例方法
-因为继承自 `Blob`，所以 `File` 同样拥有 `slice()`, `text()`, `arrayBuffer()`, `stream()` 方法，可以直接异步读取内容。
 
-### 三。FileReader —— 传统异步读取器
-#### 1. 作用
-`FileReader` 提供了一种基于事件模型的异步读取 `Blob` 或 `File `内容的方式
-#### 2. 主要读取方法
-|方法|说明|参数|
-|:--:|:--:|:--:|
-|`readAsArrayBuffer(blob)`|读取为 `ArrayBuffer`|`blob：`要读取的 `Blob `或 `File` 对象|
-|`readAsText(blob, [encoding])`|读取为字符串|`blob：`要读取的 `Blob `或 `File` 对象,`encoding`：可选，编码名称（默认 'UTF-8'）|
-|`readAsDataURL(blob)`|读取为 DataURL（Base64 编码）|`blob：`要读取的 `Blob `或 `File` 对象|
-#### 3. 事件处理
-`FileReader` 对象会触发以下事件，通过赋值监听器处理：
-|事件|触发时机|
-|:--:|:--:|
-|onloadstart|开始读取时|
-|onprogress|读取过程中周期性触发（可获取进度）|
-|onload|读取成功完成|
-|onerror|读取出错|
-|onloadend|读取完成（无论成功或失败）|
-|onabort|调用 abort() 方法中止读取时|
-#### 4.实例属性（在事件回调中访问）
-* `reader.result：`读取的结果。根据使用的读取方法不同，结果类型可能是 `ArrayBuffer`、字符串或 `DataURL`。只有在 `onload` **触发后有效**
+```js
+const file = new File(
+  ['content'],
+  'example.txt',
+  {
+    type: 'text/plain',
+    lastModified: Date.now()
+  }
+);
 
-#### 5. 示例：读取文本并显示进度
+console.log(file.name);         // "example.txt"
+console.log(file.lastModified); // 时间戳
+console.log(file instanceof Blob); // true - File 也是 Blob
+```
+
+### 2.3 File 特有属性
+
+| 属性 | 说明 | 类型 |
+|------|------|------|
+| `name` | 文件名（含扩展名） | string |
+| `lastModified` | 最后修改时间戳 | number |
+| `webkitRelativePath` | 文件相对路径（webkit 目录选择） | string |
+
+### 2.4 继承的方法
+
+因为继承自 Blob，File 同样拥有：
+- `slice()`, `text()`, `arrayBuffer()`, `stream()`
+
+---
+
+## 3. FileReader
+
+### 3.1 什么是 FileReader？
+
+```
+┌─────────────────────────────────────────┐
+│           FileReader (传统方式)          │
+├─────────────────────────────────────────┤
+│  🔧 基于**事件模型**的异步读取器          │
+│  📡 通过事件回调处理读取结果              │
+│  🎯 适合需要监听读取进度的场景            │
+└─────────────────────────────────────────┘
+```
+
+> ⚠️ **注意**：现在 Blob 有 `text()` 和 `arrayBuffer()` 方法，大多数场景下不再需要 FileReader。
+
+### 3.2 读取方法
+
+| 方法 | 说明 | result 类型 |
+|------|------|-------------|
+| `readAsArrayBuffer(blob)` | 读取为 ArrayBuffer | ArrayBuffer |
+| `readAsText(blob, encoding)` | 读取为字符串 | string |
+| `readAsDataURL(blob)` | 读取为 Base64 DataURL | string |
+
+### 3.3 事件处理
+
+| 事件 | 触发时机 |
+|------|----------|
+| `onloadstart` | 开始读取 |
+| `onprogress` | 读取中（可获取进度） |
+| `onload` | 读取成功 |
+| `onerror` | 读取出错 |
+| `onloadend` | 读取结束（无论成败） |
+| `onabort` | 中止读取 |
+
+### 3.4 实例属性
+
+```js
+reader.result    // 读取结果（onload 后有效）
+reader.error     // 错误信息
+reader.readyState // 读取状态：0/1/2
+```
+
+### 3.5 实战示例
+
+#### 读取文本并显示进度
+
 ```js
 const input = document.getElementById('fileInput');
+
 input.onchange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -114,7 +224,7 @@ input.onchange = (e) => {
   reader.onprogress = (event) => {
     if (event.lengthComputable) {
       const percent = (event.loaded / event.total) * 100;
-      console.log(`已读取 ${percent}%`);
+      console.log(`已读取 ${percent.toFixed(1)}%`);
     }
   };
 
@@ -129,122 +239,297 @@ input.onchange = (e) => {
   reader.readAsText(file, 'UTF-8');
 };
 ```
-#### 6. 示例：图片预览（使用 DataURL）
+
+#### 图片预览（DataURL）
+
 ```js
 const preview = document.getElementById('preview');
+
 fileInput.onchange = (e) => {
   const file = e.target.files[0];
-  if (file && file.type.startsWith('image/')) {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      preview.src = ev.target.result; // DataURL 可直接用于 img.src
-    };
-    reader.readAsDataURL(file);
-  }
+  if (!file?.type.startsWith('image/')) return;
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    preview.src = ev.target.result; // DataURL 直接用于 img.src
+  };
+  reader.readAsDataURL(file);
 };
 ```
-### 四。TextEncoder 与 TextDecoder
-用于字符串与二进制数据(`Uint8Array`)之间的**互相转换**
 
-#### 1. `TextEncoder`: 将字符串编码为 `UTF-8` 格式的 `Uint8Array`
-  * `encode(string)`：接受一个字符串，返回一个 `Uint8Array`，其中包含 UTF-8 编码后的字节序列
-  ```js
-  const encoder = new TextEncoder();
-  const uint8Array = encoder.encode('Hello 世界');
-  console.log(uint8Array); // Uint8Array(13) [72, 101, 108, 108, 111, 32, 228, 184, 150, 231, 149, 140]
-  ```
-  * `encodeInto(string, targetUint8Array)`：将字符串编码后写入已有的 `Uint8Array`（用于性能优化，避免分配新数组）。返回一个对象 `{ read, written }`，`read` 是已读取的字符数，`written` 是写入的字节数。
-  ```js
-    const encoder = new TextEncoder();
-    const str = 'abc';
-    const buffer = new Uint8Array(10);
-    const result = encoder.encodeInto(str, buffer);
-    console.log(result); // { read: 3, written: 3 }
-    console.log(buffer.slice(0, result.written)); // Uint8Array [97, 98, 99]
-  ```
-#### 2. `TextDecoder`: 将 `Uint8Array` 或 `ArrayBuffer` **解码**为字符串
+---
 
-  ```js
-     /** 
-     * `encoding`：可选，字符串，指定解码的编码格式，默认 `'utf-8'`。支持 `'utf-8'`、`'gbk'`、'`shift-jis'` 等（具体取决于浏览器实现）
-     * options：可选，对象，属性：
-     *          fatal：布尔值，默认 false。如果为 true，遇到非法字节序列会抛出 TypeError；否则用替换字符 � 代替。
-     *          ignoreBOM：布尔值，默认 false。是否忽略字节顺序标记（BOM）
-    */
-    new TextDecoder(encoding, options)
-  ```
-   * `decode(buffer, options)`方法：将二进制数据**解码**为字符串
-      * `buffer`：可以是 `ArrayBuffer`、`TypedArray`（如 `Uint8Array`）、`DataView` 或包含此类对象的 `ArrayBufferView`。
-      * `options`：可选对象，包含 `stream` 属性（布尔值）。当解码数据是流式分块时，设置 `{ stream: true }` 表示未结束，保留内部状态以处理跨块的多字节字符。
-#### 示例：基本解码
-```js
-let utf8decoder = new TextDecoder(); // default 'utf-8' or 'utf8'
+## 4. TextEncoder 与 TextDecoder
 
-let u8arr = new Uint8Array([240, 160, 174, 183]);
-let i8arr = new Int8Array([-16, -96, -82, -73]);
-let u16arr = new Uint16Array([41200, 47022]);
-let i16arr = new Int16Array([-24336, -18514]);
-let i32arr = new Int32Array([-1213292304]);
+### 4.1 它们是什么？
 
-console.log(utf8decoder.decode(u8arr));
-console.log(utf8decoder.decode(i8arr));
-console.log(utf8decoder.decode(u16arr));
-console.log(utf8decoder.decode(i16arr));
-console.log(utf8decoder.decode(i32arr));
 ```
-#### 示例：流式解码（分块）
+┌─────────────────────┐         ┌─────────────────────┐
+│   TextEncoder       │         │   TextDecoder       │
+├─────────────────────┤         ├─────────────────────┤
+│  字符串 → Uint8Array │         │  Uint8Array → 字符串  │
+│  (UTF-8 编码)       │         │  (UTF-8 解码)       │
+└─────────────────────┘         └─────────────────────┘
+```
+
+### 4.2 TextEncoder
+
+将字符串编码为 UTF-8 格式的 Uint8Array。
+
+```js
+const encoder = new TextEncoder();
+
+// 基础编码
+const uint8Array = encoder.encode('Hello 世界');
+console.log(uint8Array);
+// Uint8Array(13) [72, 101, 108, 108, 111, 32, 228, 184, 150, 231, 149, 140]
+
+// 高性能：写入已有数组
+const buffer = new Uint8Array(10);
+const result = encoder.encodeInto('abc', buffer);
+console.log(result);  // { read: 3, written: 3 }
+```
+
+### 4.3 TextDecoder
+
+将 Uint8Array 或 ArrayBuffer 解码为字符串。
+
+```js
+// 构造函数
+new TextDecoder(encoding, options)
+```
+
+| 参数 | 说明 |
+|------|------|
+| `encoding` | 编码格式，默认 'utf-8'。支持 'gbk', 'shift-jis' 等 |
+| `options.fatal` | 是否在非法字节时抛错，默认 false |
+| `options.ignoreBOM` | 是否忽略 BOM，默认 false |
+
+```js
+// 基础解码
+const decoder = new TextDecoder();
+const u8arr = new Uint8Array([240, 160, 174, 183]);
+console.log(decoder.decode(u8arr)); // "𠮷"
+
+// 处理 GBK 编码
+const gbkDecoder = new TextDecoder('gbk');
+const gbkText = gbkDecoder.decode(gbkBuffer);
+```
+
+### 4.4 流式解码
+
+适合处理分块传输的数据：
+
 ```js
 const decoder = new TextDecoder('utf-8');
 const chunk1 = new Uint8Array([0xE4, 0xBD]); // '你' 的前两字节
 const chunk2 = new Uint8Array([0xA0]);        // '你' 的最后一字节
-const partial = decoder.decode(chunk1, { stream: true }); // 返回空字符串（不完整）
-const final = decoder.decode(chunk2);                     // 返回 "你"
+
+// stream: true 表示数据未结束，保留内部状态
+const partial = decoder.decode(chunk1, { stream: true }); // ""（不完整）
+const final = decoder.decode(chunk2);                     // "你"
+
 console.log(partial + final); // "你"
 ```
 
-### 五。 它们之间的关系与协同工作
-#### 1. 继承关系
-* `File` 继承自 `Blob`，因此所有能使用 `Blob` 的地方（如 `FileReader` 的方法）都可以使用 `File`
-#### 2. 与 TextEncoder/Decoder 的配合
-* 从 Blob 读取文本：可以直接使用 `blob.text()`，内部使用 `UTF-8` 解码，无需手动介入
-* 自定义编码解码：如果 `Blob `不是 `UTF-8` 编码（例如 `GBK`），`blob.text()` 会乱码。此时需要先用 `blob.arrayBuffer()` 获取 `ArrayBuffer`，再使用 `TextDecoder` **指定正确编码解码**
-```js
-const buffer = await blob.arrayBuffer();
-const decoder = new TextDecoder('gbk');
-const text = decoder.decode(buffer);
+---
+
+## 5. 协同工作与最佳实践
+
+### 5.1 API 选用指南
+
 ```
-* 将字符串存入 `Blob`：`new Blob([str], { type })` 内部会自动将字符串按 UTF-8 编码。如果需要其他编码，可先用 `TextEncoder` 编码为 `Uint8Array` 再存入
+                    需要读取 Blob/File
+                          │
+         ┌────────────────┴────────────────┐
+         │                                 │
+    需要？                            不需要
+   显示进度                          直接读取
+         │                                 │
+    FileReader                    blob.text()
+         │                        blob.arrayBuffer()
+         │                                 │
+    readAsText()                       ┌────┴────┐
+    readAsDataURL                需要指定编码？   否
+                                     │           │
+                                  是          直接使用
+                                     │           │
+                            TextDecoder       blob.text()
+                            ('gbk'等)
+```
+
+### 5.2 场景示例
+
+#### 场景一：读取非 UTF-8 编码的文本文件
+
 ```js
+// blob.text() 只能处理 UTF-8，GBK 会乱码
+async function readTextFile(file, encoding = 'utf-8') {
+  const buffer = await file.arrayBuffer();
+  const decoder = new TextDecoder(encoding);
+  return decoder.decode(buffer);
+}
+
+// 使用
+const gbkText = await readTextFile(file, 'gbk');
+```
+
+#### 场景二：将字符串存入 Blob（指定编码）
+
+```js
+// new Blob([str]) 默认 UTF-8
+// 如需其他编码，先用 TextEncoder
 const encoder = new TextEncoder();
 const uint8Array = encoder.encode('你好');
 const blob = new Blob([uint8Array], { type: 'text/plain' });
 ```
-#### 3. 与流式处理的配合,适合超大文件，内存优化
-`blob.stream()` 返回 `ReadableStream`，每个 `chunk` 是 `Uint8Array`。可以使用 `TextDecoder `的流式解码选项逐步拼接文本：
-```js
-const reader = file.stream().getReader();
-const decoder = new TextDecoder('utf-8');
-let result = '';
 
-while (true) {
-  const { done, value } = await reader.read();
-  if (done) break;
-  result += decoder.decode(value, { stream: true });
+#### 场景三：大文件流式处理（内存优化）
+
+```js
+async function processLargeFile(file) {
+  const reader = file.stream().getReader();
+  const decoder = new TextDecoder('utf-8');
+  let result = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    // value 是 Uint8Array
+    result += decoder.decode(value, { stream: true });
+  }
+
+  // 完成解码（处理可能剩余的字节）
+  result += decoder.decode();
+  return result;
 }
-result += decoder.decode(); // 完成解码
 ```
-### 6. MIME 对应表
-|扩展名|MIME 类型|
-|:--:|:--:|
-|.txt|text/plain|
-|.html, .htm|text/html|
-|.css|text/css|
-|.js|text/javascript (或 application/javascript)|
-|.json|application/json|
-|.jpg, .jpeg|image/jpeg|
-|.png|image/png|
-|.gif|image/gif|
-|.pdf|application/pdf|
-|.zip|application/zip|
-|.mp3|audio/mpeg|
-|.mp4|video/mp4|
+
+#### 场景四：Blob 下载
+
+```js
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url); // 释放内存
+}
+
+// 使用
+const blob = new Blob(['Hello'], { type: 'text/plain' });
+downloadBlob(blob, 'hello.txt');
+```
+
+#### 场景五：FormData 上传
+
+```js
+async function uploadFile(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/upload', {
+    method: 'POST',
+    body: formData
+  });
+  return response.json();
+}
+```
+
+### 5.3 注意事项
+
+| 问题 | 说明 | 解决方案 |
+|------|------|----------|
+| 内存泄漏 | `createObjectURL` 不会自动释放 | 用完调用 `URL.revokeObjectURL()` |
+| 编码乱码 | 非 UTF-8 文件用 `blob.text()` | 用 `TextDecoder` 指定编码 |
+| 大文件卡顿 | 一次性读取大文件 | 使用 `stream()` 分块处理 |
+| 类型错误 | MIME 类型不匹配 | 检查 `file.type` 或手动指定 |
+
+---
+
+## 6. MIME 类型速查表
+
+### 常见文件类型
+
+| 扩展名 | MIME 类型 |
+|--------|-----------|
+| `.txt` | `text/plain` |
+| `.html`, `.htm` | `text/html` |
+| `.css` | `text/css` |
+| `.js` | `text/javascript` / `application/javascript` |
+| `.json` | `application/json` |
+| `.xml` | `application/xml` / `text/xml` |
+
+### 图片类型
+
+| 扩展名 | MIME 类型 |
+|--------|-----------|
+| `.jpg`, `.jpeg` | `image/jpeg` |
+| `.png` | `image/png` |
+| `.gif` | `image/gif` |
+| `.webp` | `image/webp` |
+| `.svg` | `image/svg+xml` |
+| `.ico` | `image/x-icon` |
+
+### 音视频类型
+
+| 扩展名 | MIME 类型 |
+|--------|-----------|
+| `.mp3` | `audio/mpeg` |
+| `.wav` | `audio/wav` |
+| `.ogg` | `audio/ogg` |
+| `.mp4` | `video/mp4` |
+| `.webm` | `video/webm` |
+| `.avi` | `video/x-msvideo` |
+
+### 其他类型
+
+| 扩展名 | MIME 类型 |
+|--------|-----------|
+| `.pdf` | `application/pdf` |
+| `.zip` | `application/zip` |
+| `.tar` | `application/x-tar` |
+| `.rar` | `application/vnd.rar` |
+| `.doc` | `application/msword` |
+| `.docx` | `application/vnd.openxmlformats-officedocument.wordprocessingml.document` |
+| `.xls` | `application/vnd.ms-excel` |
+| `.xlsx` | `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` |
+
+---
+
+## 7. 快速参考
+
+```js
+// === Blob ===
+const blob = new Blob(['data'], { type: 'text/plain' });
+blob.size           // 字节长度
+blob.type           // MIME 类型
+blob.slice(0, 5)    // 截取
+await blob.text()   // 读为字符串
+await blob.arrayBuffer() // 读为 ArrayBuffer
+blob.stream()       // 获取流
+
+// === File ===
+file.name               // 文件名
+file.lastModified       // 修改时间
+// 继承 Blob 的所有方法
+
+// === FileReader ===
+const reader = new FileReader();
+reader.onload = (e) => console.log(e.target.result);
+reader.readAsText(blob);      // 读为文本
+reader.readAsDataURL(blob);   // 读为 DataURL
+reader.readAsArrayBuffer(blob); // 读为 ArrayBuffer
+
+// === TextEncoder/Decoder ===
+new TextEncoder().encode('str')     // 字符串 → Uint8Array
+new TextDecoder('utf-8').decode(bytes) // Uint8Array → 字符串
+
+// === 下载 Blob ===
+const url = URL.createObjectURL(blob);
+a.href = url;
+a.download = 'file.txt';
+URL.revokeObjectURL(url); // 记得释放
+```
