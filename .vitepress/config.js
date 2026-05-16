@@ -49,27 +49,42 @@ function createNav() {
  */
 function toSidebarItems(tree = [], basePath = '') {
   if (!Array.isArray(tree)) return [];
-  
-  return tree.map(item => {
+
+  // 分离文件和目录
+  const files = [];
+  const dirs = [];
+
+  tree.forEach(item => {
     if (item.children !== undefined) {
-      // 处理子目录
-      return {
-        text: item.name,
-        collapsible: true,
-        collapsed: true,
-        items: toSidebarItems(item.children, basePath)
-      };
+      dirs.push(item);
     } else {
-      // 处理 .md 文件
-      const fileName = item.name.replace('.md', '');
-      const filePath = item.path.split('docs')[1].replace('.md', '');
-      
-      return {
-        text: fileName === 'index' ? 'Index' :fileName,
-        link: filePath
-      };
+      files.push(item);
     }
   });
+
+  const result = [];
+
+  // 当前目录下的文件直接作为链接项
+  files.forEach(file => {
+    const fileName = file.name.replace('.md', '');
+    const filePath = file.path.split('docs')[1].replace('.md', '');
+    result.push({
+      text: fileName,
+      link: filePath
+    });
+  });
+
+  // 子目录作为分组
+  dirs.forEach(dir => {
+    result.push({
+      text: dir.name,
+      collapsible: true,
+      collapsed: true,
+      items: toSidebarItems(dir.children, basePath)
+    });
+  });
+
+  return result;
 }
 function generateSidebar() {
   let sidebarConfig = {}
@@ -85,16 +100,11 @@ function generateSidebar() {
       normalizePath: true
     });
     if (tree && tree.children) {
-      sidebarConfig[`/${dir}/`] = [
-        {
-          text: dir,
-          collapsible: true,
-          collapsed: false,
-          items: toSidebarItems(tree.children, `/${dir}`)
-        }
-      ];
+      // 直接使用 toSidebarItems 返回的分组数组
+      sidebarConfig[`/${dir}/`] = toSidebarItems(tree.children, `/${dir}`);
     }
   });
+  console.log('sidebarConfig',sidebarConfig)
   return sidebarConfig
 }
 // https://vitepress.dev/reference/site-config
