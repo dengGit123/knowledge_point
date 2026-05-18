@@ -4,9 +4,32 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(npm run *)",
-      "Bash(python3)"
+      "Bash(python3)",
+      "Bash(awk 'NR>=95 && NR<=105' /Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/watchEffect.md)",
+      "Bash(awk 'NR>=165 && NR<=175' /Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/watch.md)",
+      "Bash(awk '/^```$/,0' /Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/watch.md)",
+      "Bash(awk 'BEGIN{incode=0} /^```$/{incode=!incode; next} !incode && /<[a-zA-Z]/ {print NR\": \"$0}' /Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/watch.md)",
+      "Bash(awk 'NR>=168 && NR<=176' /Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/watch.md)",
+      "Bash(grep -c '^```' /Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/watch.md)",
+      "Bash(awk 'BEGIN{incode=0; start=0} /^```$/{if\\(incode==0\\){start=NR}; incode=!incode; if\\(incode==0 && NR>=165 && NR<=180\\){print \"Code block from \"start\" to \"NR}} !incode && /<[a-zA-Z]/ && NR>=165 && NR<=180 {print NR\": \"$0}' /Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/watch.md)",
+      "Bash(awk 'BEGIN{incode=0} /^```$/{incode=!incode; next} !incode {print NR\": \"$0}' /Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/watch.md)",
+      "Bash(mv watchEffect.md watchEffect.md.bak)",
+      "Bash(mv watch.md watch.md.bak)",
+      "Bash(grep -n '^```' \"/Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/watch.md\")",
+      "Bash(rm -rf \"/Users/dyc/Desktop/学习/knowledge-point/.vitepress/cache\" \"/Users/dyc/Desktop/学习/knowledge-point/node_modules/.vite\" && npm run build 2>&1 | tail -50)",
+      "Bash(awk 'NR>=165 && NR<=180' \"/Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/watch.md\")",
+      "Bash(awk 'NR==171 {print; print substr\\($0, 35, 10\\)}' \"/Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/watch.md\")",
+      "Bash(grep -n '```vue' \"/Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/watchEffect.md\")",
+      "Bash(sed -n '548,558p' \"/Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/defineAsyncComponent.md\")",
+      "Bash(sed -n '534,540p' \"/Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/defineAsyncComponent.md\")",
+      "Bash(grep -n '^```$' \"/Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/defineAsyncComponent.md\")",
+      "Bash(awk '/^```xml/ {if\\(start\\) print start\"-\"NR; start=NR} /^```$/ && start {print start\"-\"NR\" \\(no lang\\)\"; start=0} /^```$/ && !start {start=NR}' \"/Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/defineAsyncComponent.md\")",
+      "Bash(git checkout *)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "/Users/dyc/Desktop/学习/knowledge-point/.vitepress/cache"
+    ]
   }
 }
