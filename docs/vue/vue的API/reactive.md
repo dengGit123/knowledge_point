@@ -7,7 +7,7 @@
 
 ### 基本用法
 
-```javascript
+```text
 import { reactive } from 'vue'
 
 // 创建响应式对象
@@ -24,7 +24,7 @@ state.message = 'World'
 
 ### 嵌套对象
 
-```javascript
+```text
 const user = reactive({
   name: 'Vue',
   info: {
@@ -42,7 +42,7 @@ user.info.address.city = 'Shanghai'
 
 ### 数组
 
-```javascript
+```text
 const list = reactive([1, 2, 3])
 
 // 数组操作都是响应式的
@@ -54,7 +54,7 @@ list.splice(1, 1, 99)
 
 ### 在 setup 中使用
 
-```javascript
+```text
 import { reactive } from 'vue'
 
 export default {
@@ -76,10 +76,10 @@ export default {
 }
 ```
 
-### 在 <script setup> 中使用
+### 在 `&lt;script setup&gt;` 中使用
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { reactive } from 'vue'
 
 const state = reactive({
@@ -90,17 +90,17 @@ const state = reactive({
 function increment() {
   state.count++
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>{{ state.count }}</div>
-</template>
+`&lt;template&gt;`
+  &lt;div&gt;{{ state.count }}&lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 与 toRefs 配合解构
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { reactive, toRefs } from 'vue'
 
 const state = reactive({
@@ -114,18 +114,18 @@ const { count, message } = toRefs(state)
 function increment() {
   count.value++ // 注意：解构后需要 .value
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>{{ count }} - {{ message }}</div>
-</template>
+`&lt;template&gt;`
+  &lt;div&gt;{{ count }} - {{ message }}&lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ## 注意事项
 
 ### 1. 不能解构 reactive 对象（会丢失响应性）
 
-```javascript
+```text
 const state = reactive({
   count: 0,
   message: 'Hello'
@@ -143,7 +143,7 @@ count.value++ // 正确触发更新
 
 ### 2. 不能替换整个对象
 
-```javascript
+```text
 const state = reactive({ count: 0 })
 
 // ❌ 错误：替换整个对象会丢失响应性
@@ -158,7 +158,7 @@ state.count = 1
 
 ### 3. 不能用于基本类型
 
-```javascript
+```text
 // ❌ 错误：reactive 只接受对象
 const count = reactive(0)
 
@@ -168,7 +168,7 @@ const count = ref(0)
 
 ### 4. 返回的是原始对象的代理
 
-```javascript
+```text
 const original = { count: 0 }
 const proxy = reactive(original)
 
@@ -182,7 +182,7 @@ console.log(original.count) // 1
 
 ### 5. 与 ref 嵌套时的行为
 
-```javascript
+```text
 const count = ref(0)
 const state = reactive({ count })
 
@@ -198,11 +198,11 @@ state.newCount++ // 不会更新 newCount.value
 
 ### 6. 作为 props 传递时
 
-```javascript
+```text
 // 父组件
 const state = reactive({ count: 0 })
 // 传递给子组件
-// <Child :state="state" />
+// &lt;Child :state="state" /&gt;
 
 // 子组件
 // ⚠️ 需要注意 props 是只读的
@@ -211,7 +211,7 @@ const state = reactive({ count: 0 })
 
 ### 7. 本地响应式状态 vs Props
 
-```javascript
+```text
 export default {
   setup(props) {
     // ❌ 错误：props 是只读的
@@ -223,21 +223,21 @@ export default {
     })
 
     // ✅ 或者使用 computed
-    const doubledCount = computed(() => props.count * 2)
+    const doubledCount = computed(() =&gt; props.count * 2)
   }
 }
 ```
 
 ### 8. TypeScript 类型支持
 
-```typescript
+```text
 interface User {
   name: string
   age: number
 }
 
 // 推导类型
-const user = reactive<User>({
+const user = reactive&lt;User&gt;({
   name: 'Vue',
   age: 3
 })
@@ -250,8 +250,8 @@ user.age // number
 
 ### 1. 复杂状态管理
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { reactive } from 'vue'
 
 const formState = reactive({
@@ -268,19 +268,19 @@ const formState = reactive({
 async function submitForm() {
   // 表单提交逻辑
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <form @submit.prevent="submitForm">
-    <input v-model="formState.username" />
-    <span class="error">{{ formState.errors.username }}</span>
-  </form>
-</template>
+`&lt;template&gt;`
+  &lt;form @submit.prevent="submitForm"&gt;
+    &lt;input v-model="formState.username" /&gt;
+    &lt;span class="error"&gt;{{ formState.errors.username }}&lt;/span&gt;
+  &lt;/form&gt;
+`&lt;/template&gt;`
 ```
 
 ### 2. 购物车状态
 
-```javascript
+```text
 const cart = reactive({
   items: [],
   total: 0,
@@ -292,20 +292,20 @@ const cart = reactive({
   },
 
   removeItem(id) {
-    this.items = this.items.filter(item => item.id !== id)
+    this.items = this.items.filter(item =&gt; item.id !== id)
     this.calculateTotal()
   },
 
   calculateTotal() {
-    this.total = this.items.reduce((sum, item) => sum + item.price, 0)
+    this.total = this.items.reduce((sum, item) =&gt; sum + item.price, 0)
   }
 })
 ```
 
 ### 3. 表格数据管理
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 const tableState = reactive({
   data: [],
   loading: false,
@@ -327,12 +327,12 @@ async function fetchData() {
   tableState.pagination.total = res.total
   tableState.loading = false
 }
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 4. 游戏状态
 
-```javascript
+```text
 const gameState = reactive({
   player: {
     x: 0,
@@ -358,7 +358,7 @@ function updateGame() {
 
 ### 5. 可视化图表数据
 
-```javascript
+```text
 const chartData = reactive({
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
   datasets: [{
@@ -380,7 +380,7 @@ function updateChart(newData) {
 
 ### 6. 多步骤表单向导
 
-```javascript
+```text
 const wizard = reactive({
   currentStep: 1,
   totalSteps: 3,
@@ -395,14 +395,14 @@ const wizard = reactive({
 })
 
 function nextStep() {
-  if (wizard.currentStep < wizard.totalSteps) {
+  if (wizard.currentStep &lt; wizard.totalSteps) {
     wizard.steps[wizard.currentStep - 1].completed = true
     wizard.currentStep++
   }
 }
 
 function prevStep() {
-  if (wizard.currentStep > 1) {
+  if (wizard.currentStep &gt; 1) {
     wizard.currentStep--
   }
 }
@@ -410,7 +410,7 @@ function prevStep() {
 
 ### 7. 实时编辑器状态
 
-```javascript
+```text
 const editorState = reactive({
   content: '',
   selection: {
@@ -433,7 +433,7 @@ const editorState = reactive({
 
 ### 8. 响应式布局状态
 
-```javascript
+```text
 const layout = reactive({
   sidebarOpen: true,
   sidebarWidth: 250,
@@ -449,7 +449,7 @@ const layout = reactive({
 function handleResize() {
   layout.mainContentWidth = window.innerWidth - (layout.sidebarOpen ? layout.sidebarWidth : 0)
 
-  if (window.innerWidth < layout.breakpoints.mobile) {
+  if (window.innerWidth &lt; layout.breakpoints.mobile) {
     layout.currentBreakpoint = 'mobile'
     layout.sidebarOpen = false
   }
@@ -458,7 +458,7 @@ function handleResize() {
 
 ### 9. 通知/消息队列
 
-```javascript
+```text
 const notificationState = reactive({
   items: [],
   maxItems: 5,
@@ -474,18 +474,18 @@ function showNotification(message, type = 'info') {
     timestamp: Date.now()
   })
 
-  if (notificationState.items.length > notificationState.maxItems) {
+  if (notificationState.items.length &gt; notificationState.maxItems) {
     notificationState.items.shift()
   }
 
-  setTimeout(() => {
+  setTimeout(() =&gt; {
     removeNotification(id)
   }, notificationState.defaultDuration)
 }
 
 function removeNotification(id) {
-  const index = notificationState.items.findIndex(item => item.id === id)
-  if (index > -1) {
+  const index = notificationState.items.findIndex(item =&gt; item.id === id)
+  if (index &gt; -1) {
     notificationState.items.splice(index, 1)
   }
 }
@@ -493,7 +493,7 @@ function removeNotification(id) {
 
 ### 10. 与 Pinia Store 类似的状态管理模式
 
-```javascript
+```text
 // 简单的 store 模式
 const userStore = reactive({
   user: null,
@@ -525,7 +525,7 @@ export function useUserStore() {
 
 ## reactive vs ref 选择指南
 
-```javascript
+```text
 // ✅ 使用 reactive 的场景
 const form = reactive({ username: '', password: '' })
 const user = reactive({ name: 'Vue', info: { age: 3 } })

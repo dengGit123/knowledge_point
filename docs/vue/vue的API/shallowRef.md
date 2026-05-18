@@ -7,7 +7,7 @@
 
 ### 基本用法
 
-```javascript
+```text
 import { shallowRef, triggerRef } from 'vue'
 
 const state = shallowRef({
@@ -30,7 +30,7 @@ state.value.nested.value = 'changed' // 不会触发更新
 
 ### 触发更新
 
-```javascript
+```text
 import { shallowRef, triggerRef } from 'vue'
 
 const state = shallowRef({
@@ -49,7 +49,7 @@ state.value = { ...state.value }
 
 ### 与 ref 的对比
 
-```javascript
+```text
 import { ref, shallowRef } from 'vue'
 
 // ref: 深层响应式
@@ -77,14 +77,14 @@ shallow.value.nested.value = 'changed' // ❌ 不触发更新
 
 ### 大型数据结构
 
-```javascript
+```text
 import { shallowRef } from 'vue'
 
 // 大型数据列表
 const largeList = shallowRef([])
 
 // 添加大量数据
-const newData = Array.from({ length: 10000 }, (_, i) => ({
+const newData = Array.from({ length: 10000 }, (_, i) =&gt; ({
   id: i,
   data: /* 复杂对象 */
 }))
@@ -98,7 +98,7 @@ largeList.value[0].data = 'changed'
 
 ### 不可变数据模式
 
-```javascript
+```text
 import { shallowRef } from 'vue'
 
 const state = shallowRef({
@@ -112,7 +112,7 @@ const state = shallowRef({
 function updateUser(id, newName) {
   state.value = {
     ...state.value,
-    users: state.value.users.map(user =>
+    users: state.value.users.map(user =&gt;
       user.id === id ? { ...user, name: newName } : user
     )
   }
@@ -124,7 +124,7 @@ updateUser(1, 'Alice Updated')
 
 ### 与 readonly 配合
 
-```javascript
+```text
 import { shallowRef, readonly } from 'vue'
 
 const internalState = {
@@ -142,7 +142,7 @@ state.value = readonly({ count: 1, data: {} })
 
 ### TypeScript 类型支持
 
-```typescript
+```text
 import { shallowRef } from 'vue'
 
 interface User {
@@ -154,7 +154,7 @@ interface User {
   }
 }
 
-const user = shallowRef<User>({
+const user = shallowRef&lt;User&gt;({
   id: 1,
   name: 'Vue',
   profile: {
@@ -169,9 +169,9 @@ user.value.name = 'React' // 类型正确
 
 ### 组件间传递
 
-```vue
-<!-- 父组件 -->
-<script setup>
+```text
+&lt;!-- 父组件 --&gt;
+`&lt;script setup&gt;`
 import { shallowRef } from 'vue'
 
 const largeData = shallowRef(/* 大型数据 */)
@@ -180,24 +180,24 @@ function updateData() {
   // 整体替换
   largeData.value = getNewData()
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Child :data="largeData" />
-</template>
+`&lt;template&gt;`
+  &lt;Child :data="largeData" /&gt;
+`&lt;/template&gt;`
 
-<!-- 子组件 -->
-<script setup>
+&lt;!-- 子组件 --&gt;
+`&lt;script setup&gt;`
 const props = defineProps(['data'])
 
 // props.data 是 shallowRef，修改内部不会触发父组件更新
 props.data.someProperty = 'value' // 不会触发更新
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 在组合函数中使用
 
-```javascript
+```text
 // useLargeData.js
 import { shallowRef } from 'vue'
 
@@ -227,7 +227,7 @@ export function useLargeData(initialData) {
 
 ### 1. 深层属性不响应式
 
-```javascript
+```text
 const state = shallowRef({
   nested: {
     value: 1
@@ -248,7 +248,7 @@ state.value = {
 
 ### 2. 解构问题
 
-```javascript
+```text
 const state = shallowRef({
   count: 0,
   message: 'Hello'
@@ -262,12 +262,12 @@ count++ // 不影响 state.value，也不触发更新
 
 ### 3. 与 computed 的交互
 
-```javascript
+```text
 const state = shallowRef({
   count: 0
 })
 
-const doubled = computed(() => state.value.count * 2)
+const doubled = computed(() =&gt; state.value.count * 2)
 
 // ❌ 修改内部属性不会更新 computed
 state.value.count++
@@ -278,15 +278,15 @@ triggerRef(state)
 
 ### 4. watch 的行为
 
-```javascript
+```text
 const state = shallowRef({
   count: 0
 })
 
 // ❌ 深层 watch 不会工作
 watch(
-  () => state.value.count,
-  (val) => console.log('count changed:', val)
+  () =&gt; state.value.count,
+  (val) =&gt; console.log('count changed:', val)
 )
 
 state.value.count++ // 不触发
@@ -297,34 +297,34 @@ state.value = { count: 1 } // 触发
 
 ### 5. 在模板中使用
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { shallowRef } from 'vue'
 
 const state = shallowRef({
   count: 0
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- ✅ 模板可以读取 -->
-  <div>{{ state.count }}</div>
+`&lt;template&gt;`
+  &lt;!-- ✅ 模板可以读取 --&gt;
+  &lt;div&gt;{{ state.count }}&lt;/div&gt;
 
-  <!-- ⚠️ 修改内部值不会触发重新渲染 -->
-  <button @click="state.count++">
+  &lt;!-- ⚠️ 修改内部值不会触发重新渲染 --&gt;
+  &lt;button @click="state.count++"&gt;
     增加（不会触发更新）
-  </button>
+  &lt;/button&gt;
 
-  <!-- ✅ 替换整个对象会触发 -->
-  <button @click="state = { count: state.count + 1 }">
+  &lt;!-- ✅ 替换整个对象会触发 --&gt;
+  &lt;button @click="state = { count: state.count + 1 }"&gt;
     增加（会触发更新）
-  </button>
-</template>
+  &lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ### 6. 性能权衡
 
-```javascript
+```text
 // shallowRef: 适合大型不可变数据
 const large = shallowRef(bigImmutableData)
 
@@ -337,26 +337,26 @@ const small = ref({
 
 ### 7. v-model 的限制
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { shallowRef } from 'vue'
 
 const user = shallowRef({
   name: 'Vue',
   email: 'vue@example.com'
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- ⚠️ v-model 绑定深层属性可能不会按预期工作 -->
-  <input v-model="user.name" />
-  <!-- 修改可能不会触发更新 -->
-</template>
+`&lt;template&gt;`
+  &lt;!-- ⚠️ v-model 绑定深层属性可能不会按预期工作 --&gt;
+  &lt;input v-model="user.name" /&gt;
+  &lt;!-- 修改可能不会触发更新 --&gt;
+`&lt;/template&gt;`
 ```
 
 ### 8. 与 reactive 嵌套
 
-```javascript
+```text
 import { shallowRef, reactive } from 'vue'
 
 const inner = reactive({ count: 0 })
@@ -373,13 +373,13 @@ state.value.someNewProperty = 'value' // 不触发更新
 
 ### 1. 大型列表渲染
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { shallowRef } from 'vue'
 
 // 大型数据列表（10000+ 项）
 const items = shallowRef(
-  Array.from({ length: 10000 }, (_, i) => ({
+  Array.from({ length: 10000 }, (_, i) =&gt; ({
     id: i,
     name: `Item ${i}`,
     description: 'Long description...',
@@ -390,7 +390,7 @@ const items = shallowRef(
 // 批量更新
 function updateItems() {
   // ✅ 整体替换才触发更新
-  items.value = items.value.map(item => ({
+  items.value = items.value.map(item =&gt; ({
     ...item,
     name: `Updated ${item.name}`
   }))
@@ -403,22 +403,22 @@ function addItem() {
     name: 'New Item'
   }]
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <button @click="updateItems">批量更新</button>
-    <button @click="addItem">添加</button>
-    <virtual-scroller :items="items">
-      <!-- 列表渲染 -->
-    </virtual-scroller>
-  </div>
-</template>
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;button @click="updateItems"&gt;批量更新&lt;/button&gt;
+    &lt;button @click="addItem"&gt;添加&lt;/button&gt;
+    &lt;virtual-scroller :items="items"&gt;
+      &lt;!-- 列表渲染 --&gt;
+    &lt;/virtual-scroller&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 2. 不可变状态管理
 
-```javascript
+```text
 import { shallowRef } from 'vue'
 
 // 创建不可变状态
@@ -433,7 +433,7 @@ const state = shallowRef({
 function updateUser(id, updates) {
   state.value = {
     ...state.value,
-    users: state.value.users.map(user =>
+    users: state.value.users.map(user =&gt;
       user.id === id ? { ...user, ...updates } : user
     )
   }
@@ -449,15 +449,15 @@ function addUser(user) {
 function deleteUser(id) {
   state.value = {
     ...state.value,
-    users: state.value.users.filter(user => user.id !== id)
+    users: state.value.users.filter(user =&gt; user.id !== id)
   }
 }
 ```
 
 ### 3. 表单初始值
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { shallowRef } from 'vue'
 
 // 初始值（不需要深层响应式）
@@ -488,18 +488,18 @@ function resetForm() {
 }
 
 // 加载初始值
-onMounted(async () => {
+onMounted(async () =&gt; {
   const data = await fetchInitialValues()
   initialValues.value = data
   resetForm()
 })
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 4. 图表数据
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { shallowRef } from 'vue'
 
 const chartData = shallowRef({
@@ -521,16 +521,16 @@ function updateChart(newData) {
     }]
   }
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Chart :data="chartData" />
-</template>
+`&lt;template&gt;`
+  &lt;Chart :data="chartData" /&gt;
+`&lt;/template&gt;`
 ```
 
 ### 5. 配置对象
 
-```javascript
+```text
 import { shallowRef } from 'vue'
 
 // 配置不需要深层响应式
@@ -561,7 +561,7 @@ function updateConfig(path, value) {
 
 ### 6. 缓存数据
 
-```javascript
+```text
 import { shallowRef } from 'vue'
 
 const cache = shallowRef(new Map())
@@ -584,7 +584,7 @@ function clearCache() {
 
 ### 7. 历史记录
 
-```javascript
+```text
 import { shallowRef } from 'vue'
 
 const history = shallowRef([])
@@ -594,7 +594,7 @@ function pushState(state) {
 }
 
 function undo() {
-  if (history.value.length > 1) {
+  if (history.value.length &gt; 1) {
     history.value = history.value.slice(0, -1)
     return history.value[history.value.length - 1]
   }
@@ -607,8 +607,8 @@ function redo(state) {
 
 ### 8. 树形数据结构
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { shallowRef } from 'vue'
 
 const tree = shallowRef({
@@ -632,14 +632,14 @@ const tree = shallowRef({
 
 function addNode(parentId, node) {
   function traverse(nodes) {
-    return nodes.map(n => {
+    return nodes.map(n =&gt; {
       if (n.id === parentId) {
         return {
           ...n,
           children: [...n.children, node]
         }
       }
-      if (n.children.length > 0) {
+      if (n.children.length &gt; 0) {
         return {
           ...n,
           children: traverse(n.children)
@@ -654,18 +654,18 @@ function addNode(parentId, node) {
     children: traverse(tree.value.children)
   }
 }
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 9. 性能优化的渲染
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { shallowRef, watchEffect } from 'vue'
 
 const renderer = shallowRef(null)
 
-watchEffect(() => {
+watchEffect(() =&gt; {
   // 只在 renderer 替换时重新初始化
   if (renderer.value) {
     renderer.value.init()
@@ -676,29 +676,29 @@ function switchRenderer(newRenderer) {
   // 替换整个渲染器
   renderer.value = newRenderer
 }
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 10. DOM 引用
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { shallowRef } from 'vue'
 
 // 对于 DOM 引用，shallowRef 比 ref 更高效
 const canvasRef = shallowRef(null)
 
-onMounted(() => {
+onMounted(() =&gt; {
   if (canvasRef.value) {
     const ctx = canvasRef.value.getContext('2d')
     // 初始化 canvas
   }
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <canvas ref="canvasRef"></canvas>
-</template>
+`&lt;template&gt;`
+  &lt;canvas ref="canvasRef"&gt;&lt;/canvas&gt;
+`&lt;/template&gt;`
 ```
 
 ## shallowRef vs ref

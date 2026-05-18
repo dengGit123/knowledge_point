@@ -7,8 +7,8 @@
 
 ### 基本用法
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const count = ref(0)
@@ -16,24 +16,24 @@ const count = ref(0)
 function increment() {
   count.value++
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- 完整语法 -->
-  <button v-on:click="increment">增加</button>
+`&lt;template&gt;`
+  &lt;!-- 完整语法 --&gt;
+  &lt;button v-on:click="increment"&gt;增加&lt;/button&gt;
 
-  <!-- 简写语法（推荐） -->
-  <button @click="increment">增加</button>
+  &lt;!-- 简写语法（推荐） --&gt;
+  &lt;button @click="increment"&gt;增加&lt;/button&gt;
 
-  <!-- 内联表达式 -->
-  <button @click="count++">增加</button>
-</template>
+  &lt;!-- 内联表达式 --&gt;
+  &lt;button @click="count++"&gt;增加&lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ### 带参数的事件处理
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 function greet(name) {
   console.log('Hello, ' + name)
 }
@@ -42,20 +42,20 @@ function say(message, event) {
   console.log(message)
   console.log(event) // 原生 DOM 事件
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <button @click="greet('Vue')">问候</button>
+`&lt;template&gt;`
+  &lt;button @click="greet('Vue')"&gt;问候&lt;/button&gt;
 
-  <!-- 访问原生事件需要 $event -->
-  <button @click="say('Hello', $event)">说你好</button>
-</template>
+  &lt;!-- 访问原生事件需要 $event --&gt;
+  &lt;button @click="say('Hello', $event)"&gt;说你好&lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ### 多个事件处理
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 function handleClick() {
   console.log('Clicked')
 }
@@ -63,70 +63,70 @@ function handleClick() {
 function trackClick() {
   console.log('Tracking...')
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- 多个处理函数 -->
-  <button @click="handleClick(); trackClick()">
+`&lt;template&gt;`
+  &lt;!-- 多个处理函数 --&gt;
+  &lt;button @click="handleClick(); trackClick()"&gt;
     Click
-  </button>
-</template>
+  &lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ### 事件修饰符
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 function onSubmit() {
   console.log('Form submitted')
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- 阻止默认行为 -->
-  <form @submit.prevent="onSubmit">
-    <button type="submit">Submit</button>
-  </form>
+`&lt;template&gt;`
+  &lt;!-- 阻止默认行为 --&gt;
+  &lt;form @submit.prevent="onSubmit"&gt;
+    &lt;button type="submit"&gt;Submit&lt;/button&gt;
+  &lt;/form&gt;
 
-  <!-- 阻止事件冒泡 -->
-  <div @click="handleParentClick">
-    <button @click.stop="handleChildClick">
+  &lt;!-- 阻止事件冒泡 --&gt;
+  &lt;div @click="handleParentClick"&gt;
+    &lt;button @click.stop="handleChildClick"&gt;
       Child Button
-    </button>
-  </div>
+    &lt;/button&gt;
+  &lt;/div&gt;
 
-  <!-- 只触发一次 -->
-  <button @click.once="handleClick">
+  &lt;!-- 只触发一次 --&gt;
+  &lt;button @click.once="handleClick"&gt;
     Click Once
-  </button>
+  &lt;/button&gt;
 
-  <!-- 使用被动模式 -->
-  <div @scroll.passive="onScroll">
+  &lt;!-- 使用被动模式 --&gt;
+  &lt;div @scroll.passive="onScroll"&gt;
     Long content...
-  </div>
+  &lt;/div&gt;
 
-  <!-- 只有当事件是从元素本身触发时才触发 -->
-  <div @click.self="handleDivClick">
-    <button>Button</button>
-  </div>
+  &lt;!-- 只有当事件是从元素本身触发时才触发 --&gt;
+  &lt;div @click.self="handleDivClick"&gt;
+    &lt;button&gt;Button&lt;/button&gt;
+  &lt;/div&gt;
 
-  <!-- 按键修饰符 -->
-  <input @keyup.enter="submit" />
+  &lt;!-- 按键修饰符 --&gt;
+  &lt;input @keyup.enter="submit" /&gt;
 
-  <!-- 系统修饰键组合 -->
-  <input @keyup.ctrl.enter="submit" />
+  &lt;!-- 系统修饰键组合 --&gt;
+  &lt;input @keyup.ctrl.enter="submit" /&gt;
 
-  <!-- 鼠标按钮修饰符 -->
-  <div @mousedown.left="handleLeftClick">
+  &lt;!-- 鼠标按钮修饰符 --&gt;
+  &lt;div @mousedown.left="handleLeftClick"&gt;
     Left click only
-  </div>
-</template>
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 按键修饰符
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 function onEnter() {
   console.log('Enter pressed')
 }
@@ -134,73 +134,73 @@ function onEnter() {
 function onEscape() {
   console.log('Escape pressed')
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- 常用按键别名 -->
-  <input @keyup.enter="onEnter" />
-  <input @keyup.tab="onTab" />
-  <input @keyup.delete="onDelete" />
-  <input @keyup.esc="onEscape" />
-  <input @keyup.space="onSpace" />
-  <input @keyup.up="onUp" />
-  <input @keyup.down="onDown" />
-  <input @keyup.left="onLeft" />
-  <input @keyup.right="onRight" />
+`&lt;template&gt;`
+  &lt;!-- 常用按键别名 --&gt;
+  &lt;input @keyup.enter="onEnter" /&gt;
+  &lt;input @keyup.tab="onTab" /&gt;
+  &lt;input @keyup.delete="onDelete" /&gt;
+  &lt;input @keyup.esc="onEscape" /&gt;
+  &lt;input @keyup.space="onSpace" /&gt;
+  &lt;input @keyup.up="onUp" /&gt;
+  &lt;input @keyup.down="onDown" /&gt;
+  &lt;input @keyup.left="onLeft" /&gt;
+  &lt;input @keyup.right="onRight" /&gt;
 
-  <!-- 自定义按键修饰符 -->
-  <input @keyup.page-down="onPageDown" />
-  <input @keyup.page-up="onPageUp" />
+  &lt;!-- 自定义按键修饰符 --&gt;
+  &lt;input @keyup.page-down="onPageDown" /&gt;
+  &lt;input @keyup.page-up="onPageUp" /&gt;
 
-  <!-- 任意按键 -->
-  <input @keyup.q="onQPress" />
-  <input @keyup.arrow-down="onArrowDown" />
-</template>
+  &lt;!-- 任意按键 --&gt;
+  &lt;input @keyup.q="onQPress" /&gt;
+  &lt;input @keyup.arrow-down="onArrowDown" /&gt;
+`&lt;/template&gt;`
 ```
 
 ### 系统修饰键
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 function handleSave() {
   console.log('Saved!')
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- Ctrl -->
-  <button @click.ctrl="handleSave">Ctrl + Click</button>
+`&lt;template&gt;`
+  &lt;!-- Ctrl --&gt;
+  &lt;button @click.ctrl="handleSave"&gt;Ctrl + Click&lt;/button&gt;
 
-  <!-- Alt -->
-  <button @click.alt="handleSave">Alt + Click</button>
+  &lt;!-- Alt --&gt;
+  &lt;button @click.alt="handleSave"&gt;Alt + Click&lt;/button&gt;
 
-  <!-- Shift -->
-  <button @click.shift="handleSave">Shift + Click</button>
+  &lt;!-- Shift --&gt;
+  &lt;button @click.shift="handleSave"&gt;Shift + Click&lt;/button&gt;
 
-  <!-- Meta (Windows键/Cmd键) -->
-  <button @click.meta="handleSave">Meta + Click</button>
+  &lt;!-- Meta (Windows键/Cmd键) --&gt;
+  &lt;button @click.meta="handleSave"&gt;Meta + Click&lt;/button&gt;
 
-  <!-- 精确组合 -->
-  <button @click.ctrl.shift="handleSave">
+  &lt;!-- 精确组合 --&gt;
+  &lt;button @click.ctrl.shift="handleSave"&gt;
     Ctrl + Shift + Click
-  </button>
+  &lt;/button&gt;
 
-  <!-- 排除某个修饰键 -->
-  <button @click.ctrl.exact="handleSave">
+  &lt;!-- 排除某个修饰键 --&gt;
+  &lt;button @click.ctrl.exact="handleSave"&gt;
     只有 Ctrl 被按下
-  </button>
+  &lt;/button&gt;
 
-  <!-- 没有任何修饰键 -->
-  <button @click.exact="handleClick">
+  &lt;!-- 没有任何修饰键 --&gt;
+  &lt;button @click.exact="handleClick"&gt;
     无修饰键点击
-  </button>
-</template>
+  &lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ### 鼠标按钮修饰符
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 function handleLeftClick() {
   console.log('Left clicked')
 }
@@ -209,157 +209,157 @@ function handleRightClick(event) {
   event.preventDefault()
   console.log('Right clicked')
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div @mousedown.left="handleLeftClick">
+`&lt;template&gt;`
+  &lt;div @mousedown.left="handleLeftClick"&gt;
     Left click
-  </div>
+  &lt;/div&gt;
 
-  <div @mousedown.right="handleRightClick">
+  &lt;div @mousedown.right="handleRightClick"&gt;
     Right click
-  </div>
+  &lt;/div&gt;
 
-  <div @mousedown.middle="handleMiddleClick">
+  &lt;div @mousedown.middle="handleMiddleClick"&gt;
     Middle click
-  </div>
-</template>
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 动态事件
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const eventName = ref('click')
-const handler = ref(() => console.log('Clicked'))
-</script>
+const handler = ref(() =&gt; console.log('Clicked'))
+`&lt;/script&gt;`
 
-<template>
-  <!-- 动态事件名 -->
-  <button @[eventName]="handler">
+`&lt;template&gt;`
+  &lt;!-- 动态事件名 --&gt;
+  &lt;button @[eventName]="handler"&gt;
     Dynamic Event
-  </button>
-</template>
+  &lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ### 对象语法
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const count = ref(0)
 
 const eventHandlers = {
-  click: () => count.value++,
-  mouseover: () => console.log('Mouse over')
+  click: () =&gt; count.value++,
+  mouseover: () =&gt; console.log('Mouse over')
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- 对象语法 -->
-  <button v-on="eventHandlers">
+`&lt;template&gt;`
+  &lt;!-- 对象语法 --&gt;
+  &lt;button v-on="eventHandlers"&gt;
     Click
-  </button>
-</template>
+  &lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ### 组件自定义事件
 
-```vue
-<!-- 父组件 -->
-<script setup>
+```text
+&lt;!-- 父组件 --&gt;
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 import ChildComponent from './ChildComponent.vue'
 
 function handleCustomEvent(data) {
   console.log('Received:', data)
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <ChildComponent @custom-event="handleCustomEvent" />
-</template>
+`&lt;template&gt;`
+  &lt;ChildComponent @custom-event="handleCustomEvent" /&gt;
+`&lt;/template&gt;`
 
-<!-- 子组件 -->
-<script setup>
+&lt;!-- 子组件 --&gt;
+`&lt;script setup&gt;`
 const emit = defineEmits(['custom-event'])
 
 function triggerEvent() {
   emit('custom-event', { message: 'Hello from child' })
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <button @click="triggerEvent">触发事件</button>
-</template>
+`&lt;template&gt;`
+  &lt;button @click="triggerEvent"&gt;触发事件&lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ## 注意事项
 
 ### 1. 内联表达式限制
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 const count = ref(0)
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- ✅ 简单表达式 -->
-  <button @click="count++">增加</button>
+`&lt;template&gt;`
+  &lt;!-- ✅ 简单表达式 --&gt;
+  &lt;button @click="count++"&gt;增加&lt;/button&gt;
 
-  <!-- ❌ 复杂表达式应该使用方法 -->
-  <button @click="if (count > 10) count = 0">
-    <!-- 不推荐 -->
-  </button>
+  &lt;!-- ❌ 复杂表达式应该使用方法 --&gt;
+  &lt;button @click="if (count &gt; 10) count = 0"&gt;
+    &lt;!-- 不推荐 --&gt;
+  &lt;/button&gt;
 
-  <!-- ✅ 推荐 -->
-  <button @click="resetIfOverLimit">
+  &lt;!-- ✅ 推荐 --&gt;
+  &lt;button @click="resetIfOverLimit"&gt;
     重置
-  </button>
-</template>
+  &lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ### 2. 修饰符链
 
-```vue
-<template>
-  <!-- 多个修饰符可以链式调用 -->
-  <form @submit.prevent.stop="handleSubmit">
-    <button type="submit">Submit</button>
-  </form>
+```text
+`&lt;template&gt;`
+  &lt;!-- 多个修饰符可以链式调用 --&gt;
+  &lt;form @submit.prevent.stop="handleSubmit"&gt;
+    &lt;button type="submit"&gt;Submit&lt;/button&gt;
+  &lt;/form&gt;
 
-  <!-- 顺序很重要 -->
-  <input @keyup.ctrl.enter="submit" />
-  <!-- Ctrl + Enter 才会触发 -->
+  &lt;!-- 顺序很重要 --&gt;
+  &lt;input @keyup.ctrl.enter="submit" /&gt;
+  &lt;!-- Ctrl + Enter 才会触发 --&gt;
 
-  <input @keyup.enter.ctrl="submit" />
-  <!-- 先检查 Enter，再检查 Ctrl -->
-</template>
+  &lt;input @keyup.enter.ctrl="submit" /&gt;
+  &lt;!-- 先检查 Enter，再检查 Ctrl --&gt;
+`&lt;/template&gt;`
 ```
 
 ### 3. 原生事件 vs 自定义事件
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 function handleClick(event) {
   // 这里的 event 是原生 DOM 事件
   console.log(event.target)
   event.preventDefault()
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <button @click="handleClick">Click</button>
-</template>
+`&lt;template&gt;`
+  &lt;button @click="handleClick"&gt;Click&lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ### 4. 事件对象
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 function handleInput(event) {
   // 访问事件目标
   const value = event.target.value
@@ -372,37 +372,37 @@ function handleKeyEvent(event) {
   console.log(event.code)
   console.log(event.ctrlKey)
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <input @input="handleInput" />
-  <input @keyup="handleKeyEvent" />
-</template>
+`&lt;template&gt;`
+  &lt;input @input="handleInput" /&gt;
+  &lt;input @keyup="handleKeyEvent" /&gt;
+`&lt;/template&gt;`
 ```
 
 ### 5. 组件事件
 
-```vue
-<!-- 父组件 -->
-<script setup>
+```text
+&lt;!-- 父组件 --&gt;
+`&lt;script setup&gt;`
 import ChildComponent from './ChildComponent.vue'
 
 function handleEvent(data) {
   console.log(data)
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- 自定义事件不会触发原生事件 -->
-  <ChildComponent @click="handleEvent" />
-  <!-- 这里监听的是子组件通过 emit 触发的 click 事件 -->
-</template>
+`&lt;template&gt;`
+  &lt;!-- 自定义事件不会触发原生事件 --&gt;
+  &lt;ChildComponent @click="handleEvent" /&gt;
+  &lt;!-- 这里监听的是子组件通过 emit 触发的 click 事件 --&gt;
+`&lt;/template&gt;`
 ```
 
 ### 6. this 的指向
 
-```vue
-<script>
+```text
+&lt;script&gt;
 export default {
   data() {
     return {
@@ -416,49 +416,49 @@ export default {
     }
   }
 }
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 7. 事件冒泡和捕获
 
-```vue
-<template>
-  <!-- 捕获阶段 -->
-  <div @click.capture="handleParentClick">
-    <button @click="handleChildClick">Button</button>
-  </div>
+```text
+`&lt;template&gt;`
+  &lt;!-- 捕获阶段 --&gt;
+  &lt;div @click.capture="handleParentClick"&gt;
+    &lt;button @click="handleChildClick"&gt;Button&lt;/button&gt;
+  &lt;/div&gt;
 
-  <!-- .preventDefault 阻止默认行为 -->
-  <a href="https://example.com" @click.prevent>
+  &lt;!-- .preventDefault 阻止默认行为 --&gt;
+  &lt;a href="https://example.com" @click.prevent&gt;
     不会跳转
-  </a>
-</template>
+  &lt;/a&gt;
+`&lt;/template&gt;`
 ```
 
 ### 8. 被动事件监听器
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 function onScroll() {
   // 滚动处理
   console.log('Scrolling...')
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- 被动模式可以提高滚动性能 -->
-  <div @scroll.passive="onScroll" style="height: 100px; overflow: auto;">
+`&lt;template&gt;`
+  &lt;!-- 被动模式可以提高滚动性能 --&gt;
+  &lt;div @scroll.passive="onScroll" style="height: 100px; overflow: auto;"&gt;
     Long content...
-  </div>
-</template>
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ## 使用场景
 
 ### 1. 表单处理
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const formData = ref({
@@ -476,22 +476,22 @@ function handleReset() {
     email: ''
   }
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <form @submit.prevent="handleSubmit">
-    <input v-model="formData.username" />
-    <input v-model="formData.email" />
-    <button type="submit">提交</button>
-    <button type="button" @click="handleReset">重置</button>
-  </form>
-</template>
+`&lt;template&gt;`
+  &lt;form @submit.prevent="handleSubmit"&gt;
+    &lt;input v-model="formData.username" /&gt;
+    &lt;input v-model="formData.email" /&gt;
+    &lt;button type="submit"&gt;提交&lt;/button&gt;
+    &lt;button type="button" @click="handleReset"&gt;重置&lt;/button&gt;
+  &lt;/form&gt;
+`&lt;/template&gt;`
 ```
 
 ### 2. 列表操作
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const items = ref([
@@ -500,7 +500,7 @@ const items = ref([
 ])
 
 function removeItem(id) {
-  items.value = items.value.filter(item => item.id !== id)
+  items.value = items.value.filter(item =&gt; item.id !== id)
 }
 
 function addItem() {
@@ -509,23 +509,23 @@ function addItem() {
     name: `Item ${items.value.length + 1}`
   })
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <ul>
-    <li v-for="item in items" :key="item.id">
+`&lt;template&gt;`
+  &lt;ul&gt;
+    &lt;li v-for="item in items" :key="item.id"&gt;
       {{ item.name }}
-      <button @click="removeItem(item.id)">删除</button>
-    </li>
-  </ul>
-  <button @click="addItem">添加</button>
-</template>
+      &lt;button @click="removeItem(item.id)"&gt;删除&lt;/button&gt;
+    &lt;/li&gt;
+  &lt;/ul&gt;
+  &lt;button @click="addItem"&gt;添加&lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ### 3. 快捷键支持
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 function save() {
   console.log('Saving...')
 }
@@ -537,25 +537,25 @@ function open() {
 function close() {
   console.log('Closing...')
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- 全局快捷键 -->
-  <div
+`&lt;template&gt;`
+  &lt;!-- 全局快捷键 --&gt;
+  &lt;div
     @keydown.ctrl.s.prevent="save"
     @keydown.ctrl.o.prevent="open"
     @keydown.escape="close"
     tabindex="0"
-  >
+  &gt;
     按 Ctrl+S 保存，Ctrl+O 打开，Esc 关闭
-  </div>
-</template>
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 4. 拖拽功能
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const isDragging = ref(false)
@@ -581,10 +581,10 @@ function onDrag(event) {
 function stopDrag() {
   isDragging.value = false
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div
+`&lt;template&gt;`
+  &lt;div
     @mousedown="startDrag"
     @mousemove="onDrag"
     @mouseup="stopDrag"
@@ -594,16 +594,16 @@ function stopDrag() {
       left: position.x + 'px',
       top: position.y + 'px'
     }"
-  >
+  &gt;
     拖拽我
-  </div>
-</template>
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 5. 输入验证
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const inputValue = ref('')
@@ -612,7 +612,7 @@ const error = ref('')
 function validateInput(event) {
   const value = event.target.value
 
-  if (value.length < 3) {
+  if (value.length &lt; 3) {
     error.value = '至少需要3个字符'
   } else if (!/^[a-zA-Z]+$/.test(value)) {
     error.value = '只能包含字母'
@@ -620,31 +620,31 @@ function validateInput(event) {
     error.value = ''
   }
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <input
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;input
       v-model="inputValue"
       @input="validateInput"
       @blur="validateInput"
-    />
-    <span v-if="error" class="error">{{ error }}</span>
-  </div>
-</template>
+    /&gt;
+    &lt;span v-if="error" class="error"&gt;{{ error }}&lt;/span&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 6. 防抖和节流
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 let debounceTimer = null
 
 function onInput(event) {
   clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => {
+  debounceTimer = setTimeout(() =&gt; {
     console.log('Debounced:', event.target.value)
   }, 300)
 }
@@ -652,25 +652,25 @@ function onInput(event) {
 let throttleTimer = null
 function onScroll(event) {
   if (throttleTimer) return
-  throttleTimer = setTimeout(() => {
+  throttleTimer = setTimeout(() =&gt; {
     console.log('Throttled scroll')
     throttleTimer = null
   }, 100)
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <input @input="onInput" />
-  <div @scroll="onScroll" style="height: 100px; overflow: auto;">
+`&lt;template&gt;`
+  &lt;input @input="onInput" /&gt;
+  &lt;div @scroll="onScroll" style="height: 100px; overflow: auto;"&gt;
     Long content...
-  </div>
-</template>
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 7. 图片懒加载
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 function handleImageLoad(event) {
   console.log('Image loaded:', event.target.src)
 }
@@ -679,22 +679,22 @@ function handleImageError(event) {
   console.log('Image failed to load')
   event.target.src = '/placeholder.jpg'
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <img
+`&lt;template&gt;`
+  &lt;img
     src="/image.jpg"
     @load="handleImageLoad"
     @error="handleImageError"
     loading="lazy"
-  />
-</template>
+  /&gt;
+`&lt;/template&gt;`
 ```
 
 ### 8. 右键菜单
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const contextMenu = ref({
@@ -715,34 +715,34 @@ function showContextMenu(event) {
 function hideContextMenu() {
   contextMenu.value.visible = false
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div @contextmenu.prevent="showContextMenu" @click="hideContextMenu">
+`&lt;template&gt;`
+  &lt;div @contextmenu.prevent="showContextMenu" @click="hideContextMenu"&gt;
     右键点击显示菜单
 
-    <div
+    &lt;div
       v-if="contextMenu.visible"
       :style="{
         position: 'fixed',
         left: contextMenu.x + 'px',
         top: contextMenu.y + 'px'
       }"
-    >
-      <ul>
-        <li>复制</li>
-        <li>粘贴</li>
-        <li>删除</li>
-      </ul>
-    </div>
-  </div>
-</template>
+    &gt;
+      &lt;ul&gt;
+        &lt;li&gt;复制&lt;/li&gt;
+        &lt;li&gt;粘贴&lt;/li&gt;
+        &lt;li&gt;删除&lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 9. 窗口事件
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { onMounted, onUnmounted } from 'vue'
 
 function handleResize() {
@@ -753,43 +753,43 @@ function handleScroll() {
   console.log('Window scrolled:', window.scrollY)
 }
 
-onMounted(() => {
+onMounted(() =&gt; {
   window.addEventListener('resize', handleResize)
   window.addEventListener('scroll', handleScroll)
 })
 
-onUnmounted(() => {
+onUnmounted(() =&gt; {
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('scroll', handleScroll)
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
+`&lt;template&gt;`
+  &lt;div&gt;
     Content...
-  </div>
-</template>
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 10. 事件委托
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 function handleListClick(event) {
   // 检查点击的是否是列表项
   if (event.target.tagName === 'LI') {
     console.log('Clicked item:', event.target.textContent)
   }
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <ul @click="handleListClick">
-    <li>Item 1</li>
-    <li>Item 2</li>
-    <li>Item 3</li>
-  </ul>
-</template>
+`&lt;template&gt;`
+  &lt;ul @click="handleListClick"&gt;
+    &lt;li&gt;Item 1&lt;/li&gt;
+    &lt;li&gt;Item 2&lt;/li&gt;
+    &lt;li&gt;Item 3&lt;/li&gt;
+  &lt;/ul&gt;
+`&lt;/template&gt;`
 ```
 
 ## v-on 修饰符总结

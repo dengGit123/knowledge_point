@@ -7,116 +7,116 @@
 
 ### 基本用法
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { defineAsyncComponent } from 'vue'
 
 // 异步组件
-const AsyncComponent = defineAsyncComponent(() =>
+const AsyncComponent = defineAsyncComponent(() =&gt;
   import('./AsyncComponent.vue')
 )
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Suspense>
-    <!-- 默认插槽：异步内容 -->
-    <template #default>
-      <AsyncComponent />
-    </template>
+`&lt;template&gt;`
+  &lt;Suspense&gt;
+    &lt;!-- 默认插槽：异步内容 --&gt;
+    `&lt;template&gt;`
+      &lt;AsyncComponent /&gt;
+    `&lt;/template&gt;`
 
-    <!-- fallback 插槽：加载状态 -->
-    <template #fallback>
-      <div>Loading...</div>
-    </template>
-  </Suspense>
-</template>
+    &lt;!-- fallback 插槽：加载状态 --&gt;
+    `&lt;template&gt;`
+      &lt;div&gt;Loading...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 多个异步组件
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { defineAsyncComponent } from 'vue'
 
-const Header = defineAsyncComponent(() => import('./Header.vue'))
-const Content = defineAsyncComponent(() => import('./Content.vue'))
-const Footer = defineAsyncComponent(() => import('./Footer.vue'))
-</script>
+const Header = defineAsyncComponent(() =&gt; import('./Header.vue'))
+const Content = defineAsyncComponent(() =&gt; import('./Content.vue'))
+const Footer = defineAsyncComponent(() =&gt; import('./Footer.vue'))
+`&lt;/script&gt;`
 
-<template>
-  <Suspense>
-    <template #default>
-      <Header />
-      <Content />
-      <Footer />
-    </template>
+`&lt;template&gt;`
+  &lt;Suspense&gt;
+    `&lt;template&gt;`
+      &lt;Header /&gt;
+      &lt;Content /&gt;
+      &lt;Footer /&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div>Loading page...</div>
-    </template>
-  </Suspense>
-</template>
+    `&lt;template&gt;`
+      &lt;div&gt;Loading page...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 嵌套 Suspense
 
-```vue
-<template>
-  <!-- 外层 Suspense -->
-  <Suspense>
-    <template #default>
-      <div>
-        <h1>Main Content</h1>
+```text
+`&lt;template&gt;`
+  &lt;!-- 外层 Suspense --&gt;
+  &lt;Suspense&gt;
+    `&lt;template&gt;`
+      &lt;div&gt;
+        &lt;h1&gt;Main Content&lt;/h1&gt;
 
-        <!-- 内层 Suspense -->
-        <Suspense>
-          <template #default>
-            <AsyncComponent />
-          </template>
-          <template #fallback>
-            <div>Loading inner component...</div>
-          </template>
-        </Suspense>
-      </div>
-    </template>
+        &lt;!-- 内层 Suspense --&gt;
+        &lt;Suspense&gt;
+          `&lt;template&gt;`
+            &lt;AsyncComponent /&gt;
+          `&lt;/template&gt;`
+          `&lt;template&gt;`
+            &lt;div&gt;Loading inner component...&lt;/div&gt;
+          `&lt;/template&gt;`
+        &lt;/Suspense&gt;
+      &lt;/div&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div>Loading main content...</div>
-    </template>
-  </Suspense>
-</template>
+    `&lt;template&gt;`
+      &lt;div&gt;Loading main content...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 与 async setup() 配合
 
-```vue
-<!-- AsyncComponent.vue -->
-<script setup>
+```text
+&lt;!-- AsyncComponent.vue --&gt;
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 // 使用 async setup
 const posts = ref([])
 
 // 这会使组件成为异步组件
-posts.value = await fetch('/api/posts').then(r => r.json())
-</script>
+posts.value = await fetch('/api/posts').then(r =&gt; r.json())
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <h1>Posts</h1>
-    <ul>
-      <li v-for="post in posts" :key="post.id">
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;h1&gt;Posts&lt;/h1&gt;
+    &lt;ul&gt;
+      &lt;li v-for="post in posts" :key="post.id"&gt;
         {{ post.title }}
-      </li>
-    </ul>
-  </div>
-</template>
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 错误处理
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const error = ref(null)
@@ -128,30 +128,30 @@ async function loadData() {
     error.value = e
   }
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Suspense>
-    <template #default>
-      <AsyncComponent @error="error = $event" />
-    </template>
+`&lt;template&gt;`
+  &lt;Suspense&gt;
+    `&lt;template&gt;`
+      &lt;AsyncComponent @error="error = $event" /&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div>Loading...</div>
-    </template>
-  </Suspense>
+    `&lt;template&gt;`
+      &lt;div&gt;Loading...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
 
-  <!-- 错误显示 -->
-  <div v-if="error" class="error">
+  &lt;!-- 错误显示 --&gt;
+  &lt;div v-if="error" class="error"&gt;
     {{ error.message }}
-  </div>
-</template>
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 组件事件处理
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const isLoading = ref(true)
@@ -170,65 +170,65 @@ function onPending() {
 function onFallback() {
   console.log('Showing fallback')
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Suspense
+`&lt;template&gt;`
+  &lt;Suspense
     @resolve="onResolve"
     @pending="onPending"
     @fallback="onFallback"
-  >
-    <template #default>
-      <AsyncComponent :data="data" />
-    </template>
+  &gt;
+    `&lt;template&gt;`
+      &lt;AsyncComponent :data="data" /&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div v-if="isLoading">Loading...</div>
-    </template>
-  </Suspense>
-</template>
+    `&lt;template&gt;`
+      &lt;div v-if="isLoading"&gt;Loading...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 动态组件
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, defineAsyncComponent, computed } from 'vue'
 
 const currentView = ref('home')
 
 const views = {
-  home: defineAsyncComponent(() => import('./Home.vue')),
-  about: defineAsyncComponent(() => import('./About.vue')),
-  contact: defineAsyncComponent(() => import('./Contact.vue'))
+  home: defineAsyncComponent(() =&gt; import('./Home.vue')),
+  about: defineAsyncComponent(() =&gt; import('./About.vue')),
+  contact: defineAsyncComponent(() =&gt; import('./Contact.vue'))
 }
 
-const currentComponent = computed(() => views[currentView.value])
-</script>
+const currentComponent = computed(() =&gt; views[currentView.value])
+`&lt;/script&gt;`
 
-<template>
-  <nav>
-    <button @click="currentView = 'home'">Home</button>
-    <button @click="currentView = 'about'">About</button>
-    <button @click="currentView = 'contact'">Contact</button>
-  </nav>
+`&lt;template&gt;`
+  &lt;nav&gt;
+    &lt;button @click="currentView = 'home'"&gt;Home&lt;/button&gt;
+    &lt;button @click="currentView = 'about'"&gt;About&lt;/button&gt;
+    &lt;button @click="currentView = 'contact'"&gt;Contact&lt;/button&gt;
+  &lt;/nav&gt;
 
-  <Suspense>
-    <template #default>
-      <component :is="currentComponent" />
-    </template>
+  &lt;Suspense&gt;
+    `&lt;template&gt;`
+      &lt;component :is="currentComponent" /&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div>Loading {{ currentView }}...</div>
-    </template>
-  </Suspense>
-</template>
+    `&lt;template&gt;`
+      &lt;div&gt;Loading {{ currentView }}...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 超时处理
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, onErrorCaptured } from 'vue'
 
 const timeout = ref(false)
@@ -236,13 +236,13 @@ const error = ref(null)
 
 let timeoutId = null
 
-onErrorCaptured((err) => {
+onErrorCaptured((err) =&gt; {
   error.value = err
   return true
 })
 
 function startTimeout() {
-  timeoutId = setTimeout(() => {
+  timeoutId = setTimeout(() =&gt; {
     timeout.value = true
   }, 5000)
 }
@@ -252,27 +252,27 @@ function clearTimeout() {
     clearTimeout(timeoutId)
   }
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Suspense @pending="startTimeout" @resolve="clearTimeout">
-    <template #default>
-      <AsyncComponent v-if="!timeout" />
-      <div v-else class="timeout">Loading timeout</div>
-    </template>
+`&lt;template&gt;`
+  &lt;Suspense @pending="startTimeout" @resolve="clearTimeout"&gt;
+    `&lt;template&gt;`
+      &lt;AsyncComponent v-if="!timeout" /&gt;
+      &lt;div v-else class="timeout"&gt;Loading timeout&lt;/div&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div>Loading...</div>
-    </template>
-  </Suspense>
-</template>
+    `&lt;template&gt;`
+      &lt;div&gt;Loading...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ## 注意事项
 
 ### 1. Suspense 是实验性的
 
-```javascript
+```text
 // Vue 3.0-3.2.x 中 Suspense 是实验性功能
 // Vue 3.3+ 中仍然是实验性的
 // 使用时需要注意 API 可能变化
@@ -280,108 +280,108 @@ function clearTimeout() {
 
 ### 2. 只能用于嵌套组件
 
-```vue
-<template>
-  <!-- ✅ 正确：Suspense 包裹子组件 -->
-  <Suspense>
-    <ChildComponent />
-  </Suspense>
+```text
+`&lt;template&gt;`
+  &lt;!-- ✅ 正确：Suspense 包裹子组件 --&gt;
+  &lt;Suspense&gt;
+    &lt;ChildComponent /&gt;
+  &lt;/Suspense&gt;
 
-  <!-- ❌ 错误：根组件不能是 Suspense -->
-  <!-- 在 main.js 中 -->
-  <!-- <Suspense>
-    <App />
-  </Suspense> -->
-</template>
+  &lt;!-- ❌ 错误：根组件不能是 Suspense --&gt;
+  &lt;!-- 在 main.js 中 --&gt;
+  &lt;!-- &lt;Suspense&gt;
+    &lt;App /&gt;
+  &lt;/Suspense&gt; --&gt;
+`&lt;/template&gt;`
 ```
 
 ### 3. 与 v-if 的配合
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const show = ref(true)
-const AsyncComp = defineAsyncComponent(() => import('./AsyncComp.vue'))
-</script>
+const AsyncComp = defineAsyncComponent(() =&gt; import('./AsyncComp.vue'))
+`&lt;/script&gt;`
 
-<template>
-  <Suspense>
-    <!-- 条件渲染的异步组件 -->
-    <template #default>
-      <AsyncComp v-if="show" />
-    </template>
+`&lt;template&gt;`
+  &lt;Suspense&gt;
+    &lt;!-- 条件渲染的异步组件 --&gt;
+    `&lt;template&gt;`
+      &lt;AsyncComp v-if="show" /&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div>Loading...</div>
-    </template>
-  </Suspense>
-</template>
+    `&lt;template&gt;`
+      &lt;div&gt;Loading...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 4. 多个异步依赖的解析
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { defineAsyncComponent } from 'vue'
 
 // 所有依赖都解析后才显示内容
-const ComponentA = defineAsyncComponent(() => import('./A.vue'))
-const ComponentB = defineAsyncComponent(() => import('./B.vue'))
-const ComponentC = defineAsyncComponent(() => import('./C.vue'))
-</script>
+const ComponentA = defineAsyncComponent(() =&gt; import('./A.vue'))
+const ComponentB = defineAsyncComponent(() =&gt; import('./B.vue'))
+const ComponentC = defineAsyncComponent(() =&gt; import('./C.vue'))
+`&lt;/script&gt;`
 
-<template>
-  <Suspense>
-    <template #default>
-      <!-- 所有组件加载完成后一起显示 -->
-      <div>
-        <ComponentA />
-        <ComponentB />
-        <ComponentC />
-      </div>
-    </template>
+`&lt;template&gt;`
+  &lt;Suspense&gt;
+    `&lt;template&gt;`
+      &lt;!-- 所有组件加载完成后一起显示 --&gt;
+      &lt;div&gt;
+        &lt;ComponentA /&gt;
+        &lt;ComponentB /&gt;
+        &lt;ComponentC /&gt;
+      &lt;/div&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div>Loading components...</div>
-    </template>
-  </Suspense>
-</template>
+    `&lt;template&gt;`
+      &lt;div&gt;Loading components...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 5. 与 defineAsyncComponent 的配合
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { defineAsyncComponent } from 'vue'
 
 const AsyncComponent = defineAsyncComponent({
-  loader: () => import('./HeavyComponent.vue'),
+  loader: () =&gt; import('./HeavyComponent.vue'),
   loadingComponent: LoadingComponent,
   errorComponent: ErrorComponent,
   delay: 200,
   timeout: 3000
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- Suspense 和 defineAsyncComponent 可以一起使用 -->
-  <Suspense>
-    <template #default>
-      <AsyncComponent />
-    </template>
+`&lt;template&gt;`
+  &lt;!-- Suspense 和 defineAsyncComponent 可以一起使用 --&gt;
+  &lt;Suspense&gt;
+    `&lt;template&gt;`
+      &lt;AsyncComponent /&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div>Loading...</div>
-    </template>
-  </Suspense>
-</template>
+    `&lt;template&gt;`
+      &lt;div&gt;Loading...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 6. 事件触发顺序
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const events = ref([])
@@ -389,91 +389,91 @@ const events = ref([])
 function logEvent(event) {
   events.value.push(event)
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Suspense
+`&lt;template&gt;`
+  &lt;Suspense
     @pending="logEvent('pending')"
     @resolve="logEvent('resolve')"
     @fallback="logEvent('fallback')"
-  >
-    <template #default>
-      <AsyncComponent />
-    </template>
-    <template #fallback>
-      <div>Loading...</div>
-    </template>
-  </Suspense>
+  &gt;
+    `&lt;template&gt;`
+      &lt;AsyncComponent /&gt;
+    `&lt;/template&gt;`
+    `&lt;template&gt;`
+      &lt;div&gt;Loading...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
 
-  <div>Events: {{ events }}</div>
-</template>
+  &lt;div&gt;Events: {{ events }}&lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 7. 与 provide/inject 的兼容性
 
-```vue
-<!-- 父组件 -->
-<script setup>
+```text
+&lt;!-- 父组件 --&gt;
+`&lt;script setup&gt;`
 import { provide } from 'vue'
 
 provide('theme', 'dark')
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Suspense>
-    <template #default>
-      <!-- 异步子组件可以注入父组件提供的数据 -->
-      <AsyncChild />
-    </template>
-    <template #fallback>
-      <div>Loading...</div>
-    </template>
-  </Suspense>
-</template>
+`&lt;template&gt;`
+  &lt;Suspense&gt;
+    `&lt;template&gt;`
+      &lt;!-- 异步子组件可以注入父组件提供的数据 --&gt;
+      &lt;AsyncChild /&gt;
+    `&lt;/template&gt;`
+    `&lt;template&gt;`
+      &lt;div&gt;Loading...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 8. 模板引用访问
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, onMounted } from 'vue'
 
 const asyncComponentRef = ref(null)
 
-onMounted(async () => {
+onMounted(async () =&gt; {
   // 在 Suspense 解析后可以访问组件引用
   // 但需要等待异步操作完成
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Suspense>
-    <template #default>
-      <AsyncComponent ref="asyncComponentRef" />
-    </template>
-    <template #fallback>
-      <div>Loading...</div>
-    </template>
-  </Suspense>
-</template>
+`&lt;template&gt;`
+  &lt;Suspense&gt;
+    `&lt;template&gt;`
+      &lt;AsyncComponent ref="asyncComponentRef" /&gt;
+    `&lt;/template&gt;`
+    `&lt;template&gt;`
+      &lt;div&gt;Loading...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ## 使用场景
 
 ### 1. 路由级代码分割
 
-```vue
-<!-- router/index.js -->
+```text
+&lt;!-- router/index.js --&gt;
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
   {
     path: '/',
-    component: () => import('@/views/Home.vue')
+    component: () =&gt; import('@/views/Home.vue')
   },
   {
     path: '/about',
-    component: () => import('@/views/About.vue')
+    component: () =&gt; import('@/views/About.vue')
   }
 ]
 
@@ -483,22 +483,22 @@ const router = createRouter({
 })
 
 // App.vue
-<template>
-  <Suspense>
-    <template #default>
-      <router-view />
-    </template>
-    <template #fallback>
-      <PageLoader />
-    </template>
-  </Suspense>
-</template>
+`&lt;template&gt;`
+  &lt;Suspense&gt;
+    `&lt;template&gt;`
+      &lt;router-view /&gt;
+    `&lt;/template&gt;`
+    `&lt;template&gt;`
+      &lt;PageLoader /&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 2. 数据预加载
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const user = ref(null)
@@ -506,174 +506,174 @@ const posts = ref([])
 
 // 在 setup 中异步加载数据
 async function loadUserData() {
-  const userData = await fetch('/api/user').then(r => r.json())
+  const userData = await fetch('/api/user').then(r =&gt; r.json())
   user.value = userData
 }
 
 async function loadPosts() {
-  const postsData = await fetch('/api/posts').then(r => r.json())
+  const postsData = await fetch('/api/posts').then(r =&gt; r.json())
   posts.value = postsData
 }
 
 // 并行加载
 await Promise.all([loadUserData(), loadPosts()])
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Suspense>
-    <template #default>
-      <div>
-        <h1>{{ user.name }}</h1>
-        <ul>
-          <li v-for="post in posts" :key="post.id">
+`&lt;template&gt;`
+  &lt;Suspense&gt;
+    `&lt;template&gt;`
+      &lt;div&gt;
+        &lt;h1&gt;{{ user.name }}&lt;/h1&gt;
+        &lt;ul&gt;
+          &lt;li v-for="post in posts" :key="post.id"&gt;
             {{ post.title }}
-          </li>
-        </ul>
-      </div>
-    </template>
+          &lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/div&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div>Loading user data and posts...</div>
-    </template>
-  </Suspense>
-</template>
+    `&lt;template&gt;`
+      &lt;div&gt;Loading user data and posts...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 3. 懒加载图片
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const images = ref([])
 
 // 异步加载图片列表
 async function loadImages() {
-  const data = await fetch('/api/images').then(r => r.json())
+  const data = await fetch('/api/images').then(r =&gt; r.json())
   images.value = data
 }
 
 await loadImages()
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Suspense>
-    <template #default>
-      <div class="image-grid">
-        <img
+`&lt;template&gt;`
+  &lt;Suspense&gt;
+    `&lt;template&gt;`
+      &lt;div class="image-grid"&gt;
+        &lt;img
           v-for="img in images"
           :key="img.id"
           :src="img.url"
           :alt="img.alt"
-        />
-      </div>
-    </template>
+        /&gt;
+      &lt;/div&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div>Loading images...</div>
-    </template>
-  </Suspense>
-</template>
+    `&lt;template&gt;`
+      &lt;div&gt;Loading images...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 4. 异步表单
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const formSchema = ref(null)
 
 // 异步加载表单配置
-formSchema.value = await fetch('/api/form-schema').then(r => r.json())
-</script>
+formSchema.value = await fetch('/api/form-schema').then(r =&gt; r.json())
+`&lt;/script&gt;`
 
-<template>
-  <Suspense>
-    <template #default>
-      <DynamicForm :schema="formSchema" />
-    </template>
+`&lt;template&gt;`
+  &lt;Suspense&gt;
+    `&lt;template&gt;`
+      &lt;DynamicForm :schema="formSchema" /&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div>Loading form...</div>
-    </template>
-  </Suspense>
-</template>
+    `&lt;template&gt;`
+      &lt;div&gt;Loading form...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 5. 条件内容加载
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, defineAsyncComponent } from 'vue'
 
 const showDetails = ref(false)
 
-const DetailsComponent = defineAsyncComponent(() =>
+const DetailsComponent = defineAsyncComponent(() =&gt;
   import('./DetailsComponent.vue')
 )
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <button @click="showDetails = true">显示详情</button>
+`&lt;template&gt;`
+  &lt;button @click="showDetails = true"&gt;显示详情&lt;/button&gt;
 
-  <Suspense v-if="showDetails">
-    <template #default>
-      <DetailsComponent />
-    </template>
+  &lt;Suspense v-if="showDetails"&gt;
+    `&lt;template&gt;`
+      &lt;DetailsComponent /&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div>Loading details...</div>
-    </template>
-  </Suspense>
-</template>
+    `&lt;template&gt;`
+      &lt;div&gt;Loading details...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 6. 渐进式加载
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { defineAsyncComponent } from 'vue'
 
 // 首先加载关键内容
-const CriticalContent = defineAsyncComponent(() =>
+const CriticalContent = defineAsyncComponent(() =&gt;
   import('./CriticalContent.vue')
 )
 
 // 然后加载辅助内容
-const AuxiliaryContent = defineAsyncComponent(() =>
+const AuxiliaryContent = defineAsyncComponent(() =&gt;
   import('./AuxiliaryContent.vue')
 )
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Suspense>
-    <template #default>
-      <div>
-        <CriticalContent />
+`&lt;template&gt;`
+  &lt;Suspense&gt;
+    `&lt;template&gt;`
+      &lt;div&gt;
+        &lt;CriticalContent /&gt;
 
-        <!-- 内层 Suspense 实现渐进式加载 -->
-        <Suspense>
-          <template #default>
-            <AuxiliaryContent />
-          </template>
-          <template #fallback>
-            <div>Loading auxiliary content...</div>
-          </template>
-        </Suspense>
-      </div>
-    </template>
+        &lt;!-- 内层 Suspense 实现渐进式加载 --&gt;
+        &lt;Suspense&gt;
+          `&lt;template&gt;`
+            &lt;AuxiliaryContent /&gt;
+          `&lt;/template&gt;`
+          `&lt;template&gt;`
+            &lt;div&gt;Loading auxiliary content...&lt;/div&gt;
+          `&lt;/template&gt;`
+        &lt;/Suspense&gt;
+      &lt;/div&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div>Loading critical content...</div>
-    </template>
-  </Suspense>
-</template>
+    `&lt;template&gt;`
+      &lt;div&gt;Loading critical content...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ## Suspense 生命周期
 
-```
+```text
 pending (异步操作进行中)
     ↓
 fallback (显示后备内容)

@@ -7,13 +7,13 @@
 
 ### 基本用法
 
-```javascript
+```text
 import { ref, watch } from 'vue'
 
 const count = ref(0)
 
 // 侦听单个 ref
-watch(count, (newValue, oldValue) => {
+watch(count, (newValue, oldValue) =&gt; {
   console.log(`count 从 ${oldValue} 变为 ${newValue}`)
 })
 
@@ -22,40 +22,40 @@ count.value = 1 // 输出: count 从 0 变为 1
 
 ### 侦听 getter 函数
 
-```javascript
+```text
 const count = ref(0)
-const doubled = computed(() => count.value * 2)
+const doubled = computed(() =&gt; count.value * 2)
 
 // 使用 getter 函数
-watch(() => count.value, (newVal, oldVal) => {
+watch(() =&gt; count.value, (newVal, oldVal) =&gt; {
   console.log('count 变化:', newVal)
 })
 
 // 侦听计算属性
-watch(() => doubled.value, (newVal) => {
+watch(() =&gt; doubled.value, (newVal) =&gt; {
   console.log('doubled 变化:', newVal)
 })
 ```
 
 ### 侦听多个来源
 
-```javascript
+```text
 const firstName = ref('Vue')
 const lastName = ref('JS')
 
 // 数组形式侦听多个来源
-watch([firstName, lastName], ([newFirst, newLast], [oldFirst, oldLast]) => {
-  console.log(`${oldFirst} ${oldLast} -> ${newFirst} ${newLast}`)
+watch([firstName, lastName], ([newFirst, newLast], [oldFirst, oldLast]) =&gt; {
+  console.log(`${oldFirst} ${oldLast} -&gt; ${newFirst} ${newLast}`)
 })
 
 firstName.value = 'React'
 lastName.value = 'Native'
-// 输出: Vue JS -> React Native
+// 输出: Vue JS -&gt; React Native
 ```
 
 ### 侦听 reactive 对象
 
-```javascript
+```text
 import { reactive, watch } from 'vue'
 
 const state = reactive({
@@ -64,14 +64,14 @@ const state = reactive({
 })
 
 // ⚠️ 默认深层侦听
-watch(() => state, (newState, oldState) => {
+watch(() =&gt; state, (newState, oldState) =&gt; {
   // newState 和 oldState 是同一个对象引用
   console.log('state 变化')
 })
 
 // 推荐使用 getter
-watch(() => state.count, (newVal, oldVal) => {
-  console.log(`count: ${oldVal} -> ${newVal}`)
+watch(() =&gt; state.count, (newVal, oldVal) =&gt; {
+  console.log(`count: ${oldVal} -&gt; ${newVal}`)
 })
 
 state.count++ // 触发 watch
@@ -79,7 +79,7 @@ state.count++ // 触发 watch
 
 ### deep 选项（深层侦听）
 
-```javascript
+```text
 const state = reactive({
   user: {
     name: 'Vue',
@@ -90,35 +90,35 @@ const state = reactive({
 })
 
 // 启用深层侦听
-watch(() => state, (newVal, oldVal) => {
+watch(() =&gt; state, (newVal, oldVal) =&gt; {
   console.log('深层变化')
 }, { deep: true })
 
 // 或者直接侦听对象（reactive 默认 deep）
-watch(state, () => {
+watch(state, () =&gt; {
   console.log('变化了')
 })
 ```
 
 ### immediate 选项（立即执行）
 
-```javascript
+```text
 const count = ref(0)
 
-watch(count, (newVal, oldVal) => {
-  console.log(`count: ${oldVal} -> ${newVal}`)
+watch(count, (newVal, oldVal) =&gt; {
+  console.log(`count: ${oldVal} -&gt; ${newVal}`)
 }, { immediate: true })
-// 立即输出: count: undefined -> 0
+// 立即输出: count: undefined -&gt; 0
 
-count.value = 1 // 输出: count: 0 -> 1
+count.value = 1 // 输出: count: 0 -&gt; 1
 ```
 
 ### once 选项（只执行一次）
 
-```javascript
+```text
 const count = ref(0)
 
-watch(count, (newVal) => {
+watch(count, (newVal) =&gt; {
   console.log('count 变化:', newVal)
 }, { once: true })
 
@@ -129,31 +129,31 @@ count.value = 3 // 不再触发
 
 ### flush 选项（回调时机）
 
-```javascript
+```text
 const count = ref(0)
 
 // pre: 组件更新前调用（默认）
-watch(count, () => {
+watch(count, () =&gt; {
   console.log('pre flush')
 }, { flush: 'pre' })
 
 // sync: 同步调用
-watch(count, () => {
+watch(count, () =&gt; {
   console.log('sync flush')
 }, { flush: 'sync' })
 
 // post: 组件更新后调用
-watch(count, () => {
+watch(count, () =&gt; {
   console.log('post flush')
 }, { flush: 'post' })
 ```
 
 ### 停止侦听器
 
-```javascript
+```text
 const count = ref(0)
 
-const stop = watch(count, (newVal) => {
+const stop = watch(count, (newVal) =&gt; {
   console.log('count:', newVal)
 })
 
@@ -166,14 +166,14 @@ count.value = 2 // 不再触发
 
 ### 副作用清理
 
-```javascript
+```text
 const id = ref(0)
 
-watch(id, async (newId, oldId, onCleanup) => {
+watch(id, async (newId, oldId, onCleanup) =&gt; {
   const { cancel } = doAsyncWork(newId)
 
   // 在 watch 再次触发或停止时清理
-  onCleanup(() => {
+  onCleanup(() =&gt; {
     cancel()
   })
 })
@@ -182,29 +182,29 @@ function doAsyncWork(id) {
   let cancelled = false
 
   const promise = fetch(`/api/data/${id}`)
-    .then(res => res.json())
-    .then(data => {
+    .then(res =&gt; res.json())
+    .then(data =&gt; {
       if (cancelled) return
       console.log('数据:', data)
     })
 
   return {
-    cancel: () => { cancelled = true }
+    cancel: () =&gt; { cancelled = true }
   }
 }
 ```
 
 ### 在 setup 中使用
 
-```javascript
+```text
 import { ref, watch, onUnmounted } from 'vue'
 
 export default {
   setup() {
     const count = ref(0)
 
-    watch(count, (newVal, oldVal) => {
-      console.log(`count: ${oldVal} -> ${newVal}`)
+    watch(count, (newVal, oldVal) =&gt; {
+      console.log(`count: ${oldVal} -&gt; ${newVal}`)
     })
 
     return { count }
@@ -212,31 +212,31 @@ export default {
 }
 ```
 
-### 在 <script setup> 中使用
+### 在 `&lt;script setup&gt;` 中使用
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, watch } from 'vue'
 
 const count = ref(0)
 
-watch(count, (newVal, oldVal) => {
-  console.log(`count: ${oldVal} -> ${newVal}`)
+watch(count, (newVal, oldVal) =&gt; {
+  console.log(`count: ${oldVal} -&gt; ${newVal}`)
 })
 
 function increment() {
   count.value++
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <button @click="increment">{{ count }}</button>
-</template>
+`&lt;template&gt;`
+  &lt;button @click="increment"&gt;{{ count }}&lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ### 选项式 API 中使用
 
-```javascript
+```text
 export default {
   data() {
     return {
@@ -249,7 +249,7 @@ export default {
   watch: {
     // 侦听基本类型
     count(newVal, oldVal) {
-      console.log(`count: ${oldVal} -> ${newVal}`)
+      console.log(`count: ${oldVal} -&gt; ${newVal}`)
     },
 
     // 侦听对象（需要 deep 或 handler）
@@ -263,7 +263,7 @@ export default {
 
     // 使用字符串形式
     'user.name'(newVal, oldVal) {
-      console.log(`name: ${oldVal} -> ${newVal}`)
+      console.log(`name: ${oldVal} -&gt; ${newVal}`)
     }
   }
 }
@@ -273,63 +273,63 @@ export default {
 
 ### 1. 侦听 ref 需要 .value
 
-```javascript
+```text
 const count = ref(0)
 
 // ✅ 正确
-watch(() => count.value, (newVal) => {})
+watch(() =&gt; count.value, (newVal) =&gt; {})
 
 // ❌ 错误
-watch(count, (newVal) => {}) // 这其实是正确的，直接传 ref
+watch(count, (newVal) =&gt; {}) // 这其实是正确的，直接传 ref
 
 // ✅ 也可以直接传 ref
-watch(count, (newVal) => {
+watch(count, (newVal) =&gt; {
   console.log(newVal)
 })
 ```
 
 ### 2. 侦听 reactive 对象的问题
 
-```javascript
+```text
 const state = reactive({ count: 0 })
 
 // ⚠️ newState 和 oldVal 是同一个对象
-watch(() => state, (newState, oldState) => {
+watch(() =&gt; state, (newState, oldState) =&gt; {
   console.log(newState === oldState) // true
 })
 
 // ✅ 推荐侦听具体属性
-watch(() => state.count, (newVal, oldVal) => {
+watch(() =&gt; state.count, (newVal, oldVal) =&gt; {
   console.log(newVal, oldVal) // 不同
 })
 ```
 
 ### 3. deep 的性能影响
 
-```javascript
+```text
 const bigData = reactive({ /* 大量嵌套数据 */ })
 
 // ⚠️ deep 会有性能开销
-watch(bigData, () => {}, { deep: true })
+watch(bigData, () =&gt; {}, { deep: true })
 
 // ✅ 侦听具体属性更高效
-watch(() => bigData.specificProp, () => {})
+watch(() =&gt; bigData.specificProp, () =&gt; {})
 ```
 
 ### 4. 在 watch 中修改依赖
 
-```javascript
+```text
 const count = ref(0)
 const doubled = ref(0)
 
 // ⚠️ 可能导致无限循环
-watch(count, () => {
+watch(count, () =&gt; {
   doubled.value = count.value * 2
   count.value++ // 可能导致无限循环
 })
 
 // ✅ 使用条件避免
-watch(count, (newVal) => {
+watch(count, (newVal) =&gt; {
   if (doubled.value !== newVal * 2) {
     doubled.value = newVal * 2
   }
@@ -338,15 +338,15 @@ watch(count, (newVal) => {
 
 ### 5. watch vs watchEffect
 
-```javascript
+```text
 // watch: 明确指定依赖
 const count = ref(0)
-watch(() => count.value, (newVal) => {
+watch(() =&gt; count.value, (newVal) =&gt; {
   console.log('count 变化:', newVal)
 })
 
 // watchEffect: 自动收集依赖
-watchEffect(() => {
+watchEffect(() =&gt; {
   console.log('count 变化:', count.value)
 })
 
@@ -358,20 +358,20 @@ watchEffect(() => {
 
 ### 6. 异步操作的竞态问题
 
-```javascript
+```text
 const id = ref(1)
 
 // ❌ 可能有竞态问题
-watch(id, async (newId) => {
+watch(id, async (newId) =&gt; {
   const res = await fetch(`/api/${newId}`)
   data.value = await res.json()
 })
 
 // ✅ 使用 onCleanup 清理
-watch(id, async (newId, oldId, onCleanup) => {
+watch(id, async (newId, oldId, onCleanup) =&gt; {
   const controller = new AbortController()
 
-  onCleanup(() => {
+  onCleanup(() =&gt; {
     controller.abort()
   })
 
@@ -385,21 +385,21 @@ watch(id, async (newId, oldId, onCleanup) => {
 
 ### 7. flush 时机选择
 
-```javascript
+```text
 const count = ref(0)
 
 // sync: 立即同步执行
-watch(count, () => {
+watch(count, () =&gt; {
   console.log('sync - DOM 还未更新')
 }, { flush: 'sync' })
 
 // pre: DOM 更新前（默认）
-watch(count, () => {
+watch(count, () =&gt; {
   console.log('pre - DOM 即将更新')
 }, { flush: 'pre' })
 
 // post: DOM 更新后
-watch(count, () => {
+watch(count, () =&gt; {
   console.log('post - DOM 已更新')
   // 可以访问更新后的 DOM
 }, { flush: 'post' })
@@ -407,18 +407,18 @@ watch(count, () => {
 
 ### 8. TypeScript 类型支持
 
-```typescript
+```text
 import { Ref, WatchSource } from 'vue'
 
-const count: Ref<number> = ref(0)
+const count: Ref&lt;number&gt; = ref(0)
 
 // 单个来源
-watch(count, (newVal: number, oldVal: number) => {
+watch(count, (newVal: number, oldVal: number) =&gt; {
   // ...
 })
 
 // 多个来源
-watch([count, another] as WatchSource[], ([newCount, newAnother]) => {
+watch([count, another] as WatchSource[], ([newCount, newAnother]) =&gt; {
   // ...
 })
 ```
@@ -427,8 +427,8 @@ watch([count, another] as WatchSource[], ([newCount, newAnother]) => {
 
 ### 1. 数据变化时发送请求
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, watch } from 'vue'
 
 const searchQuery = ref('')
@@ -436,7 +436,7 @@ const results = ref([])
 const loading = ref(false)
 const error = ref(null)
 
-watch(searchQuery, async (newQuery) => {
+watch(searchQuery, async (newQuery) =&gt; {
   if (!newQuery) {
     results.value = []
     return
@@ -454,31 +454,31 @@ watch(searchQuery, async (newQuery) => {
     loading.value = false
   }
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <input v-model="searchQuery" placeholder="搜索..." />
-  <p v-if="loading">加载中...</p>
-  <p v-if="error">{{ error }}</p>
-  <ul v-if="results.length">
-    <li v-for="item in results" :key="item.id">
+`&lt;template&gt;`
+  &lt;input v-model="searchQuery" placeholder="搜索..." /&gt;
+  &lt;p v-if="loading"&gt;加载中...&lt;/p&gt;
+  &lt;p v-if="error"&gt;{{ error }}&lt;/p&gt;
+  &lt;ul v-if="results.length"&gt;
+    &lt;li v-for="item in results" :key="item.id"&gt;
       {{ item.name }}
-    </li>
-  </ul>
-</template>
+    &lt;/li&gt;
+  &lt;/ul&gt;
+`&lt;/template&gt;`
 ```
 
 ### 2. 表单验证
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, watch } from 'vue'
 
 const email = ref('')
 const touched = ref(false)
 const error = ref('')
 
-watch(email, (newEmail) => {
+watch(email, (newEmail) =&gt; {
   if (!touched.value) return
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -494,31 +494,31 @@ watch(email, (newEmail) => {
 function onBlur() {
   touched.value = true
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <input
+`&lt;template&gt;`
+  &lt;input
     v-model="email"
     @blur="onBlur"
     :class="{ error: !!error }"
-  />
-  <span v-if="error" class="error-message">{{ error }}</span>
-</template>
+  /&gt;
+  &lt;span v-if="error" class="error-message"&gt;{{ error }}&lt;/span&gt;
+`&lt;/template&gt;`
 ```
 
 ### 3. 路由变化时重新加载数据
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const userId = computed(() => route.params.id)
+const userId = computed(() =&gt; route.params.id)
 const user = ref(null)
 const loading = ref(false)
 
-watch(userId, async (newId) => {
+watch(userId, async (newId) =&gt; {
   if (!newId) return
 
   loading.value = true
@@ -529,21 +529,21 @@ watch(userId, async (newId) => {
     loading.value = false
   }
 }, { immediate: true })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div v-if="loading">加载中...</div>
-  <div v-else-if="user">
-    <h1>{{ user.name }}</h1>
-    <p>{{ user.email }}</p>
-  </div>
-</template>
+`&lt;template&gt;`
+  &lt;div v-if="loading"&gt;加载中...&lt;/div&gt;
+  &lt;div v-else-if="user"&gt;
+    &lt;h1&gt;{{ user.name }}&lt;/h1&gt;
+    &lt;p&gt;{{ user.email }}&lt;/p&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 4. 本地存储同步
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, watch } from 'vue'
 
 const settings = ref({
@@ -559,16 +559,16 @@ if (saved) {
 }
 
 // 保存到 localStorage
-watch(settings, (newSettings) => {
+watch(settings, (newSettings) =&gt; {
   localStorage.setItem('settings', JSON.stringify(newSettings))
 }, { deep: true })
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 5. 防抖输入
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, watch } from 'vue'
 
 const searchQuery = ref('')
@@ -576,13 +576,13 @@ const results = ref([])
 
 function debounce(fn, delay) {
   let timeoutId
-  return (...args) => {
+  return (...args) =&gt; {
     clearTimeout(timeoutId)
-    timeoutId = setTimeout(() => fn(...args), delay)
+    timeoutId = setTimeout(() =&gt; fn(...args), delay)
   }
 }
 
-const debouncedSearch = debounce(async (query) => {
+const debouncedSearch = debounce(async (query) =&gt; {
   if (!query) {
     results.value = []
     return
@@ -592,22 +592,22 @@ const debouncedSearch = debounce(async (query) => {
 }, 300)
 
 watch(searchQuery, debouncedSearch)
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <input v-model="searchQuery" placeholder="搜索..." />
-  <ul>
-    <li v-for="item in results" :key="item.id">
+`&lt;template&gt;`
+  &lt;input v-model="searchQuery" placeholder="搜索..." /&gt;
+  &lt;ul&gt;
+    &lt;li v-for="item in results" :key="item.id"&gt;
       {{ item.name }}
-    </li>
-  </ul>
-</template>
+    &lt;/li&gt;
+  &lt;/ul&gt;
+`&lt;/template&gt;`
 ```
 
 ### 6. 监听窗口大小变化
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 
 const windowSize = ref({
@@ -615,47 +615,47 @@ const windowSize = ref({
   height: window.innerHeight
 })
 
-const updateSize = () => {
+const updateSize = () =&gt; {
   windowSize.value = {
     width: window.innerWidth,
     height: window.innerHeight
   }
 }
 
-onMounted(() => {
+onMounted(() =&gt; {
   window.addEventListener('resize', updateSize)
 })
 
-onUnmounted(() => {
+onUnmounted(() =&gt; {
   window.removeEventListener('resize', updateSize)
 })
 
-watch(windowSize, (newSize) => {
+watch(windowSize, (newSize) =&gt; {
   console.log('窗口大小变化:', newSize)
   // 可以根据大小调整布局
 })
 
-const isMobile = computed(() => windowSize.value.width < 768)
-</script>
+const isMobile = computed(() =&gt; windowSize.value.width &lt; 768)
+`&lt;/script&gt;`
 
-<template>
-  <div :class="{ mobile: isMobile }">
-    <p>窗口: {{ windowSize.width }} x {{ windowSize.height }}</p>
-  </div>
-</template>
+`&lt;template&gt;`
+  &lt;div :class="{ mobile: isMobile }"&gt;
+    &lt;p&gt;窗口: {{ windowSize.width }} x {{ windowSize.height }}&lt;/p&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 7. 文件上传进度
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, watch } from 'vue'
 
 const file = ref(null)
 const progress = ref(0)
 const status = ref('idle')
 
-watch(file, async (newFile) => {
+watch(file, async (newFile) =&gt; {
   if (!newFile) return
 
   status.value = 'uploading'
@@ -667,13 +667,13 @@ watch(file, async (newFile) => {
   try {
     const xhr = new XMLHttpRequest()
 
-    xhr.upload.addEventListener('progress', (e) => {
+    xhr.upload.addEventListener('progress', (e) =&gt; {
       if (e.lengthComputable) {
         progress.value = (e.loaded / e.total) * 100
       }
     })
 
-    xhr.addEventListener('load', () => {
+    xhr.addEventListener('load', () =&gt; {
       status.value = 'completed'
     })
 
@@ -683,51 +683,51 @@ watch(file, async (newFile) => {
     status.value = 'error'
   }
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <input type="file" @change="file = $event.target.files[0]" />
-  <div v-if="status === 'uploading'">
-    <progress :value="progress" max="100"></progress>
-    <p>{{ Math.round(progress) }}%</p>
-  </div>
-</template>
+`&lt;template&gt;`
+  &lt;input type="file" @change="file = $event.target.files[0]" /&gt;
+  &lt;div v-if="status === 'uploading'"&gt;
+    &lt;progress :value="progress" max="100"&gt;&lt;/progress&gt;
+    &lt;p&gt;{{ Math.round(progress) }}%&lt;/p&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 8. WebSocket 消息处理
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, watch, onUnmounted } from 'vue'
 
 const messages = ref([])
 const socket = ref(null)
 const connected = ref(false)
 
-const connect = () => {
+const connect = () =&gt; {
   socket.value = new WebSocket('ws://localhost:8080')
 
-  socket.value.onopen = () => {
+  socket.value.onopen = () =&gt; {
     connected.value = true
   }
 
-  socket.value.onmessage = (event) => {
+  socket.value.onmessage = (event) =&gt; {
     messages.value.push(JSON.parse(event.data))
   }
 
-  socket.value.onclose = () => {
+  socket.value.onclose = () =&gt; {
     connected.value = false
   }
 }
 
-const disconnect = () => {
+const disconnect = () =&gt; {
   if (socket.value) {
     socket.value.close()
     socket.value = null
   }
 }
 
-watch(connected, (isConnected) => {
+watch(connected, (isConnected) =&gt; {
   if (isConnected) {
     console.log('WebSocket 已连接')
   } else {
@@ -737,13 +737,13 @@ watch(connected, (isConnected) => {
 
 onMounted(connect)
 onUnmounted(disconnect)
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 9. 权限变化时的界面更新
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, watch } from 'vue'
 import { useAuth } from './composables/useAuth'
 
@@ -752,7 +752,7 @@ const { user, permissions } = useAuth()
 const canEdit = ref(false)
 const canDelete = ref(false)
 
-watch([user, permissions], ([newUser, newPerms]) => {
+watch([user, permissions], ([newUser, newPerms]) =&gt; {
   canEdit.value = newPerms.includes('edit') || newUser?.role === 'admin'
   canDelete.value = newPerms.includes('delete') || newUser?.role === 'admin'
 
@@ -764,24 +764,24 @@ watch([user, permissions], ([newUser, newPerms]) => {
     clearData()
   }
 }, { immediate: true })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <button v-if="canEdit">编辑</button>
-  <button v-if="canDelete">删除</button>
-</template>
+`&lt;template&gt;`
+  &lt;button v-if="canEdit"&gt;编辑&lt;/button&gt;
+  &lt;button v-if="canDelete"&gt;删除&lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ### 10. 动画/过渡控制
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, watch } from 'vue'
 
 const isVisible = ref(true)
 const isAnimating = ref(false)
 
-watch(isVisible, async (newVisible, oldVisible) => {
+watch(isVisible, async (newVisible, oldVisible) =&gt; {
   if (newVisible === oldVisible) return
 
   isAnimating.value = true
@@ -798,34 +798,34 @@ watch(isVisible, async (newVisible, oldVisible) => {
 })
 
 async function animateIn() {
-  return new Promise(resolve => {
+  return new Promise(resolve =&gt; {
     // 动画逻辑
     setTimeout(resolve, 300)
   })
 }
 
 async function animateOut() {
-  return new Promise(resolve => {
+  return new Promise(resolve =&gt; {
     // 动画逻辑
     setTimeout(resolve, 300)
   })
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <transition
+`&lt;template&gt;`
+  &lt;transition
     @before-enter="isAnimating = true"
     @after-enter="isAnimating = false"
-  >
-    <div v-if="isVisible" class="content">
+  &gt;
+    &lt;div v-if="isVisible" class="content"&gt;
       内容
-    </div>
-  </transition>
+    &lt;/div&gt;
+  &lt;/transition&gt;
 
-  <button @click="isVisible = !isVisible" :disabled="isAnimating">
+  &lt;button @click="isVisible = !isVisible" :disabled="isAnimating"&gt;
     {{ isVisible ? '隐藏' : '显示' }}
-  </button>
-</template>
+  &lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ## watch 选项总结

@@ -7,13 +7,13 @@
 
 ### 基本用法
 
-```javascript
+```text
 import { ref, computed } from 'vue'
 
 const count = ref(0)
 
 // 创建计算属性
-const doubled = computed(() => count.value * 2)
+const doubled = computed(() =&gt; count.value * 2)
 
 console.log(doubled.value) // 0
 
@@ -23,11 +23,11 @@ console.log(doubled.value) // 2（重新计算）
 
 ### getter 函数形式（只读）
 
-```javascript
+```text
 const firstName = ref('Vue')
 const lastName = ref('JS')
 
-const fullName = computed(() => {
+const fullName = computed(() =&gt; {
   return firstName.value + ' ' + lastName.value
 })
 
@@ -37,7 +37,7 @@ fullName.value = 'New Name'
 
 ### getter + setter 形式（可写）
 
-```javascript
+```text
 const firstName = ref('Vue')
 const lastName = ref('JS')
 
@@ -57,70 +57,70 @@ console.log(firstName.value) // 'React'
 console.log(lastName.value) // 'Native'
 ```
 
-### 在 <script setup> 中使用
+### 在 `&lt;script setup&gt;` 中使用
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, computed } from 'vue'
 
 const count = ref(0)
-const doubled = computed(() => count.value * 2)
+const doubled = computed(() =&gt; count.value * 2)
 
 function increment() {
   count.value++
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <p>原始值: {{ count }}</p>
-    <p>计算值: {{ doubled }}</p>
-    <button @click="increment">增加</button>
-  </div>
-</template>
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;p&gt;原始值: {{ count }}&lt;/p&gt;
+    &lt;p&gt;计算值: {{ doubled }}&lt;/p&gt;
+    &lt;button @click="increment"&gt;增加&lt;/button&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 计算属性 vs 方法
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, computed } from 'vue'
 
 const count = ref(0)
 
 // ✅ 计算属性：有缓存
-const doubled = computed(() => count.value * 2)
+const doubled = computed(() =&gt; count.value * 2)
 
 // ❌ 方法：每次调用都执行
 function getDoubled() {
   return count.value * 2
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <!-- 多次访问也只计算一次 -->
-    <p>{{ doubled }}</p>
-    <p>{{ doubled }}</p>
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;!-- 多次访问也只计算一次 --&gt;
+    &lt;p&gt;{{ doubled }}&lt;/p&gt;
+    &lt;p&gt;{{ doubled }}&lt;/p&gt;
 
-    <!-- 每次都重新计算 -->
-    <p>{{ getDoubled() }}</p>
-    <p>{{ getDoubled() }}</p>
-  </div>
-</template>
+    &lt;!-- 每次都重新计算 --&gt;
+    &lt;p&gt;{{ getDoubled() }}&lt;/p&gt;
+    &lt;p&gt;{{ getDoubled() }}&lt;/p&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 复杂计算逻辑
 
-```javascript
+```text
 const products = ref([
   { name: 'Apple', price: 10, quantity: 2 },
   { name: 'Banana', price: 5, quantity: 5 },
   { name: 'Orange', price: 8, quantity: 3 }
 ])
 
-const cartSummary = computed(() => {
-  return products.value.reduce((summary, product) => {
+const cartSummary = computed(() =&gt; {
+  return products.value.reduce((summary, product) =&gt; {
     summary.totalItems += product.quantity
     summary.totalPrice += product.price * product.quantity
     return summary
@@ -133,7 +133,7 @@ const cartSummary = computed(() => {
 
 ### 选项式 API 中使用
 
-```javascript
+```text
 export default {
   data() {
     return {
@@ -161,41 +161,41 @@ export default {
 
 ### 1. 计算属性不应该有副作用
 
-```javascript
+```text
 // ❌ 错误：计算属性中有副作用
-const doubled = computed(() => {
+const doubled = computed(() =&gt; {
   console.log('计算中...') // 副作用
   count.value++ // 修改依赖 - 不应该这样做
   return count.value * 2
 })
 
 // ✅ 正确：纯函数
-const doubled = computed(() => count.value * 2)
+const doubled = computed(() =&gt; count.value * 2)
 ```
 
 ### 2. 避免在 getter 中修改响应式数据
 
-```javascript
+```text
 // ❌ 错误：getter 中修改数据
-const invalid = computed(() => {
+const invalid = computed(() =&gt; {
   count.value++ // 不要这样做
   return count.value
 })
 
 // ✅ 正确：使用 watch
-watch(() => {
+watch(() =&gt; {
   count.value++
   return someValue
-}, (newVal) => {
+}, (newVal) =&gt; {
   // 处理逻辑
 })
 ```
 
 ### 3. 计算属性会自动缓存
 
-```javascript
+```text
 const count = ref(0)
-const doubled = computed(() => {
+const doubled = computed(() =&gt; {
   console.log('计算执行') // 只在 count 变化时执行
   return count.value * 2
 })
@@ -208,7 +208,7 @@ console.log(doubled.value) // "计算执行" 输出
 
 ### 4. 可写计算属性的限制
 
-```javascript
+```text
 const count = ref(0)
 
 // ⚠️ 可写计算属性的 setter 不应该直接修改自己
@@ -234,28 +234,28 @@ const valid = computed({
 
 ### 5. 计算属性 vs watch
 
-```javascript
+```text
 // computed：适用于派生状态
-const fullName = computed(() => firstName.value + ' ' + lastName.value)
+const fullName = computed(() =&gt; firstName.value + ' ' + lastName.value)
 
 // watch：适用于副作用
-watch(fullName, (newName) => {
+watch(fullName, (newName) =&gt; {
   console.log('名字变更为:', newName)
 })
 ```
 
 ### 6. TypeScript 类型支持
 
-```typescript
+```text
 import { Ref, ComputedRef } from 'vue'
 
-const count: Ref<number> = ref(0)
-const doubled: ComputedRef<number> = computed(() => count.value * 2)
+const count: Ref&lt;number&gt; = ref(0)
+const doubled: ComputedRef&lt;number&gt; = computed(() =&gt; count.value * 2)
 
 // 可写计算属性
-const fullName = computed<string>({
-  get: () => firstName.value + ' ' + lastName.value,
-  set: (val: string) => {
+const fullName = computed&lt;string&gt;({
+  get: () =&gt; firstName.value + ' ' + lastName.value,
+  set: (val: string) =&gt; {
     // ...
   }
 })
@@ -263,43 +263,43 @@ const fullName = computed<string>({
 
 ### 7. 调试计算属性
 
-```javascript
-const doubled = computed(() => count.value * 2)
+```text
+const doubled = computed(() =&gt; count.value * 2)
 
 // 在开发环境中可以添加调试
 console.log('doubled:', doubled.value)
 
 // 使用 watch 监听变化
-watch(doubled, (newVal, oldVal) => {
+watch(doubled, (newVal, oldVal) =&gt; {
   console.log('doubled 变化:', { old: oldVal, new: newVal })
 })
 ```
 
 ### 8. 计算属性返回值类型
 
-```javascript
+```text
 // ✅ 返回基本类型
-const count = computed(() => list.value.length)
+const count = computed(() =&gt; list.value.length)
 
 // ✅ 返回对象
-const summary = computed(() => ({
-  total: items.value.reduce((sum, item) => sum + item.price, 0),
+const summary = computed(() =&gt; ({
+  total: items.value.reduce((sum, item) =&gt; sum + item.price, 0),
   count: items.value.length
 }))
 
 // ✅ 返回数组
-const filteredList = computed(() => items.value.filter(item => item.active))
+const filteredList = computed(() =&gt; items.value.filter(item =&gt; item.active))
 
 // ⚠️ 返回 null/undefined
-const maybeValue = computed(() => condition.value ? value.value : null)
+const maybeValue = computed(() =&gt; condition.value ? value.value : null)
 ```
 
 ## 使用场景
 
 ### 1. 数据派生和转换
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, computed } from 'vue'
 
 const users = ref([
@@ -309,32 +309,32 @@ const users = ref([
 ])
 
 // 获取所有用户名
-const userNames = computed(() => users.value.map(u => u.name))
+const userNames = computed(() =&gt; users.value.map(u =&gt; u.name))
 
 // 获取成年人
-const adults = computed(() => users.value.filter(u => u.age >= 18))
+const adults = computed(() =&gt; users.value.filter(u =&gt; u.age &gt;= 18))
 
 // 按年龄排序
-const sortedByAge = computed(() =>
-  [...users.value].sort((a, b) => a.age - b.age)
+const sortedByAge = computed(() =&gt;
+  [...users.value].sort((a, b) =&gt; a.age - b.age)
 )
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 2. 表单验证
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, computed } from 'vue'
 
 const username = ref('')
 const email = ref('')
 const password = ref('')
 
-const errors = computed(() => {
+const errors = computed(() =&gt; {
   const errs = {}
 
-  if (username.value.length < 3) {
+  if (username.value.length &lt; 3) {
     errs.username = '用户名至少3个字符'
   }
 
@@ -342,33 +342,33 @@ const errors = computed(() => {
     errs.email = '请输入有效的邮箱'
   }
 
-  if (password.value.length < 6) {
+  if (password.value.length &lt; 6) {
     errs.password = '密码至少6个字符'
   }
 
   return errs
 })
 
-const isValid = computed(() => Object.keys(errors.value).length === 0)
-</script>
+const isValid = computed(() =&gt; Object.keys(errors.value).length === 0)
+`&lt;/script&gt;`
 
-<template>
-  <form>
-    <input v-model="username" />
-    <span class="error">{{ errors.username }}</span>
+`&lt;template&gt;`
+  &lt;form&gt;
+    &lt;input v-model="username" /&gt;
+    &lt;span class="error"&gt;{{ errors.username }}&lt;/span&gt;
 
-    <input v-model="email" />
-    <span class="error">{{ errors.email }}</span>
+    &lt;input v-model="email" /&gt;
+    &lt;span class="error"&gt;{{ errors.email }}&lt;/span&gt;
 
-    <button :disabled="!isValid">提交</button>
-  </form>
-</template>
+    &lt;button :disabled="!isValid"&gt;提交&lt;/button&gt;
+  &lt;/form&gt;
+`&lt;/template&gt;`
 ```
 
 ### 3. 过滤和搜索
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, computed } from 'vue'
 
 const searchQuery = ref('')
@@ -378,34 +378,34 @@ const items = ref([
   { id: 3, name: 'Banana', category: 'fruit' }
 ])
 
-const filteredItems = computed(() => {
+const filteredItems = computed(() =&gt; {
   if (!searchQuery.value) return items.value
 
   const query = searchQuery.value.toLowerCase()
-  return items.value.filter(item =>
+  return items.value.filter(item =&gt;
     item.name.toLowerCase().includes(query) ||
     item.category.toLowerCase().includes(query)
   )
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <input v-model="searchQuery" placeholder="搜索..." />
-  <ul>
-    <li v-for="item in filteredItems" :key="item.id">
+`&lt;template&gt;`
+  &lt;input v-model="searchQuery" placeholder="搜索..." /&gt;
+  &lt;ul&gt;
+    &lt;li v-for="item in filteredItems" :key="item.id"&gt;
       {{ item.name }} ({{ item.category }})
-    </li>
-  </ul>
-</template>
+    &lt;/li&gt;
+  &lt;/ul&gt;
+`&lt;/template&gt;`
 ```
 
 ### 4. 列表分页
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, computed } from 'vue'
 
-const items = ref(Array.from({ length: 100 }, (_, i) => ({
+const items = ref(Array.from({ length: 100 }, (_, i) =&gt; ({
   id: i + 1,
   name: `Item ${i + 1}`
 })))
@@ -413,47 +413,47 @@ const items = ref(Array.from({ length: 100 }, (_, i) => ({
 const currentPage = ref(1)
 const pageSize = ref(10)
 
-const totalPages = computed(() =>
+const totalPages = computed(() =&gt;
   Math.ceil(items.value.length / pageSize.value)
 )
 
-const paginatedItems = computed(() => {
+const paginatedItems = computed(() =&gt; {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
   return items.value.slice(start, end)
 })
 
 function nextPage() {
-  if (currentPage.value < totalPages.value) {
+  if (currentPage.value &lt; totalPages.value) {
     currentPage.value++
   }
 }
 
 function prevPage() {
-  if (currentPage.value > 1) {
+  if (currentPage.value &gt; 1) {
     currentPage.value--
   }
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <ul>
-      <li v-for="item in paginatedItems" :key="item.id">
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;ul&gt;
+      &lt;li v-for="item in paginatedItems" :key="item.id"&gt;
         {{ item.name }}
-      </li>
-    </ul>
-    <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
-    <span>第 {{ currentPage }} / {{ totalPages }} 页</span>
-    <button @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
-  </div>
-</template>
+      &lt;/li&gt;
+    &lt;/ul&gt;
+    &lt;button @click="prevPage" :disabled="currentPage === 1"&gt;上一页&lt;/button&gt;
+    &lt;span&gt;第 {{ currentPage }} / {{ totalPages }} 页&lt;/span&gt;
+    &lt;button @click="nextPage" :disabled="currentPage === totalPages"&gt;下一页&lt;/button&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 5. 购物车计算
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, computed } from 'vue'
 
 const cart = ref([
@@ -464,75 +464,75 @@ const cart = ref([
 
 const discount = ref(0) // 折扣百分比
 
-const subtotal = computed(() =>
-  cart.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
+const subtotal = computed(() =&gt;
+  cart.value.reduce((sum, item) =&gt; sum + item.price * item.quantity, 0)
 )
 
-const discountAmount = computed(() =>
+const discountAmount = computed(() =&gt;
   subtotal.value * (discount.value / 100)
 )
 
-const total = computed(() =>
+const total = computed(() =&gt;
   subtotal.value - discountAmount.value
 )
 
-const itemCount = computed(() =>
-  cart.value.reduce((sum, item) => sum + item.quantity, 0)
+const itemCount = computed(() =&gt;
+  cart.value.reduce((sum, item) =&gt; sum + item.quantity, 0)
 )
 
 function updateQuantity(id, quantity) {
-  const item = cart.value.find(i => i.id === id)
+  const item = cart.value.find(i =&gt; i.id === id)
   if (item) item.quantity = Math.max(0, quantity)
 }
 
 function removeItem(id) {
-  cart.value = cart.value.filter(item => item.id !== id)
+  cart.value = cart.value.filter(item =&gt; item.id !== id)
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <h2>购物车 ({{ itemCount }} 件商品)</h2>
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;h2&gt;购物车 ({{ itemCount }} 件商品)&lt;/h2&gt;
 
-    <div v-for="item in cart" :key="item.id">
-      <h3>{{ item.name }}</h3>
-      <p>单价: ¥{{ item.price }}</p>
-      <input
+    &lt;div v-for="item in cart" :key="item.id"&gt;
+      &lt;h3&gt;{{ item.name }}&lt;/h3&gt;
+      &lt;p&gt;单价: ¥{{ item.price }}&lt;/p&gt;
+      &lt;input
         type="number"
         :value="item.quantity"
         @input="updateQuantity(item.id, Number($event.target.value))"
         min="0"
-      />
-      <button @click="removeItem(item.id)">删除</button>
-    </div>
+      /&gt;
+      &lt;button @click="removeItem(item.id)"&gt;删除&lt;/button&gt;
+    &lt;/div&gt;
 
-    <div class="summary">
-      <p>小计: ¥{{ subtotal }}</p>
-      <p>折扣: -¥{{ discountAmount }}</p>
-      <h3>总计: ¥{{ total }}</h3>
-    </div>
-  </div>
-</template>
+    &lt;div class="summary"&gt;
+      &lt;p&gt;小计: ¥{{ subtotal }}&lt;/p&gt;
+      &lt;p&gt;折扣: -¥{{ discountAmount }}&lt;/p&gt;
+      &lt;h3&gt;总计: ¥{{ total }}&lt;/h3&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 6. 样式类名计算
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, computed } from 'vue'
 
 const isActive = ref(true)
 const isLoading = ref(false)
 const hasError = ref(false)
 
-const buttonClasses = computed(() => ({
+const buttonClasses = computed(() =&gt; ({
   'btn': true,
   'btn-active': isActive.value,
   'btn-loading': isLoading.value,
   'btn-error': hasError.value
 }))
 
-const buttonClassString = computed(() => {
+const buttonClassString = computed(() =&gt; {
   return [
     'btn',
     isActive.value && 'btn-active',
@@ -540,31 +540,31 @@ const buttonClassString = computed(() => {
     hasError.value && 'btn-error'
   ].filter(Boolean).join(' ')
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- 对象语法 -->
-  <button :class="buttonClasses">按钮</button>
+`&lt;template&gt;`
+  &lt;!-- 对象语法 --&gt;
+  &lt;button :class="buttonClasses"&gt;按钮&lt;/button&gt;
 
-  <!-- 数组语法 -->
-  <button :class="[
+  &lt;!-- 数组语法 --&gt;
+  &lt;button :class="[
     'btn',
     { 'btn-active': isActive, 'btn-loading': isLoading }
-  ]">
+  ]"&gt;
     按钮
-  </button>
-</template>
+  &lt;/button&gt;
+`&lt;/template&gt;`
 ```
 
 ### 7. 数据格式化
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, computed } from 'vue'
 
 const price = ref(1234.567)
 
-const formattedPrice = computed(() => {
+const formattedPrice = computed(() =&gt; {
   return new Intl.NumberFormat('zh-CN', {
     style: 'currency',
     currency: 'CNY'
@@ -573,25 +573,25 @@ const formattedPrice = computed(() => {
 
 const date = ref('2024-01-15')
 
-const formattedDate = computed(() => {
+const formattedDate = computed(() =&gt; {
   return new Intl.DateTimeFormat('zh-CN', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   }).format(new Date(date.value))
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <p>价格: {{ formattedPrice }}</p>
-  <p>日期: {{ formattedDate }}</p>
-</template>
+`&lt;template&gt;`
+  &lt;p&gt;价格: {{ formattedPrice }}&lt;/p&gt;
+  &lt;p&gt;日期: {{ formattedDate }}&lt;/p&gt;
+`&lt;/template&gt;`
 ```
 
 ### 8. 权限检查
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, computed } from 'vue'
 
 const user = ref({
@@ -600,18 +600,18 @@ const user = ref({
   permissions: ['read', 'write']
 })
 
-const isAdmin = computed(() => user.value.role === 'admin')
+const isAdmin = computed(() =&gt; user.value.role === 'admin')
 
-const canEdit = computed(() =>
+const canEdit = computed(() =&gt;
   user.value.permissions.includes('write')
 )
 
-const canDelete = computed(() =>
+const canDelete = computed(() =&gt;
   user.value.role === 'admin' ||
   user.value.permissions.includes('delete')
 )
 
-const availableActions = computed(() => {
+const availableActions = computed(() =&gt; {
   const actions = []
 
   if (user.value.permissions.includes('read')) {
@@ -628,24 +628,24 @@ const availableActions = computed(() => {
 
   return actions
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <button v-if="canEdit">编辑</button>
-    <button v-if="canDelete">删除</button>
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;button v-if="canEdit"&gt;编辑&lt;/button&gt;
+    &lt;button v-if="canDelete"&gt;删除&lt;/button&gt;
 
-    <div v-for="action in availableActions" :key="action">
+    &lt;div v-for="action in availableActions" :key="action"&gt;
       {{ action }}
-    </div>
-  </div>
-</template>
+    &lt;/div&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 9. 双向绑定的可写计算属性
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, computed } from 'vue'
 
 const firstName = ref('')
@@ -673,21 +673,21 @@ const fahrenheit = computed({
     celsius.value = (value - 32) * 5/9
   }
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <input v-model="fullName" placeholder="全名" />
-  <p>名: {{ firstName }}</p>
-  <p>姓: {{ lastName }}</p>
+`&lt;template&gt;`
+  &lt;input v-model="fullName" placeholder="全名" /&gt;
+  &lt;p&gt;名: {{ firstName }}&lt;/p&gt;
+  &lt;p&gt;姓: {{ lastName }}&lt;/p&gt;
 
-  <input v-model="celsius" type="number" /> 摄氏度
-  <input v-model="fahrenheit" type="number" /> 华氏度
-</template>
+  &lt;input v-model="celsius" type="number" /&gt; 摄氏度
+  &lt;input v-model="fahrenheit" type="number" /&gt; 华氏度
+`&lt;/template&gt;`
 ```
 
 ### 10. 性能优化：缓存昂贵计算
 
-```javascript
+```text
 import { ref, computed } from 'vue'
 
 const items = ref(/* 大量数据 */)
@@ -695,17 +695,17 @@ const items = ref(/* 大量数据 */)
 // ❌ 每次都重新计算（如果在方法中）
 function getProcessedItems() {
   return items.value
-    .filter(item => item.active)
-    .map(item => ({ ...item, processed: true }))
-    .sort((a, b) => a.order - b.order)
+    .filter(item =&gt; item.active)
+    .map(item =&gt; ({ ...item, processed: true }))
+    .sort((a, b) =&gt; a.order - b.order)
 }
 
 // ✅ 使用计算属性缓存结果
-const processedItems = computed(() => {
+const processedItems = computed(() =&gt; {
   return items.value
-    .filter(item => item.active)
-    .map(item => ({ ...item, processed: true }))
-    .sort((a, b) => a.order - b.order)
+    .filter(item =&gt; item.active)
+    .map(item =&gt; ({ ...item, processed: true }))
+    .sort((a, b) =&gt; a.order - b.order)
 })
 ```
 

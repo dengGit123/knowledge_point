@@ -7,7 +7,7 @@
 
 ### 基本用法
 
-```javascript
+```text
 import { reactive, toRef } from 'vue'
 
 const state = reactive({
@@ -31,7 +31,7 @@ console.log(countRef.value) // 2
 
 ### 在组合函数中使用
 
-```javascript
+```text
 // useFeature.js
 import { toRef } from 'vue'
 
@@ -54,8 +54,8 @@ export function useFeature(state) {
 
 ### 传递 props 的单个属性
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { toRef } from 'vue'
 
 const props = defineProps({
@@ -67,13 +67,13 @@ const props = defineProps({
 const countRef = toRef(props, 'count')
 
 // 可以在组合函数中使用
-const doubled = computed(() => countRef.value * 2)
-</script>
+const doubled = computed(() =&gt; countRef.value * 2)
+`&lt;/script&gt;`
 ```
 
 ### 与 computed 配合
 
-```javascript
+```text
 import { reactive, toRef, computed } from 'vue'
 
 const state = reactive({
@@ -86,14 +86,14 @@ const firstName = toRef(state, 'firstName')
 const lastName = toRef(state, 'lastName')
 
 // 创建计算属性
-const fullName = computed(() => {
+const fullName = computed(() =&gt; {
   return firstName.value + ' ' + lastName.value
 })
 ```
 
 ### 解构响应式对象
 
-```javascript
+```text
 import { reactive, toRef } from 'vue'
 
 const state = reactive({
@@ -114,8 +114,8 @@ console.log(message.value)
 
 ### 在函数式组件中使用
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { toRef } from 'vue'
 
 const props = defineProps({
@@ -126,16 +126,16 @@ const props = defineProps({
 })
 
 // 将 props.user.name 转换为 ref
-const userName = toRef(() => props.user.name)
+const userName = toRef(() =&gt; props.user.name)
 
 // 或者直接使用 props 的属性
 const userRef = toRef(props, 'user')
-</script>
+`&lt;/script&gt;`
 ```
 
 ### TypeScript 类型支持
 
-```typescript
+```text
 import { reactive, toRef } from 'vue'
 
 interface State {
@@ -143,20 +143,20 @@ interface State {
   message: string
 }
 
-const state = reactive<State>({
+const state = reactive&lt;State&gt;({
   count: 0,
   message: 'Hello'
 })
 
 // 类型推导正确
-const countRef = toRef(state, 'count') // ToRef<number>
+const countRef = toRef(state, 'count') // ToRef&lt;number&gt;
 ```
 
 ## 注意事项
 
 ### 1. 与解构的区别
 
-```javascript
+```text
 const state = reactive({
   count: 0,
   message: 'Hello'
@@ -173,7 +173,7 @@ countRef.value++ // 会触发更新
 
 ### 2. 与 toRefs 的区别
 
-```javascript
+```text
 const state = reactive({
   count: 0,
   message: 'Hello',
@@ -189,7 +189,7 @@ const { count, message, flag } = toRefs(state)
 
 ### 3. 不存在的属性
 
-```javascript
+```text
 const state = reactive({
   count: 0
 })
@@ -205,7 +205,7 @@ missing.value = 'new value'
 
 ### 4. 与 ref 的区别
 
-```javascript
+```text
 const state = reactive({
   count: 0
 })
@@ -222,7 +222,7 @@ const countRef2 = ref(state.count)
 
 ### 5. 嵌套属性
 
-```javascript
+```text
 const state = reactive({
   user: {
     name: 'Vue',
@@ -231,7 +231,7 @@ const state = reactive({
 })
 
 // ✅ 可以访问嵌套属性
-const userName = toRef(() => state.user.name)
+const userName = toRef(() =&gt; state.user.name)
 
 // 或者直接引用
 const user = toRef(state, 'user')
@@ -240,8 +240,8 @@ console.log(user.value.name)
 
 ### 6. 在模板中的使用
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { reactive, toRef } from 'vue'
 
 const state = reactive({
@@ -251,20 +251,20 @@ const state = reactive({
 
 const count = toRef(state, 'count')
 const message = toRef(state, 'message')
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <!-- 自动解包 -->
-  <div>{{ count }}</div>
-  <div>{{ message }}</div>
-</template>
+`&lt;template&gt;`
+  &lt;!-- 自动解包 --&gt;
+  &lt;div&gt;{{ count }}&lt;/div&gt;
+  &lt;div&gt;{{ message }}&lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ## 使用场景
 
 ### 1. 在组合函数中传递响应式属性
 
-```javascript
+```text
 // useCounter.js
 import { toRef, computed } from 'vue'
 
@@ -272,7 +272,7 @@ export function useCounter(state) {
   // 将特定属性转为 ref
   const count = toRef(state, 'count')
 
-  const doubled = computed(() => count.value * 2)
+  const doubled = computed(() =&gt; count.value * 2)
 
   function increment() {
     count.value++
@@ -291,7 +291,7 @@ export function useCounter(state) {
 }
 
 // 在组件中使用
-<script setup>
+`&lt;script setup&gt;`
 import { reactive } from 'vue'
 import { useCounter } from './useCounter'
 
@@ -300,13 +300,13 @@ const state = reactive({
 })
 
 const { count, doubled, increment, decrement } = useCounter(state)
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 2. 传递 props 的属性
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { toRef, computed } from 'vue'
 
 const props = defineProps({
@@ -319,15 +319,15 @@ const modelValue = toRef(props, 'modelValue')
 const disabled = toRef(props, 'disabled')
 
 // 在组合函数中使用
-const isValid = computed(() => {
-  return modelValue.value && modelValue.value.length > 0
+const isValid = computed(() =&gt; {
+  return modelValue.value && modelValue.value.length &gt; 0
 })
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 3. 部分共享状态
 
-```javascript
+```text
 // store.js
 import { reactive } from 'vue'
 
@@ -354,8 +354,8 @@ export function useLoadingState() {
 
 ### 4. 表单字段处理
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { reactive, toRef } from 'vue'
 
 const form = reactive({
@@ -370,35 +370,35 @@ const email = toRef(form, 'email')
 const password = toRef(form, 'password')
 
 // 验证单个字段
-const usernameError = computed(() => {
-  if (username.value.length < 3) {
+const usernameError = computed(() =&gt; {
+  if (username.value.length &lt; 3) {
     return '用户名至少3个字符'
   }
   return ''
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <form>
-    <input v-model="username" />
-    <span v-if="usernameError">{{ usernameError }}</span>
+`&lt;template&gt;`
+  &lt;form&gt;
+    &lt;input v-model="username" /&gt;
+    &lt;span v-if="usernameError"&gt;{{ usernameError }}&lt;/span&gt;
 
-    <input v-model="email" />
-    <input v-model="password" />
-  </form>
-</template>
+    &lt;input v-model="email" /&gt;
+    &lt;input v-model="password" /&gt;
+  &lt;/form&gt;
+`&lt;/template&gt;`
 ```
 
 ### 5. 可重用的逻辑提取
 
-```javascript
+```text
 // useValidation.js
 import { toRef, computed } from 'vue'
 
 export function useValidation(state, field, rules) {
   const fieldValue = toRef(state, field)
 
-  const error = computed(() => {
+  const error = computed(() =&gt; {
     for (const rule of rules) {
       const result = rule(fieldValue.value)
       if (result) return result
@@ -406,7 +406,7 @@ export function useValidation(state, field, rules) {
     return ''
   })
 
-  const isValid = computed(() => !error.value)
+  const isValid = computed(() =&gt; !error.value)
 
   return {
     error,
@@ -416,7 +416,7 @@ export function useValidation(state, field, rules) {
 }
 
 // 使用
-<script setup>
+`&lt;script setup&gt;`
 import { reactive } from 'vue'
 import { useValidation } from './useValidation'
 
@@ -426,15 +426,15 @@ const form = reactive({
 })
 
 const usernameValidation = useValidation(form, 'username', [
-  (v) => v.length < 3 && '用户名至少3个字符',
-  (v) => !v && '用户名不能为空'
+  (v) =&gt; v.length &lt; 3 && '用户名至少3个字符',
+  (v) =&gt; !v && '用户名不能为空'
 ])
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 6. 条件响应式
 
-```javascript
+```text
 import { reactive, toRef, computed } from 'vue'
 
 const state = reactive({
@@ -445,15 +445,15 @@ const state = reactive({
 const condition = toRef(state, 'condition')
 
 // 根据条件决定是否响应
-const displayValue = computed(() => {
+const displayValue = computed(() =&gt; {
   return condition.value ? state.value : 'hidden'
 })
 ```
 
 ### 7. 与 v-model 的配合
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { reactive, toRef } from 'vue'
 
 const props = defineProps({
@@ -469,19 +469,19 @@ const modelValue = toRef(props, 'modelValue')
 function updateValue(value) {
   emit('update:modelValue', value)
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <input
+`&lt;template&gt;`
+  &lt;input
     :value="modelValue"
     @input="updateValue($event.target.value)"
-  />
-</template>
+  /&gt;
+`&lt;/template&gt;`
 ```
 
 ### 8. 状态切片
 
-```javascript
+```text
 // 大型状态对象
 const appState = reactive({
   user: { name: 'Vue', age: 3 },
@@ -499,15 +499,15 @@ export function useUserState() {
 
 export function useSettings() {
   return {
-    theme: toRef(() => appState.settings.theme),
-    language: toRef(() => appState.settings.language)
+    theme: toRef(() =&gt; appState.settings.theme),
+    language: toRef(() =&gt; appState.settings.language)
   }
 }
 ```
 
 ### 9. 响应式属性别名
 
-```javascript
+```text
 const state = reactive({
   firstName: 'Vue',
   lastName: 'JS'
@@ -524,8 +524,8 @@ console.log(state.firstName) // 'React'
 
 ### 10. 与第三方库集成
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { reactive, toRef, watchEffect } from 'vue'
 import { useMotion } from '@vueuse/motion'
 
@@ -541,25 +541,25 @@ const { motion } = useMotion({
   y: toRef(state, 'y'),
   rotate: toRef(state, 'rotation')
 })
-</script>
+`&lt;/script&gt;`
 ```
 
 ## API 签名
 
-```typescript
+```text
 // 对象属性版本
-function toRef<T extends object, K extends keyof T>(
+function toRef&lt;T extends object, K extends keyof T&gt;(
   object: T,
   key: K
-): ToRef<T[K]>
+): ToRef&lt;T[K]&gt;
 
 // getter 版本
-function toRef<T>(
-  getter: () => T
-): Readonly<Ref<T>>
+function toRef&lt;T&gt;(
+  getter: () =&gt; T
+): Readonly&lt;Ref&lt;T&gt;&gt;
 
 // 类型别名
-type ToRef<T> = T extends Ref ? T : Ref<NonNullable<T>>
+type ToRef&lt;T&gt; = T extends Ref ? T : Ref&lt;NonNullable&lt;T&gt;&gt;
 ```
 
 ## toRef vs 其他响应式 API

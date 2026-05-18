@@ -7,7 +7,7 @@
 
 ### 基本用法
 
-```javascript
+```text
 import { createApp } from 'vue'
 import App from './App.vue'
 
@@ -20,7 +20,7 @@ app.mount('#app')
 
 ### 完整示例
 
-```javascript
+```text
 // main.js
 import { createApp } from 'vue'
 import App from './App.vue'
@@ -53,24 +53,24 @@ app.mount('#app')
 
 ### 根组件
 
-```javascript
+```text
 // App.vue
-<script setup>
+`&lt;script setup&gt;`
 import { ref } from 'vue'
 
 const message = ref('Hello Vue 3!')
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div id="app">
-    <h1>{{ message }}</h1>
-  </div>
-</template>
+`&lt;template&gt;`
+  &lt;div id="app"&gt;
+    &lt;h1&gt;{{ message }}&lt;/h1&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 使用渲染函数
 
-```javascript
+```text
 import { createApp, h } from 'vue'
 
 const app = createApp({
@@ -84,11 +84,11 @@ app.mount('#app')
 
 ### 配置应用实例
 
-```javascript
+```text
 const app = createApp(App)
 
 // 错误处理
-app.config.errorHandler = (err, instance, info) => {
+app.config.errorHandler = (err, instance, info) =&gt; {
   console.error('Error:', err)
   console.error('Component:', instance)
   console.error('Info:', info)
@@ -103,7 +103,7 @@ app.mount('#app')
 
 ### 多个应用实例
 
-```javascript
+```text
 import { createApp } from 'vue'
 import App1 from './App1.vue'
 import App2 from './App2.vue'
@@ -123,7 +123,7 @@ app2.mount('#app2')
 
 注册全局组件。
 
-```javascript
+```text
 import { createApp } from 'vue'
 import MyButton from './MyButton.vue'
 import MyInput from './MyInput.vue'
@@ -148,7 +148,7 @@ app.component('MyButton', MyButton)
 
 注册全局指令。
 
-```javascript
+```text
 const app = createApp(App)
 
 // 注册指令
@@ -169,15 +169,15 @@ app.directive('color', {
 })
 
 // 使用
-// <input v-focus />
-// <div v-color="'red'">Text</div>
+// &lt;input v-focus /&gt;
+// &lt;div v-color="'red'"&gt;Text&lt;/div&gt;
 ```
 
 ### app.use()
 
 安装插件。
 
-```javascript
+```text
 const app = createApp(App)
 
 // 安装 Vue Router
@@ -194,7 +194,7 @@ app.use(pinia)
 const myPlugin = {
   install(app, options) {
     // 提供全局属性
-    app.config.globalProperties.$myMethod = () => {
+    app.config.globalProperties.$myMethod = () =&gt; {
       console.log('My method called')
     }
 
@@ -213,7 +213,7 @@ app.use(myPlugin, { someOption: true })
 
 挂载应用。
 
-```javascript
+```text
 const app = createApp(App)
 
 // 挂载到 DOM 元素
@@ -230,7 +230,7 @@ app.component('NewComponent', NewComponent) // 警告
 
 卸载应用。
 
-```javascript
+```text
 const app = createApp(App)
 const vm = app.mount('#app')
 
@@ -244,7 +244,7 @@ app.unmount()
 
 提供全局可注入的值。
 
-```javascript
+```text
 const app = createApp(App)
 
 // 提供 value
@@ -261,7 +261,7 @@ app.provide('config', {
 
 添加全局属性。
 
-```javascript
+```text
 const app = createApp(App)
 
 // 添加全局属性
@@ -287,10 +287,10 @@ app.config.globalProperties.$utils = {
 
 全局错误处理器。
 
-```javascript
+```text
 const app = createApp(App)
 
-app.config.errorHandler = (err, instance, info) => {
+app.config.errorHandler = (err, instance, info) =&gt; {
   // err: 错误对象
   // instance: 发生错误的组件实例
   // info: Vue 特定的错误信息
@@ -310,10 +310,10 @@ app.config.errorHandler = (err, instance, info) => {
 
 全局警告处理器。
 
-```javascript
+```text
 const app = createApp(App)
 
-app.config.warnHandler = (msg, instance, trace) => {
+app.config.warnHandler = (msg, instance, trace) =&gt; {
   // msg: 警告信息
   // instance: 组件实例
   // trace: 组件层次结构追踪
@@ -327,11 +327,11 @@ app.config.warnHandler = (msg, instance, trace) => {
 
 自定义选项合并策略。
 
-```javascript
+```text
 const app = createApp(App)
 
 // 自定义合并策略
-app.config.optionMergeStrategies.customStrategy = (toVal, fromVal) => {
+app.config.optionMergeStrategies.customStrategy = (toVal, fromVal) =&gt; {
   // toVal: 父组件的选项值
   // fromVal: 子组件的选项值
 
@@ -354,7 +354,7 @@ export default {
 
 启用性能追踪。
 
-```javascript
+```text
 const app = createApp(App)
 
 // 开发模式中启用性能追踪
@@ -367,12 +367,12 @@ app.config.performance = true
 
 配置编译器选项。
 
-```javascript
+```text
 const app = createApp(App)
 
 app.config.compilerOptions = {
   // 是否区分大小写
-  isCustomElement: (tag) => tag.startsWith('x-'),
+  isCustomElement: (tag) =&gt; tag.startsWith('x-'),
 
   // 分隔符
   delimiters: ['${', '}'],
@@ -387,7 +387,7 @@ app.config.compilerOptions = {
 
 ### 1. 只在挂载前配置
 
-```javascript
+```text
 const app = createApp(App)
 
 // ✅ 正确：挂载前配置
@@ -402,7 +402,7 @@ app.component('NewComponent', NewComponent) // 警告
 
 ### 2. 每个 mount 创建新实例
 
-```javascript
+```text
 const app = createApp(App)
 
 // ✅ 可以多次挂载
@@ -414,7 +414,7 @@ app.mount('#app2')
 
 ### 3. TypeScript 类型支持
 
-```typescript
+```text
 import { createApp } from 'vue'
 import App from './App.vue'
 
@@ -442,7 +442,7 @@ app.mount('#app')
 
 ### 4. SSR 注意事项
 
-```javascript
+```text
 // 服务端渲染
 import { createApp } from 'vue'
 import { renderToString } from '@vue/server-renderer'
@@ -462,12 +462,12 @@ function createSSRApp() {
 
 ### 5. 插件开发
 
-```javascript
+```text
 // my-plugin.js
 export default {
   install(app, options) {
     // 1. 注入全局属性
-    app.config.globalProperties.$myPlugin = () => {
+    app.config.globalProperties.$myPlugin = () =&gt; {
       console.log('My plugin!')
     }
 
@@ -502,7 +502,7 @@ app.use(MyPlugin, { option: 'value' })
 
 ### 1. 基础应用设置
 
-```javascript
+```text
 // main.js
 import { createApp } from 'vue'
 import App from './App.vue'
@@ -519,10 +519,10 @@ app.mount('#app')
 
 ### 2. 全局错误处理
 
-```javascript
+```text
 const app = createApp(App)
 
-app.config.errorHandler = (err, instance, info) => {
+app.config.errorHandler = (err, instance, info) =&gt; {
   // 开发环境
   if (import.meta.env.DEV) {
     console.error('Error:', err)
@@ -543,7 +543,7 @@ app.mount('#app')
 
 ### 3. 全局组件库
 
-```javascript
+```text
 // components/index.js
 import Button from './Button.vue'
 import Input from './Input.vue'
@@ -566,7 +566,7 @@ app.mount('#app')
 
 ### 4. 插件开发模式
 
-```javascript
+```text
 // plugins/api.js
 import axios from 'axios'
 
@@ -577,7 +577,7 @@ export default {
     })
 
     // 添加请求拦截器
-    api.interceptors.request.use(config => {
+    api.interceptors.request.use(config =&gt; {
       const token = app.config.globalProperties.$store?.state?.auth?.token
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
@@ -587,8 +587,8 @@ export default {
 
     // 添加响应拦截器
     api.interceptors.response.use(
-      response => response,
-      error => {
+      response =&gt; response,
+      error =&gt; {
         if (error.response?.status === 401) {
           // 处理未授权
           app.config.globalProperties.$router?.push('/login')
@@ -615,12 +615,12 @@ app.use(apiPlugin, {
 
 ### 5. 自定义指令库
 
-```javascript
+```text
 // directives/index.js
 export function registerDirectives(app) {
   app.directive('click-outside', {
     mounted(el, binding) {
-      el._clickOutside = (event) => {
+      el._clickOutside = (event) =&gt; {
         if (!(el === event.target || el.contains(event.target))) {
           binding.value(event)
         }
@@ -634,8 +634,8 @@ export function registerDirectives(app) {
 
   app.directive('lazy', {
     mounted(el, binding) {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
+      const observer = new IntersectionObserver((entries) =&gt; {
+        entries.forEach(entry =&gt; {
           if (entry.isIntersecting) {
             el.src = binding.value
             observer.unobserve(el)
@@ -650,13 +650,13 @@ export function registerDirectives(app) {
 
 ### 6. 主题插件
 
-```javascript
+```text
 // plugins/theme.js
 export default {
   install(app) {
     const theme = ref(localStorage.getItem('theme') || 'light')
 
-    const updateTheme = (newTheme) => {
+    const updateTheme = (newTheme) =&gt; {
       theme.value = newTheme
       localStorage.setItem('theme', newTheme)
       document.documentElement.setAttribute('data-theme', newTheme)
@@ -677,25 +677,25 @@ export default {
 
 ### 7. i18n 插件
 
-```javascript
+```text
 // plugins/i18n.js
 export default {
   install(app, options) {
     const locale = ref(options.defaultLocale || 'zh-CN')
     const messages = ref(options.messages || {})
 
-    const t = (key, params = {}) => {
+    const t = (key, params = {}) =&gt; {
       let message = messages.value[locale.value]?.[key] || key
 
       // 替换参数
-      Object.keys(params).forEach(param => {
+      Object.keys(params).forEach(param =&gt; {
         message = message.replace(`{${param}}`, params[param])
       })
 
       return message
     }
 
-    const setLocale = (newLocale) => {
+    const setLocale = (newLocale) =&gt; {
       locale.value = newLocale
     }
 

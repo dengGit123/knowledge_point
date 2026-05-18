@@ -7,7 +7,7 @@
 
 ### 基本用法
 
-```javascript
+```text
 import { reactive, readonly } from 'vue'
 
 const original = reactive({
@@ -31,7 +31,7 @@ console.log(copy.count) // 1（同步更新）
 
 ### 对普通对象使用
 
-```javascript
+```text
 import { readonly } from 'vue'
 
 const original = {
@@ -50,7 +50,7 @@ original.count = 1
 
 ### 对 ref 使用
 
-```javascript
+```text
 import { ref, readonly } from 'vue'
 
 const count = ref(0)
@@ -70,11 +70,11 @@ console.log(readonlyCount.value) // 1
 
 ### 对 computed 使用
 
-```javascript
+```text
 import { computed, readonly } from 'vue'
 
 const count = ref(0)
-const doubled = computed(() => count.value * 2)
+const doubled = computed(() =&gt; count.value * 2)
 
 // computed 默认就是只读的
 const readonlyDoubled = readonly(doubled)
@@ -85,7 +85,7 @@ readonlyDoubled.value = 10 // 错误
 
 ### 嵌套对象
 
-```javascript
+```text
 import { reactive, readonly } from 'vue'
 
 const original = reactive({
@@ -107,9 +107,9 @@ copy.settings.theme = 'dark' // 警告
 
 ### 在 provide 中使用
 
-```vue
-<!-- 祖先组件 -->
-<script setup>
+```text
+&lt;!-- 祖先组件 --&gt;
+`&lt;script setup&gt;`
 import { provide, reactive, readonly } from 'vue'
 
 const state = reactive({
@@ -124,10 +124,10 @@ provide('state', readonly(state))
 function increment() {
   state.count++
 }
-</script>
+`&lt;/script&gt;`
 
-<!-- 后代组件 -->
-<script setup>
+&lt;!-- 后代组件 --&gt;
+`&lt;script setup&gt;`
 import { inject } from 'vue'
 
 const state = inject('state')
@@ -137,12 +137,12 @@ console.log(state.count)
 
 // ❌ 尝试修改会报警告
 state.count++ // 警告
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 返回类型检查
 
-```javascript
+```text
 import { reactive, readonly, isReadonly } from 'vue'
 
 const original = reactive({ count: 0 })
@@ -154,7 +154,7 @@ console.log(isReadonly(original)) // false
 
 ### TypeScript 支持
 
-```typescript
+```text
 import { reactive, readonly } from 'vue'
 
 interface User {
@@ -167,8 +167,8 @@ const original: User = reactive({
   age: 3
 })
 
-// 返回 Readonly<User>
-const copy: Readonly<User> = readonly(original)
+// 返回 Readonly&lt;User&gt;
+const copy: Readonly&lt;User&gt; = readonly(original)
 
 // 类型系统会阻止修改
 copy.name = 'React' // TypeScript 错误
@@ -176,7 +176,7 @@ copy.name = 'React' // TypeScript 错误
 
 ### 数组
 
-```javascript
+```text
 import { reactive, readonly } from 'vue'
 
 const original = reactive([1, 2, 3])
@@ -195,7 +195,7 @@ console.log(copy.length) // 3
 
 ### Map 和 Set
 
-```javascript
+```text
 import { reactive, readonly } from 'vue'
 
 const originalMap = reactive(new Map([
@@ -219,7 +219,7 @@ console.log(readonlyMap.has('key1')) // true
 
 ### 1. 不是深度不可变
 
-```javascript
+```text
 const original = reactive({
   nested: {
     value: 1
@@ -240,7 +240,7 @@ nested.value = 2 // 警告
 
 ### 2. 原始对象修改会同步
 
-```javascript
+```text
 const original = reactive({ count: 0 })
 const copy = readonly(original)
 
@@ -250,7 +250,7 @@ console.log(copy.count) // 1（同步反映变化）
 
 ### 3. 只阻止直接修改
 
-```javascript
+```text
 const original = reactive({
   data: [{ id: 1, name: 'Item 1' }]
 })
@@ -271,7 +271,7 @@ const deepCopy = readonly(markRaw(JSON.parse(JSON.stringify(original))))
 
 ### 4. 与 Object.freeze 的区别
 
-```javascript
+```text
 // Object.freeze: 冻结对象，无法修改
 const frozen = Object.freeze({ count: 0 })
 frozen.count = 1 // 静默失败，无警告
@@ -285,7 +285,7 @@ ro.count = 1 // 开发环境警告
 
 ### 5. 性能考虑
 
-```javascript
+```text
 // readonly 会创建代理，有一定开销
 const largeObject = reactive({ /* 大量数据 */ })
 
@@ -295,7 +295,7 @@ const largeObject = reactive({ /* 大量数据 */ })
 
 ### 6. 与 shallowReadonly 的区别
 
-```javascript
+```text
 const original = reactive({
   nested: {
     value: 1
@@ -315,7 +315,7 @@ shallowRo.nested = {} // 警告（顶层属性只读）
 
 ### 7. 解构行为
 
-```javascript
+```text
 const state = reactive({
   count: 0,
   message: 'Hello'
@@ -335,8 +335,8 @@ roCount.value = 1 // 警告
 
 ### 8. 组件 props 是只读的
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 const props = defineProps({
   count: Number,
   message: String
@@ -347,14 +347,14 @@ props.count = 1 // 警告
 
 // ✅ 创建本地副本
 const localCount = ref(props.count)
-</script>
+`&lt;/script&gt;`
 ```
 
 ## 使用场景
 
 ### 1. 保护共享状态
 
-```javascript
+```text
 // store.js
 import { reactive, readonly } from 'vue'
 
@@ -379,19 +379,19 @@ export function logout() {
 }
 
 // 组件中使用
-<script setup>
+`&lt;script setup&gt;`
 import { readonlyState } from './store'
 
 // 只能读取，不能修改
 console.log(readonlyState.user)
 readonlyState.isLoggedIn = true // 警告
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 2. 保护传递的数据
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { readonly } from 'vue'
 
 const props = defineProps({
@@ -401,13 +401,13 @@ const props = defineProps({
 // 将 props 转为只读后传递给子组件
 const readonlyConfig = readonly(props.config)
 
-// <Child :config="readonlyConfig" />
-</script>
+// &lt;Child :config="readonlyConfig" /&gt;
+`&lt;/script&gt;`
 ```
 
 ### 3. API 响应数据
 
-```javascript
+```text
 import { ref, readonly } from 'vue'
 
 const apiData = ref(null)
@@ -430,7 +430,7 @@ data.someProperty = 'value' // 警告
 
 ### 4. 配置对象保护
 
-```javascript
+```text
 import { reactive, readonly } from 'vue'
 
 // 默认配置
@@ -446,21 +446,21 @@ const userConfig = reactive({
 })
 
 // 提供只读的默认配置
-export const getDefaultConfig = () => readonly(defaultConfig)
+export const getDefaultConfig = () =&gt; readonly(defaultConfig)
 
 // 组件中使用
-<script setup>
+`&lt;script setup&gt;`
 import { getDefaultConfig } from './config'
 
 const config = getDefaultConfig()
 
 config.theme = 'custom' // 警告
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 5. 状态切片保护
 
-```javascript
+```text
 import { reactive, readonly } from 'vue'
 
 const appState = reactive({
@@ -470,15 +470,15 @@ const appState = reactive({
 })
 
 // 导出只读的状态切片
-export const useUserState = () => readonly(appState.user)
-export const useSettings = () => readonly(appState.settings)
-export const useUIState = () => readonly(appState.ui)
+export const useUserState = () =&gt; readonly(appState.user)
+export const useSettings = () =&gt; readonly(appState.settings)
+export const useUIState = () =&gt; readonly(appState.ui)
 ```
 
 ### 6. 防止意外修改
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { reactive, readonly, provide } from 'vue'
 
 const formState = reactive({
@@ -494,12 +494,12 @@ provide('formState', readonly(formState))
 function updateField(field, value) {
   formState[field] = value
 }
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 7. 不可变数据模式
 
-```javascript
+```text
 import { reactive, readonly } from 'vue'
 
 function createState(initialState) {
@@ -507,20 +507,20 @@ function createState(initialState) {
 
   return {
     // 只读状态
-    get: () => readonly(state),
+    get: () =&gt; readonly(state),
 
     // 更新方法
-    set: (key, value) => {
+    set: (key, value) =&gt; {
       state[key] = value
     },
 
     // 批量更新
-    update: (updates) => {
+    update: (updates) =&gt; {
       Object.assign(state, updates)
     },
 
     // 重置
-    reset: () => {
+    reset: () =&gt; {
       Object.assign(state, initialState)
     }
   }
@@ -537,8 +537,8 @@ store.set('count', 1) // ✅ 正确
 
 ### 8. 表单初始值保护
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { reactive, readonly, computed } from 'vue'
 
 const initialValues = reactive({
@@ -553,22 +553,22 @@ const formValues = reactive({ ...initialValues })
 const readonlyInitials = readonly(initialValues)
 
 // 检查是否有修改
-const isDirty = computed(() => {
+const isDirty = computed(() =&gt; {
   return Object.keys(formValues).some(
-    key => formValues[key] !== readonlyInitials[key]
+    key =&gt; formValues[key] !== readonlyInitials[key]
   )
 })
 
 function resetForm() {
   Object.assign(formValues, initialValues)
 }
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 9. 列表数据保护
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, readonly, computed } from 'vue'
 
 const items = ref([
@@ -585,7 +585,7 @@ function addItem(name) {
 }
 
 function removeItem(id) {
-  items.value = items.value.filter(item => item.id !== id)
+  items.value = items.value.filter(item =&gt; item.id !== id)
 }
 
 // 导出给子组件
@@ -594,12 +594,12 @@ defineExpose({
   addItem,
   removeItem
 })
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 10. 类型安全的只读接口
 
-```typescript
+```text
 // types.ts
 export interface Config {
   theme: 'light' | 'dark'
@@ -608,8 +608,8 @@ export interface Config {
 }
 
 export interface ConfigStore {
-  get(): Readonly<Config>
-  set<K extends keyof Config>(key: K, value: Config[K]): void
+  get(): Readonly&lt;Config&gt;
+  set&lt;K extends keyof Config&gt;(key: K, value: Config[K]): void
 }
 
 // store.ts
@@ -619,8 +619,8 @@ export function createConfigStore(initial: Config): ConfigStore {
   const config = reactive(initial)
 
   return {
-    get: () => config as Readonly<Config>,
-    set: (key, value) => {
+    get: () =&gt; config as Readonly&lt;Config&gt;,
+    set: (key, value) =&gt; {
       config[key] = value
     }
   }

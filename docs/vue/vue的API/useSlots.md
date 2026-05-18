@@ -1,15 +1,15 @@
 # useSlots
 
 ## 作用
-`useSlots()` 用于在 `<script setup>` 中访问组件的插槽内容。它返回一个 slots 对象，其中键是插槽名称，值是渲染函数。
+`useSlots()` 用于在 ``&lt;script setup&gt;`` 中访问组件的插槽内容。它返回一个 slots 对象，其中键是插槽名称，值是渲染函数。
 
 ## 用法
 
 ### 基本用法
 
-```vue
-<!-- MyComponent.vue -->
-<script setup>
+```text
+&lt;!-- MyComponent.vue --&gt;
+`&lt;script setup&gt;`
 import { useSlots } from 'vue'
 
 const slots = useSlots()
@@ -17,69 +17,69 @@ const slots = useSlots()
 console.log(slots.default)   // 默认插槽
 console.log(slots.header)    // 具名插槽
 console.log(slots.footer)    // 具名插槽
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <!-- 使用默认插槽 -->
-    <slot />
-  </div>
-</template>
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;!-- 使用默认插槽 --&gt;
+    &lt;slot /&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 检查插槽是否存在
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { useSlots } from 'vue'
 
 const slots = useSlots()
 
-const hasHeader = computed(() => !!slots.header)
-const hasFooter = computed(() => !!slots.footer)
-const hasDefault = computed(() => !!slots.default)
-</script>
+const hasHeader = computed(() =&gt; !!slots.header)
+const hasFooter = computed(() =&gt; !!slots.footer)
+const hasDefault = computed(() =&gt; !!slots.default)
+`&lt;/script&gt;`
 
-<template>
-  <div class="card">
-    <header v-if="hasHeader" class="card-header">
-      <slot name="header" />
-    </header>
+`&lt;template&gt;`
+  &lt;div class="card"&gt;
+    &lt;header v-if="hasHeader" class="card-header"&gt;
+      &lt;slot name="header" /&gt;
+    &lt;/header&gt;
 
-    <div class="card-body">
-      <slot />
-    </div>
+    &lt;div class="card-body"&gt;
+      &lt;slot /&gt;
+    &lt;/div&gt;
 
-    <footer v-if="hasFooter" class="card-footer">
-      <slot name="footer" />
-    </footer>
-  </div>
-</template>
+    &lt;footer v-if="hasFooter" class="card-footer"&gt;
+      &lt;slot name="footer" /&gt;
+    &lt;/footer&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 编程式使用插槽
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { useSlots, h } from 'vue'
 
 const slots = useSlots()
 
 // 渲染函数中使用
-const render = () => {
+const render = () =&gt; {
   return h('div', [
     h('header', slots.header?.()),
     h('main', slots.default?.()),
     h('footer', slots.footer?.())
   ])
 }
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 动态插槽名
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { useSlots, computed } from 'vue'
 
 const props = defineProps({
@@ -91,92 +91,92 @@ const props = defineProps({
 
 const slots = useSlots()
 
-const contentSlot = computed(() => {
+const contentSlot = computed(() =&gt; {
   return slots[props.position] || slots.default
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div class="layout">
-    <div class="sidebar">
-      <component :is="() => contentSlot()" />
-    </div>
-  </div>
-</template>
+`&lt;template&gt;`
+  &lt;div class="layout"&gt;
+    &lt;div class="sidebar"&gt;
+      &lt;component :is="() =&gt; contentSlot()" /&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 插槽内容处理
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { useSlots } from 'vue'
 
 const slots = useSlots()
 
 // 获取插槽内容数量
-const slotCount = computed(() => {
+const slotCount = computed(() =&gt; {
   return slots.default?.() || []
 }).value.length
 
 // 过滤插槽内容
-const filteredSlots = computed(() => {
+const filteredSlots = computed(() =&gt; {
   const content = slots.default?.() || []
-  return content.filter(vnode => {
+  return content.filter(vnode =&gt; {
     // 过滤逻辑
     return true
   })
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <p>共有 {{ slotCount }} 个子元素</p>
-    <component :is="() => filteredSlots()" />
-  </div>
-</template>
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;p&gt;共有 {{ slotCount }} 个子元素&lt;/p&gt;
+    &lt;component :is="() =&gt; filteredSlots()" /&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 透传插槽
 
-```vue
-<!-- MyButton.vue -->
-<script setup>
+```text
+&lt;!-- MyButton.vue --&gt;
+`&lt;script setup&gt;`
 import { useSlots } from 'vue'
 
 const slots = useSlots()
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <button class="my-button">
-    <!-- 透传所有插槽 -->
-    <template v-for="(_, name) in slots" :key="name" #[name]="slotProps">
-      <slot :name="name" v-bind="slotProps || {}" />
-    </template>
-  </button>
-</template>
+`&lt;template&gt;`
+  &lt;button class="my-button"&gt;
+    &lt;!-- 透传所有插槽 --&gt;
+    `&lt;template&gt;`
+      &lt;slot :name="name" v-bind="slotProps || {}" /&gt;
+    `&lt;/template&gt;`
+  &lt;/button&gt;
+`&lt;/template&gt;`
 
-<!-- WrapperComponent.vue -->
-<script setup>
+&lt;!-- WrapperComponent.vue --&gt;
+`&lt;script setup&gt;`
 import MyButton from './MyButton.vue'
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <MyButton>
-    <template #icon>
-      <svg>...</svg>
-    </template>
-    <template #default>
+`&lt;template&gt;`
+  &lt;MyButton&gt;
+    `&lt;template&gt;`
+      &lt;svg&gt;...&lt;/svg&gt;
+    `&lt;/template&gt;`
+    `&lt;template&gt;`
       Click me
-    </template>
-  </MyButton>
-</template>
+    `&lt;/template&gt;`
+  &lt;/MyButton&gt;
+`&lt;/template&gt;`
 ```
 
 ### 与作用域插槽结合
 
-```vue
-<!-- DataTable.vue -->
-<script setup>
+```text
+&lt;!-- DataTable.vue --&gt;
+`&lt;script setup&gt;`
 import { useSlots } from 'vue'
 
 const props = defineProps({
@@ -186,40 +186,40 @@ const props = defineProps({
 const slots = useSlots()
 
 // 检查是否有自定义渲染
-const hasCustomRender = computed(() => {
+const hasCustomRender = computed(() =&gt; {
   return slots.item || slots.default
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <table>
-    <tbody>
-      <tr v-for="(item, index) in items" :key="index">
-        <!-- 如果有自定义插槽，使用它 -->
-        <template v-if="hasCustomRender">
-          <slot name="item" :item="item" :index="index" />
-        </template>
+`&lt;template&gt;`
+  &lt;table&gt;
+    &lt;tbody&gt;
+      &lt;tr v-for="(item, index) in items" :key="index"&gt;
+        &lt;!-- 如果有自定义插槽，使用它 --&gt;
+        `&lt;template&gt;`
+          &lt;slot name="item" :item="item" :index="index" /&gt;
+        `&lt;/template&gt;`
 
-        <!-- 否则使用默认渲染 -->
-        <template v-else>
-          <td>{{ item }}</td>
-        </template>
-      </tr>
-    </tbody>
-  </table>
-</template>
+        &lt;!-- 否则使用默认渲染 --&gt;
+        `&lt;template&gt;`
+          &lt;td&gt;{{ item }}&lt;/td&gt;
+        `&lt;/template&gt;`
+      &lt;/tr&gt;
+    &lt;/tbody&gt;
+  &lt;/table&gt;
+`&lt;/template&gt;`
 ```
 
 ### TypeScript 类型支持
 
-```vue
-<script setup lang="ts">
+```text
+&lt;script setup lang="ts"&gt;
 import { useSlots } from 'vue'
 
 interface Slots {
-  default?: () => VNode[]
-  header?: (props: { title: string }) => VNode[]
-  footer?: () => VNode[]
+  default?: () =&gt; VNode[]
+  header?: (props: { title: string }) =&gt; VNode[]
+  footer?: () =&gt; VNode[]
 }
 
 const slots = useSlots() as Slots
@@ -228,19 +228,19 @@ const slots = useSlots() as Slots
 if (slots.header) {
   const headerVNodes = slots.header({ title: 'Hello' })
 }
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 在 setup 函数中使用
 
-```javascript
+```text
 import { useSlots, h } from 'vue'
 
 export default {
   setup() {
     const slots = useSlots()
 
-    return () => h('div', [
+    return () =&gt; h('div', [
       slots.header?.(),
       slots.default?.(),
       slots.footer?.()
@@ -251,54 +251,54 @@ export default {
 
 ### 条件插槽渲染
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { useSlots, computed } from 'vue'
 
 const slots = useSlots()
 
 // 检查多个插槽
-const slotNames = computed(() => {
-  return Object.keys(slots).filter(name => {
-    return slots[name] && slots[name]().length > 0
+const slotNames = computed(() =&gt; {
+  return Object.keys(slots).filter(name =&gt; {
+    return slots[name] && slots[name]().length &gt; 0
   })
 })
 
 // 判断是否有任何插槽内容
-const hasSlotContent = computed(() => {
-  return slotNames.value.length > 0
+const hasSlotContent = computed(() =&gt; {
+  return slotNames.value.length &gt; 0
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div class="wrapper">
-    <div v-if="!hasSlotContent" class="empty-state">
+`&lt;template&gt;`
+  &lt;div class="wrapper"&gt;
+    &lt;div v-if="!hasSlotContent" class="empty-state"&gt;
       No content provided
-    </div>
+    &lt;/div&gt;
 
-    <template v-for="name in slotNames" :key="name">
-      <slot :name="name" />
-    </template>
-  </div>
-</template>
+    `&lt;template&gt;`
+      &lt;slot :name="name" /&gt;
+    `&lt;/template&gt;`
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ## 注意事项
 
 ### 1. slots 是响应式的
 
-```javascript
+```text
 const slots = useSlots()
 
 // slots 对象本身是响应式的
-watchEffect(() => {
+watchEffect(() =&gt; {
   console.log(Object.keys(slots)) // 当插槽变化时重新执行
 })
 ```
 
 ### 2. 插槽是函数
 
-```javascript
+```text
 const slots = useSlots()
 
 // ✅ 正确：调用函数获取内容
@@ -310,7 +310,7 @@ const defaultContent = slots.default?.()
 
 ### 3. 空插槽处理
 
-```javascript
+```text
 const slots = useSlots()
 
 // 插槽可能不存在
@@ -324,16 +324,16 @@ if (slots.header) {
 
 ### 4. 插槽作用域
 
-```vue
-<!-- 父组件 -->
-<MyComponent>
-  <template #default="slotProps">
+```text
+&lt;!-- 父组件 --&gt;
+&lt;MyComponent&gt;
+  `&lt;template&gt;`
     {{ slotProps.value }}
-  </template>
-</MyComponent>
+  `&lt;/template&gt;`
+&lt;/MyComponent&gt;
 
-<!-- 子组件 -->
-<script setup>
+&lt;!-- 子组件 --&gt;
+`&lt;script setup&gt;`
 import { useSlots } from 'vue'
 
 const slots = useSlots()
@@ -342,19 +342,19 @@ const slots = useSlots()
 if (slots.default) {
   const vnodes = slots.default({ value: 'Hello' })
 }
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 5. 插槽内容修改
 
-```javascript
+```text
 const slots = useSlots()
 
 // 获取插槽内容
 const content = slots.default?.()
 
 // 修改 VNode（需要谨慎）
-const modifiedContent = content?.map(vnode => {
+const modifiedContent = content?.map(vnode =&gt; {
   // 修改逻辑
   return vnode
 })
@@ -362,49 +362,49 @@ const modifiedContent = content?.map(vnode => {
 
 ### 6. 与模板 ref 的配合
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { useSlots, ref } from 'vue'
 
 const slots = useSlots()
 const slotContentRef = ref(null)
 
 // 访问插槽中的元素
-onMounted(() => {
+onMounted(() =&gt; {
   const content = slots.default?.()
   // 遍历 VNode 查找元素
 })
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 7. 默认内容
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { useSlots } from 'vue'
 
 const slots = useSlots()
 
 // 提供默认内容
-const content = computed(() => {
-  if (slots.default && slots.default().length > 0) {
+const content = computed(() =&gt; {
+  if (slots.default && slots.default().length &gt; 0) {
     return slots.default
   }
-  return () => 'Default content'
+  return () =&gt; 'Default content'
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <component :is="content" />
-  </div>
-</template>
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;component :is="content" /&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 8. 动态组件插槽
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { useSlots, computed } from 'vue'
 
 const props = defineProps({
@@ -413,61 +413,61 @@ const props = defineProps({
 
 const slots = useSlots()
 
-const layoutSlots = computed(() => {
+const layoutSlots = computed(() =&gt; {
   // 根据布局选择插槽
   return slots[props.layout] || slots.default
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <component :is="() => layoutSlots()" />
-</template>
+`&lt;template&gt;`
+  &lt;component :is="() =&gt; layoutSlots()" /&gt;
+`&lt;/template&gt;`
 ```
 
 ## 使用场景
 
 ### 1. 布局组件
 
-```vue
-<!-- Layout.vue -->
-<script setup>
+```text
+&lt;!-- Layout.vue --&gt;
+`&lt;script setup&gt;`
 import { useSlots } from 'vue'
 
 const slots = useSlots()
 
-const hasHeader = computed(() => !!(slots.header && slots.header().length))
-const hasSidebar = computed(() => !!(slots.sidebar && slots.sidebar().length))
-const hasFooter = computed(() => !!(slots.footer && slots.footer().length))
-</script>
+const hasHeader = computed(() =&gt; !!(slots.header && slots.header().length))
+const hasSidebar = computed(() =&gt; !!(slots.sidebar && slots.sidebar().length))
+const hasFooter = computed(() =&gt; !!(slots.footer && slots.footer().length))
+`&lt;/script&gt;`
 
-<template>
-  <div class="layout" :class="{ 'has-sidebar': hasSidebar }">
-    <header v-if="hasHeader" class="layout-header">
-      <slot name="header" />
-    </header>
+`&lt;template&gt;`
+  &lt;div class="layout" :class="{ 'has-sidebar': hasSidebar }"&gt;
+    &lt;header v-if="hasHeader" class="layout-header"&gt;
+      &lt;slot name="header" /&gt;
+    &lt;/header&gt;
 
-    <div class="layout-body">
-      <aside v-if="hasSidebar" class="layout-sidebar">
-        <slot name="sidebar" />
-      </aside>
+    &lt;div class="layout-body"&gt;
+      &lt;aside v-if="hasSidebar" class="layout-sidebar"&gt;
+        &lt;slot name="sidebar" /&gt;
+      &lt;/aside&gt;
 
-      <main class="layout-content">
-        <slot />
-      </main>
-    </div>
+      &lt;main class="layout-content"&gt;
+        &lt;slot /&gt;
+      &lt;/main&gt;
+    &lt;/div&gt;
 
-    <footer v-if="hasFooter" class="layout-footer">
-      <slot name="footer" />
-    </footer>
-  </div>
-</template>
+    &lt;footer v-if="hasFooter" class="layout-footer"&gt;
+      &lt;slot name="footer" /&gt;
+    &lt;/footer&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 2. 表格组件
 
-```vue
-<!-- DataTable.vue -->
-<script setup>
+```text
+&lt;!-- DataTable.vue --&gt;
+`&lt;script setup&gt;`
 import { useSlots, computed } from 'vue'
 
 const props = defineProps({
@@ -478,79 +478,79 @@ const props = defineProps({
 const slots = useSlots()
 
 // 检查是否有单元格插槽
-const hasCellSlot = (field) => {
+const hasCellSlot = (field) =&gt; {
   return !!slots[`cell-${field}`]
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <table>
-    <thead>
-      <tr>
-        <th v-for="col in columns" :key="col.field">
+`&lt;template&gt;`
+  &lt;table&gt;
+    &lt;thead&gt;
+      &lt;tr&gt;
+        &lt;th v-for="col in columns" :key="col.field"&gt;
           {{ col.label }}
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="(row, rowIndex) in data" :key="rowIndex">
-        <td v-for="col in columns" :key="col.field">
-          <!-- 使用自定义插槽渲染 -->
-          <slot
+        &lt;/th&gt;
+      &lt;/tr&gt;
+    &lt;/thead&gt;
+    &lt;tbody&gt;
+      &lt;tr v-for="(row, rowIndex) in data" :key="rowIndex"&gt;
+        &lt;td v-for="col in columns" :key="col.field"&gt;
+          &lt;!-- 使用自定义插槽渲染 --&gt;
+          &lt;slot
             v-if="hasCellSlot(col.field)"
             :name="`cell-${col.field}`"
             :row="row"
             :value="row[col.field]"
-          />
-          <!-- 默认渲染 -->
-          <span v-else>{{ row[col.field] }}</span>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</template>
+          /&gt;
+          &lt;!-- 默认渲染 --&gt;
+          &lt;span v-else&gt;{{ row[col.field] }}&lt;/span&gt;
+        &lt;/td&gt;
+      &lt;/tr&gt;
+    &lt;/tbody&gt;
+  &lt;/table&gt;
+`&lt;/template&gt;`
 ```
 
 ### 3. 卡片组件
 
-```vue
-<!-- Card.vue -->
-<script setup>
+```text
+&lt;!-- Card.vue --&gt;
+`&lt;script setup&gt;`
 import { useSlots } from 'vue'
 
 const slots = useSlots()
 
-const hasCover = computed(() => !!(slots.cover && slots.cover().length))
-const hasActions = computed(() => !!(slots.actions && slots.actions().length))
-const hasHeader = computed(() => !!(slots.header && slots.header().length))
-</script>
+const hasCover = computed(() =&gt; !!(slots.cover && slots.cover().length))
+const hasActions = computed(() =&gt; !!(slots.actions && slots.actions().length))
+const hasHeader = computed(() =&gt; !!(slots.header && slots.header().length))
+`&lt;/script&gt;`
 
-<template>
-  <div class="card">
-    <div v-if="hasCover" class="card-cover">
-      <slot name="cover" />
-    </div>
+`&lt;template&gt;`
+  &lt;div class="card"&gt;
+    &lt;div v-if="hasCover" class="card-cover"&gt;
+      &lt;slot name="cover" /&gt;
+    &lt;/div&gt;
 
-    <div v-if="hasHeader" class="card-header">
-      <slot name="header" />
-    </div>
+    &lt;div v-if="hasHeader" class="card-header"&gt;
+      &lt;slot name="header" /&gt;
+    &lt;/div&gt;
 
-    <div class="card-body">
-      <slot />
-    </div>
+    &lt;div class="card-body"&gt;
+      &lt;slot /&gt;
+    &lt;/div&gt;
 
-    <div v-if="hasActions" class="card-actions">
-      <slot name="actions" />
-    </div>
-  </div>
-</template>
+    &lt;div v-if="hasActions" class="card-actions"&gt;
+      &lt;slot name="actions" /&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 4. 弹窗组件
 
-```vue
-<!-- Modal.vue -->
-<script setup>
+```text
+&lt;!-- Modal.vue --&gt;
+`&lt;script setup&gt;`
 import { useSlots } from 'vue'
 
 const props = defineProps({
@@ -561,37 +561,37 @@ const emit = defineEmits(['update:modelValue'])
 
 const slots = useSlots()
 
-const hasHeader = computed(() => !!(slots.header && slots.header().length))
-const hasFooter = computed(() => !!(slots.footer && slots.footer().length))
-</script>
+const hasHeader = computed(() =&gt; !!(slots.header && slots.header().length))
+const hasFooter = computed(() =&gt; !!(slots.footer && slots.footer().length))
+`&lt;/script&gt;`
 
-<template>
-  <Teleport to="body">
-    <div v-if="modelValue" class="modal">
-      <div class="modal-content">
-        <div v-if="hasHeader" class="modal-header">
-          <slot name="header" />
-          <button @click="emit('update:modelValue', false)">×</button>
-        </div>
+`&lt;template&gt;`
+  &lt;Teleport to="body"&gt;
+    &lt;div v-if="modelValue" class="modal"&gt;
+      &lt;div class="modal-content"&gt;
+        &lt;div v-if="hasHeader" class="modal-header"&gt;
+          &lt;slot name="header" /&gt;
+          &lt;button @click="emit('update:modelValue', false)"&gt;×&lt;/button&gt;
+        &lt;/div&gt;
 
-        <div class="modal-body">
-          <slot />
-        </div>
+        &lt;div class="modal-body"&gt;
+          &lt;slot /&gt;
+        &lt;/div&gt;
 
-        <div v-if="hasFooter" class="modal-footer">
-          <slot name="footer" />
-        </div>
-      </div>
-    </div>
-  </Teleport>
-</template>
+        &lt;div v-if="hasFooter" class="modal-footer"&gt;
+          &lt;slot name="footer" /&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/Teleport&gt;
+`&lt;/template&gt;`
 ```
 
 ### 5. 标签页组件
 
-```vue
-<!-- Tabs.vue -->
-<script setup>
+```text
+&lt;!-- Tabs.vue --&gt;
+`&lt;script setup&gt;`
 import { useSlots, ref, computed } from 'vue'
 
 const slots = useSlots()
@@ -599,47 +599,47 @@ const slots = useSlots()
 const activeTab = ref(0)
 
 // 从插槽中提取标签
-const tabs = computed(() => {
+const tabs = computed(() =&gt; {
   const content = slots.default?.() || []
   return content
-    .filter(vnode => vnode.type && vnode.type.name === 'TabPanel')
-    .map((vnode, index) => ({
+    .filter(vnode =&gt; vnode.type && vnode.type.name === 'TabPanel')
+    .map((vnode, index) =&gt; ({
       index,
       title: vnode.props?.title || `Tab ${index + 1}`,
       vnode
     }))
 })
 
-const activePanel = computed(() => {
+const activePanel = computed(() =&gt; {
   return tabs.value[activeTab.value]?.vnode
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div class="tabs">
-    <div class="tab-headers">
-      <button
+`&lt;template&gt;`
+  &lt;div class="tabs"&gt;
+    &lt;div class="tab-headers"&gt;
+      &lt;button
         v-for="tab in tabs"
         :key="tab.index"
         :class="{ active: activeTab === tab.index }"
         @click="activeTab = tab.index"
-      >
+      &gt;
         {{ tab.title }}
-      </button>
-    </div>
+      &lt;/button&gt;
+    &lt;/div&gt;
 
-    <div class="tab-content">
-      <component :is="activePanel" />
-    </div>
-  </div>
-</template>
+    &lt;div class="tab-content"&gt;
+      &lt;component :is="activePanel" /&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 6. 表单组件
 
-```vue
-<!-- FormItem.vue -->
-<script setup>
+```text
+&lt;!-- FormItem.vue --&gt;
+`&lt;script setup&gt;`
 import { useSlots, computed } from 'vue'
 
 const props = defineProps({
@@ -649,41 +649,41 @@ const props = defineProps({
 
 const slots = useSlots()
 
-const hasLabel = computed(() => {
+const hasLabel = computed(() =&gt; {
   return !!(props.label || (slots.label && slots.label().length))
 })
 
-const hasExtra = computed(() => {
+const hasExtra = computed(() =&gt; {
   return !!(slots.extra && slots.extra().length)
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div class="form-item" :class="{ 'has-error': error }">
-    <label v-if="hasLabel" class="form-label">
-      <slot name="label">{{ label }}</slot>
-    </label>
+`&lt;template&gt;`
+  &lt;div class="form-item" :class="{ 'has-error': error }"&gt;
+    &lt;label v-if="hasLabel" class="form-label"&gt;
+      &lt;slot name="label"&gt;{{ label }}&lt;/slot&gt;
+    &lt;/label&gt;
 
-    <div class="form-content">
-      <slot />
-    </div>
+    &lt;div class="form-content"&gt;
+      &lt;slot /&gt;
+    &lt;/div&gt;
 
-    <div v-if="hasExtra" class="form-extra">
-      <slot name="extra" />
-    </div>
+    &lt;div v-if="hasExtra" class="form-extra"&gt;
+      &lt;slot name="extra" /&gt;
+    &lt;/div&gt;
 
-    <div v-if="error" class="form-error">
+    &lt;div v-if="error" class="form-error"&gt;
       {{ error }}
-    </div>
-  </div>
-</template>
+    &lt;/div&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 7. 列表组件
 
-```vue
-<!-- List.vue -->
-<script setup>
+```text
+&lt;!-- List.vue --&gt;
+`&lt;script setup&gt;`
 import { useSlots, computed } from 'vue'
 
 const props = defineProps({
@@ -692,40 +692,40 @@ const props = defineProps({
 
 const slots = useSlots()
 
-const hasItemSlot = computed(() => !!slots.item)
-</script>
+const hasItemSlot = computed(() =&gt; !!slots.item)
+`&lt;/script&gt;`
 
-<template>
-  <ul class="list">
-    <li v-for="(item, index) in items" :key="index" class="list-item">
-      <!-- 自定义渲染 -->
-      <slot v-if="hasItemSlot" name="item" :item="item" :index="index" />
-      <!-- 默认渲染 -->
-      <template v-else>{{ item }}</template>
-    </li>
-  </ul>
+`&lt;template&gt;`
+  &lt;ul class="list"&gt;
+    &lt;li v-for="(item, index) in items" :key="index" class="list-item"&gt;
+      &lt;!-- 自定义渲染 --&gt;
+      &lt;slot v-if="hasItemSlot" name="item" :item="item" :index="index" /&gt;
+      &lt;!-- 默认渲染 --&gt;
+      `&lt;template&gt;`{{ item }}`&lt;/template&gt;`
+    &lt;/li&gt;
+  &lt;/ul&gt;
 
-  <!-- 空状态 -->
-  <div v-if="items.length === 0" class="empty-state">
-    <slot name="empty">
+  &lt;!-- 空状态 --&gt;
+  &lt;div v-if="items.length === 0" class="empty-state"&gt;
+    &lt;slot name="empty"&gt;
       No items
-    </slot>
-  </div>
+    &lt;/slot&gt;
+  &lt;/div&gt;
 
-  <!-- 加载状态 -->
-  <div v-if="$attrs.loading" class="loading-state">
-    <slot name="loading">
+  &lt;!-- 加载状态 --&gt;
+  &lt;div v-if="$attrs.loading" class="loading-state"&gt;
+    &lt;slot name="loading"&gt;
       Loading...
-    </slot>
-  </div>
-</template>
+    &lt;/slot&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 8. 树形组件
 
-```vue
-<!-- Tree.vue -->
-<script setup>
+```text
+&lt;!-- Tree.vue --&gt;
+`&lt;script setup&gt;`
 import { useSlots, computed } from 'vue'
 
 const props = defineProps({
@@ -734,39 +734,39 @@ const props = defineProps({
 
 const slots = useSlots()
 
-const hasNodeSlot = computed(() => !!slots.node)
-const hasIconSlot = computed(() => !!slots.icon)
-</script>
+const hasNodeSlot = computed(() =&gt; !!slots.node)
+const hasIconSlot = computed(() =&gt; !!slots.icon)
+`&lt;/script&gt;`
 
-<template>
-  <div class="tree">
-    <TreeNode
+`&lt;template&gt;`
+  &lt;div class="tree"&gt;
+    &lt;TreeNode
       v-for="node in data"
       :key="node.id"
       :node="node"
-    >
-      <template #node="{ node, expanded }">
-        <slot v-if="hasNodeSlot" name="node" :node="node" :expanded="expanded" />
-        <template v-else>{{ node.label }}</template>
-      </template>
+    &gt;
+      `&lt;template&gt;`
+        &lt;slot v-if="hasNodeSlot" name="node" :node="node" :expanded="expanded" /&gt;
+        `&lt;template&gt;`{{ node.label }}`&lt;/template&gt;`
+      `&lt;/template&gt;`
 
-      <template #icon="{ node, expanded }">
-        <slot v-if="hasIconSlot" name="icon" :node="node" :expanded="expanded" />
-        <template v-else>{{ expanded ? '▼' : '▶' }}</template>
-      </template>
-    </TreeNode>
-  </div>
-</template>
+      `&lt;template&gt;`
+        &lt;slot v-if="hasIconSlot" name="icon" :node="node" :expanded="expanded" /&gt;
+        `&lt;template&gt;`{{ expanded ? '▼' : '▶' }}`&lt;/template&gt;`
+      `&lt;/template&gt;`
+    &lt;/TreeNode&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ## useSlots 与其他 API 的区别
 
 | API | 用途 |
 |-----|------|
-| useSlots | 在 <script setup> 中访问插槽 |
+| useSlots | 在 `&lt;script setup&gt;` 中访问插槽 |
 | useAttrs | 访问未声明的 attrs |
 | $slots | 选项式 API 中访问插槽 |
-| <slot> | 在模板中渲染插槽 |
+| &lt;slot> | 在模板中渲染插槽 |
 
 ## 最佳实践
 

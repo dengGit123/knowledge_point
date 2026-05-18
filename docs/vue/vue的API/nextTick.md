@@ -7,7 +7,7 @@
 
 ### 基本用法
 
-```javascript
+```text
 import { nextTick } from 'vue'
 
 const count = ref(0)
@@ -19,15 +19,15 @@ await nextTick()
 console.log('DOM 已更新')
 
 // 或者使用 Promise
-nextTick(() => {
+nextTick(() =&gt; {
   console.log('DOM 已更新')
 })
 ```
 
-### 在 <script setup> 中使用
+### 在 `&lt;script setup&gt;` 中使用
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, nextTick } from 'vue'
 
 const message = ref('Hello')
@@ -42,20 +42,20 @@ async function updateAndFocus() {
   // 现在 DOM 已经更新，可以安全操作
   inputRef.value.focus()
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <p>{{ message }}</p>
-    <input ref="inputRef" />
-    <button @click="updateAndFocus">更新并聚焦</button>
-  </div>
-</template>
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;p&gt;{{ message }}&lt;/p&gt;
+    &lt;input ref="inputRef" /&gt;
+    &lt;button @click="updateAndFocus"&gt;更新并聚焦&lt;/button&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### Promise 方式
 
-```javascript
+```text
 import { nextTick } from 'vue'
 
 async function updateData() {
@@ -70,12 +70,12 @@ async function updateData() {
 
 ### 回调方式
 
-```javascript
+```text
 import { nextTick } from 'vue'
 
 data.value = 'new value'
 
-nextTick(() => {
+nextTick(() =&gt; {
   // DOM 已更新
   console.log('DOM updated')
 })
@@ -83,7 +83,7 @@ nextTick(() => {
 
 ### 多次更新后执行
 
-```javascript
+```text
 import { nextTick } from 'vue'
 
 // 多次修改数据
@@ -98,7 +98,7 @@ console.log('所有更新已应用到 DOM')
 
 ### 在选项式 API 中使用
 
-```javascript
+```text
 export default {
   data() {
     return {
@@ -118,7 +118,7 @@ export default {
     incrementWithCallback() {
       this.count++
 
-      this.$nextTick(() => {
+      this.$nextTick(() =&gt; {
         console.log('DOM updated')
       })
     }
@@ -128,8 +128,8 @@ export default {
 
 ### 获取元素尺寸
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, nextTick } from 'vue'
 
 const list = ref([])
@@ -144,21 +144,21 @@ async function addItem() {
   const height = containerRef.value.offsetHeight
   console.log('Container height:', height)
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div ref="containerRef" class="container">
-    <div v-for="item in list" :key="item.id">
+`&lt;template&gt;`
+  &lt;div ref="containerRef" class="container"&gt;
+    &lt;div v-for="item in list" :key="item.id"&gt;
       {{ item.id }}
-    </div>
-  </div>
-</template>
+    &lt;/div&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 滚动到指定位置
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, nextTick } from 'vue'
 
 const messages = ref([])
@@ -174,20 +174,20 @@ async function addMessage(message) {
     messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
   }
 }
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 与第三方库集成
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, onMounted, nextTick } from 'vue'
 import Chart from 'chart.js/auto'
 
 const canvasRef = ref(null)
 let chart = null
 
-onMounted(async () => {
+onMounted(async () =&gt; {
   await nextTick()
 
   // 确保 canvas 已渲染
@@ -205,28 +205,28 @@ onMounted(async () => {
     })
   }
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <canvas ref="canvasRef"></canvas>
-</template>
+`&lt;template&gt;`
+  &lt;canvas ref="canvasRef"&gt;&lt;/canvas&gt;
+`&lt;/template&gt;`
 ```
 
 ## 注意事项
 
 ### 1. nextTick 的执行时机
 
-```javascript
+```text
 import { nextTick, watchEffect } from 'vue'
 
 data.value = 'new value'
 
 // watchEffect 比 nextTick 更早执行
-watchEffect(() => {
+watchEffect(() =&gt; {
   console.log('watchEffect') // 1
 })
 
-nextTick(() => {
+nextTick(() =&gt; {
   console.log('nextTick') // 2
 })
 
@@ -236,34 +236,34 @@ console.log('sync') // 0
 
 ### 2. 多次调用合并
 
-```javascript
+```text
 // 多次调用 nextTick 会被合并为一次
-nextTick(() => console.log(1))
-nextTick(() => console.log(2))
-nextTick(() => console.log(3))
+nextTick(() =&gt; console.log(1))
+nextTick(() =&gt; console.log(2))
+nextTick(() =&gt; console.log(3))
 
 // 输出顺序: 1, 2, 3（在同一个微任务中）
 ```
 
 ### 3. 与 setTimeout 的区别
 
-```javascript
+```text
 // nextTick: 微任务，在 DOM 更新后立即执行
-nextTick(() => {
+nextTick(() =&gt; {
   console.log('nextTick')
 })
 
 // setTimeout: 宏任务，在事件循环的下一轮执行
-setTimeout(() => {
+setTimeout(() =&gt; {
   console.log('setTimeout')
 }, 0)
 
-// 输出顺序: nextTick -> setTimeout
+// 输出顺序: nextTick -&gt; setTimeout
 ```
 
 ### 4. 在 async 函数中使用
 
-```javascript
+```text
 async function update() {
   data.value = 'new'
 
@@ -277,7 +277,7 @@ async function update() {
 
 ### 5. 错误处理
 
-```javascript
+```text
 try {
   await nextTick()
   // DOM 已更新
@@ -288,11 +288,11 @@ try {
 
 ### 6. 与 watch 的区别
 
-```javascript
+```text
 const data = ref(0)
 
 // watch: 监听特定数据变化
-watch(data, () => {
+watch(data, () =&gt; {
   console.log('data changed')
 })
 
@@ -304,10 +304,10 @@ console.log('DOM updated')
 
 ### 7. 在 beforeUnmount 中的使用
 
-```javascript
+```text
 import { onBeforeUnmount, nextTick } from 'vue'
 
-onBeforeUnmount(async () => {
+onBeforeUnmount(async () =&gt; {
   // 清理前最后的 DOM 操作
   await nextTick()
   saveScrollPosition()
@@ -316,7 +316,7 @@ onBeforeUnmount(async () => {
 
 ### 8. 服务端渲染
 
-```javascript
+```text
 // SSR 中 nextTick 立即执行
 if (import.meta.env.SSR) {
   await nextTick() // 立即解决，没有 DOM
@@ -329,8 +329,8 @@ if (import.meta.env.SSR) {
 
 ### 1. 自动聚焦输入框
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, nextTick } from 'vue'
 
 const showInput = ref(false)
@@ -344,20 +344,20 @@ async function showAndFocus() {
 
   inputRef.value?.focus()
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <button @click="showAndFocus">显示输入框</button>
-    <input v-if="showInput" ref="inputRef" />
-  </div>
-</template>
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;button @click="showAndFocus"&gt;显示输入框&lt;/button&gt;
+    &lt;input v-if="showInput" ref="inputRef" /&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 2. 聊天窗口滚动
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, nextTick } from 'vue'
 
 const messages = ref([])
@@ -381,21 +381,21 @@ async function sendMessage(text) {
     })
   }
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div ref="containerRef" class="chat-container">
-    <div v-for="msg in messages" :key="msg.id" class="message">
+`&lt;template&gt;`
+  &lt;div ref="containerRef" class="chat-container"&gt;
+    &lt;div v-for="msg in messages" :key="msg.id" class="message"&gt;
       {{ msg.text }}
-    </div>
-  </div>
-</template>
+    &lt;/div&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 3. 动态高度计算
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, nextTick } from 'vue'
 
 const content = ref('')
@@ -411,27 +411,27 @@ async function updateContent() {
   // 计算高度
   height.value = containerRef.value?.offsetHeight || 0
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <button @click="updateContent">更新内容</button>
-    <div ref="containerRef">{{ content }}</div>
-    <p>高度: {{ height }}px</p>
-  </div>
-</template>
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;button @click="updateContent"&gt;更新内容&lt;/button&gt;
+    &lt;div ref="containerRef"&gt;{{ content }}&lt;/div&gt;
+    &lt;p&gt;高度: {{ height }}px&lt;/p&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 4. 第三方组件初始化
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, onMounted, nextTick } from 'vue'
 import { Calendar } from '@fullcalendar/core'
 
 const calendarRef = ref(null)
 
-onMounted(async () => {
+onMounted(async () =&gt; {
   await nextTick()
 
   // 初始化日历
@@ -442,17 +442,17 @@ onMounted(async () => {
 
   calendar.render()
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div ref="calendarRef"></div>
-</template>
+`&lt;template&gt;`
+  &lt;div ref="calendarRef"&gt;&lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 5. 拖拽后获取位置
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, nextTick } from 'vue'
 
 const items = ref([
@@ -468,7 +468,7 @@ async function reorderItems() {
   await nextTick()
 
   // 获取新位置
-  const positions = items.value.map(item => {
+  const positions = items.value.map(item =&gt; {
     const el = document.getElementById(`item-${item.id}`)
     return {
       id: item.id,
@@ -478,32 +478,32 @@ async function reorderItems() {
 
   console.log('New positions:', positions)
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <button @click="reorderItems">重排序</button>
-    <div
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;button @click="reorderItems"&gt;重排序&lt;/button&gt;
+    &lt;div
       v-for="item in items"
       :key="item.id"
       :id="`item-${item.id}`"
-    >
+    &gt;
       {{ item.text }}
-    </div>
-  </div>
-</template>
+    &lt;/div&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 6. Canvas 绘图
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, watch, nextTick } from 'vue'
 
 const canvasRef = ref(null)
 const data = ref([])
 
-watch(data, async () => {
+watch(data, async () =&gt; {
   await nextTick()
 
   const canvas = canvasRef.value
@@ -513,23 +513,23 @@ watch(data, async () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
   // 绘制图表
-  data.value.forEach((point, i) => {
+  data.value.forEach((point, i) =&gt; {
     ctx.beginPath()
     ctx.arc(i * 50, point, 5, 0, Math.PI * 2)
     ctx.fill()
   })
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <canvas ref="canvasRef" width="500" height="300"></canvas>
-</template>
+`&lt;template&gt;`
+  &lt;canvas ref="canvasRef" width="500" height="300"&gt;&lt;/canvas&gt;
+`&lt;/template&gt;`
 ```
 
 ### 7. 表单验证
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, nextTick } from 'vue'
 
 const form = ref({
@@ -555,25 +555,25 @@ async function validate() {
   const firstError = document.querySelector('.error')
   firstError?.scrollIntoView({ behavior: 'smooth' })
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <form @submit.prevent="validate">
-    <div>
-      <input v-model="form.username" />
-      <span v-if="errors.username" class="error">
+`&lt;template&gt;`
+  &lt;form @submit.prevent="validate"&gt;
+    &lt;div&gt;
+      &lt;input v-model="form.username" /&gt;
+      &lt;span v-if="errors.username" class="error"&gt;
         {{ errors.username }}
-      </span>
-    </div>
-    <button type="submit">Submit</button>
-  </form>
-</template>
+      &lt;/span&gt;
+    &lt;/div&gt;
+    &lt;button type="submit"&gt;Submit&lt;/button&gt;
+  &lt;/form&gt;
+`&lt;/template&gt;`
 ```
 
 ### 8. 列表动画
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, nextTick } from 'vue'
 
 const items = ref([1, 2, 3])
@@ -588,32 +588,32 @@ async function addItem() {
   const newItem = document.querySelectorAll('.item')[items.value.length - 1]
   newItem.classList.add('animate-in')
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <button @click="addItem">添加</button>
-    <div
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;button @click="addItem"&gt;添加&lt;/button&gt;
+    &lt;div
       v-for="item in items"
       :key="item"
       class="item"
-    >
+    &gt;
       {{ item }}
-    </div>
-  </div>
-</template>
+    &lt;/div&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 9. 图片懒加载
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, onMounted, nextTick } from 'vue'
 
 const images = ref([])
 
-onMounted(async () => {
-  images.value = Array.from({ length: 20 }, (_, i) => ({
+onMounted(async () =&gt; {
+  images.value = Array.from({ length: 20 }, (_, i) =&gt; ({
     id: i,
     src: `https://picsum.photos/300/200?random=${i}`,
     loaded: false
@@ -626,8 +626,8 @@ onMounted(async () => {
 })
 
 function observeImages() {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
+  const observer = new IntersectionObserver((entries) =&gt; {
+    entries.forEach(entry =&gt; {
       if (entry.isIntersecting) {
         const img = entry.target
         img.src = img.dataset.src
@@ -636,28 +636,28 @@ function observeImages() {
     })
   })
 
-  document.querySelectorAll('.lazy-image').forEach(img => {
+  document.querySelectorAll('.lazy-image').forEach(img =&gt; {
     observer.observe(img)
   })
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <img
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;img
       v-for="image in images"
       :key="image.id"
       :data-src="image.src"
       class="lazy-image"
-    />
-  </div>
-</template>
+    /&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 10. 条件渲染后的操作
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, nextTick } from 'vue'
 
 const showDialog = ref(false)
@@ -676,16 +676,16 @@ async function openDialog() {
   dialogRef.value.style.left = `calc(50% - ${width / 2}px)`
   dialogRef.value.style.top = `calc(50% - ${height / 2}px)`
 }
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <button @click="openDialog">打开对话框</button>
-    <div v-if="showDialog" ref="dialogRef" class="dialog">
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;button @click="openDialog"&gt;打开对话框&lt;/button&gt;
+    &lt;div v-if="showDialog" ref="dialogRef" class="dialog"&gt;
       Dialog content
-    </div>
-  </div>
-</template>
+    &lt;/div&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ## nextTick 与其他 API 的对比

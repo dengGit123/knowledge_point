@@ -7,28 +7,28 @@
 
 ### 基本用法
 
-```javascript
+```text
 import { defineAsyncComponent } from 'vue'
 
 // 简单用法
-const AsyncComponent = defineAsyncComponent(() =>
+const AsyncComponent = defineAsyncComponent(() =&gt;
   import('./components/MyComponent.vue')
 )
 
 // 在模板中使用
-// <template>
-//   <AsyncComponent />
-// </template>
+// `&lt;template&gt;`
+//   &lt;AsyncComponent /&gt;
+// `&lt;/template&gt;`
 ```
 
 ### 带选项的异步组件
 
-```javascript
+```text
 import { defineAsyncComponent } from 'vue'
 
 const AsyncComponent = defineAsyncComponent({
   // 加载组件的函数
-  loader: () => import('./components/MyComponent.vue'),
+  loader: () =&gt; import('./components/MyComponent.vue'),
 
   // 加载中显示的组件
   loadingComponent: LoadingComponent,
@@ -62,44 +62,44 @@ const AsyncComponent = defineAsyncComponent({
 
 ### 在组件中使用
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { defineAsyncComponent } from 'vue'
 
 // 定义异步组件
-const HeavyComponent = defineAsyncComponent(() =>
+const HeavyComponent = defineAsyncComponent(() =&gt;
   import('./HeavyComponent.vue')
 )
 
-const ModalComponent = defineAsyncComponent(() =>
+const ModalComponent = defineAsyncComponent(() =&gt;
   import('./ModalComponent.vue')
 )
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <button @click="showModal = true">打开弹窗</button>
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;button @click="showModal = true"&gt;打开弹窗&lt;/button&gt;
 
-    <!-- 条件渲染异步组件 -->
-    <ModalComponent v-if="showModal" @close="showModal = false" />
+    &lt;!-- 条件渲染异步组件 --&gt;
+    &lt;ModalComponent v-if="showModal" @close="showModal = false" /&gt;
 
-    <!-- 使用 Suspense 包裹 -->
-    <Suspense>
-      <template #default>
-        <HeavyComponent />
-      </template>
+    &lt;!-- 使用 Suspense 包裹 --&gt;
+    &lt;Suspense&gt;
+      `&lt;template&gt;`
+        &lt;HeavyComponent /&gt;
+      `&lt;/template&gt;`
 
-      <template #fallback>
-        <div>加载中...</div>
-      </template>
-    </Suspense>
-  </div>
-</template>
+      `&lt;template&gt;`
+        &lt;div&gt;加载中...&lt;/div&gt;
+      `&lt;/template&gt;`
+    &lt;/Suspense&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 与路由结合使用
 
-```javascript
+```text
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -108,18 +108,18 @@ const router = createRouter({
     {
       path: '/',
       name: 'Home',
-      component: () => import('@/views/Home.vue')
+      component: () =&gt; import('@/views/Home.vue')
     },
     {
       path: '/about',
       name: 'About',
-      component: () => import('@/views/About.vue')
+      component: () =&gt; import('@/views/About.vue')
     },
     {
       path: '/admin',
       name: 'Admin',
       // 使用 defineAsyncComponent
-      component: defineAsyncComponent(() =>
+      component: defineAsyncComponent(() =&gt;
         import('@/views/Admin.vue')
       ),
       meta: { requiresAuth: true }
@@ -130,25 +130,25 @@ const router = createRouter({
 
 ### 返回 Promise 的工厂函数
 
-```javascript
+```text
 // 基本用法
-const AsyncComp = defineAsyncComponent(() =>
-  new Promise((resolve) => {
-    setTimeout(() => {
+const AsyncComp = defineAsyncComponent(() =&gt;
+  new Promise((resolve) =&gt; {
+    setTimeout(() =&gt; {
       resolve({
-        template: '<div>I am async!</div>'
+        template: '&lt;div&gt;I am async!&lt;/div&gt;'
       })
     }, 1000)
   })
 )
 
 // 带错误处理
-const AsyncWithError = defineAsyncComponent(() => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() > 0.5) {
+const AsyncWithError = defineAsyncComponent(() =&gt; {
+  return new Promise((resolve, reject) =&gt; {
+    setTimeout(() =&gt; {
+      if (Math.random() &gt; 0.5) {
         resolve({
-          template: '<div>Success!</div>'
+          template: '&lt;div&gt;Success!&lt;/div&gt;'
         })
       } else {
         reject(new Error('Random failure'))
@@ -160,44 +160,44 @@ const AsyncWithError = defineAsyncComponent(() => {
 
 ### 配合 Suspense 使用
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { defineAsyncComponent } from 'vue'
 
-const AsyncComponent = defineAsyncComponent(() =>
+const AsyncComponent = defineAsyncComponent(() =&gt;
   import('./AsyncComponent.vue')
 )
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Suspense>
-    <template #default>
-      <AsyncComponent />
-    </template>
+`&lt;template&gt;`
+  &lt;Suspense&gt;
+    `&lt;template&gt;`
+      &lt;AsyncComponent /&gt;
+    `&lt;/template&gt;`
 
-    <template #fallback>
-      <div class="loading">
-        <span>加载中...</span>
-      </div>
-    </template>
-  </Suspense>
-</template>
+    `&lt;template&gt;`
+      &lt;div class="loading"&gt;
+        &lt;span&gt;加载中...&lt;/span&gt;
+      &lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 
-<style>
+&lt;style&gt;
 .loading {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 200px;
 }
-</style>
+&lt;/style&gt;
 ```
 
 ### 动态导入参数
 
-```javascript
+```text
 // 根据条件导入不同的组件
-const AsyncComponent = defineAsyncComponent(() => {
+const AsyncComponent = defineAsyncComponent(() =&gt; {
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 
   if (isMobile) {
@@ -208,7 +208,7 @@ const AsyncComponent = defineAsyncComponent(() => {
 })
 
 // 根据用户权限导入
-const AdminPanel = defineAsyncComponent(async () => {
+const AdminPanel = defineAsyncComponent(async () =&gt; {
   const { isAdmin } = await import('./utils/auth.js')
   const module = isAdmin()
     ? await import('./components/AdminPanel.vue')
@@ -219,69 +219,69 @@ const AdminPanel = defineAsyncComponent(async () => {
 
 ### TypeScript 支持
 
-```typescript
+```text
 import { defineAsyncComponent } from 'vue'
 
 // 推导组件类型
-const AsyncComponent = defineAsyncComponent<
+const AsyncComponent = defineAsyncComponent&lt;
   ComponentType & {
-    exposedMethod: () => void
-  }>(() => import('./MyComponent.vue'))
+    exposedMethod: () =&gt; void
+  }&gt;(() =&gt; import('./MyComponent.vue'))
 
 // 使用
-// <AsyncComponent ref="compRef" />
+// &lt;AsyncComponent ref="compRef" /&gt;
 // compRef.exposedMethod()
 ```
 
 ### 全局注册异步组件
 
-```javascript
+```text
 import { createApp, defineAsyncComponent } from 'vue'
 import App from './App.vue'
 
 const app = createApp(App)
 
 // 全局注册异步组件
-app.component('GlobalAsync', defineAsyncComponent(() =>
+app.component('GlobalAsync', defineAsyncComponent(() =&gt;
   import('./components/GlobalAsync.vue')
 ))
 
 // 任何地方都可以使用
-// <template>
-//   <GlobalAsync />
-// </template>
+// `&lt;template&gt;`
+//   &lt;GlobalAsync /&gt;
+// `&lt;/template&gt;`
 ```
 
 ### 嵌套异步组件
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { defineAsyncComponent } from 'vue'
 
-const ParentAsync = defineAsyncComponent(() =>
+const ParentAsync = defineAsyncComponent(() =&gt;
   import('./ParentAsync.vue')
 )
 
 // ParentAsync.vue 内部也有异步组件
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Suspense>
-    <ParentAsync />
-    <template #fallback>
-      <div>加载父组件中...</div>
-    </template>
-  </Suspense>
-</template>
+`&lt;template&gt;`
+  &lt;Suspense&gt;
+    &lt;ParentAsync /&gt;
+    `&lt;template&gt;`
+      &lt;div&gt;加载父组件中...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ## 注意事项
 
 ### 1. 组件加载状态
 
-```javascript
+```text
 const AsyncComp = defineAsyncComponent({
-  loader: () => import('./MyComponent.vue'),
+  loader: () =&gt; import('./MyComponent.vue'),
   loadingComponent: LoadingSpinner,
   delay: 200 // 延迟 200ms 后显示 loading
 })
@@ -291,9 +291,9 @@ const AsyncComp = defineAsyncComponent({
 
 ### 2. 错误处理
 
-```javascript
+```text
 const AsyncComp = defineAsyncComponent({
-  loader: () => import('./MyComponent.vue'),
+  loader: () =&gt; import('./MyComponent.vue'),
   errorComponent: ErrorDisplay,
   timeout: 5000, // 5 秒超时
   onError(error, retry, fail) {
@@ -308,42 +308,42 @@ const AsyncComp = defineAsyncComponent({
 
 ### 3. 与 v-if 的配合
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, defineAsyncComponent } from 'vue'
 
 const show = ref(false)
-const AsyncComp = defineAsyncComponent(() =>
+const AsyncComp = defineAsyncComponent(() =&gt;
   import('./AsyncComp.vue')
 )
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <button @click="show = true">显示组件</button>
+`&lt;template&gt;`
+  &lt;button @click="show = true"&gt;显示组件&lt;/button&gt;
 
-  <!-- 只有在 show 为 true 时才会加载组件 -->
-  <AsyncComp v-if="show" />
-</template>
+  &lt;!-- 只有在 show 为 true 时才会加载组件 --&gt;
+  &lt;AsyncComp v-if="show" /&gt;
+`&lt;/template&gt;`
 ```
 
 ### 4. 避免重复加载
 
-```javascript
+```text
 // Vue 会缓存已加载的组件
-const AsyncComp = defineAsyncComponent(() => import('./MyComponent.vue'))
+const AsyncComp = defineAsyncComponent(() =&gt; import('./MyComponent.vue'))
 
 // 多次使用不会重复加载
-// <AsyncComp />
-// <AsyncComp />
-// <AsyncComp />
+// &lt;AsyncComp /&gt;
+// &lt;AsyncComp /&gt;
+// &lt;AsyncComp /&gt;
 ```
 
 ### 5. 服务端渲染 (SSR)
 
-```javascript
+```text
 // SSR 中需要特殊处理
 const AsyncComp = defineAsyncComponent({
-  loader: () => import('./MyComponent.vue'),
+  loader: () =&gt; import('./MyComponent.vue'),
   suspensible: false // 禁用 Suspense 支持
 })
 
@@ -353,90 +353,90 @@ if (import.meta.env.SSR) {
   const AsyncComp = defineComponent(MyComponent)
 } else {
   // 客户端：异步加载
-  const AsyncComp = defineAsyncComponent(() => import('./MyComponent.vue'))
+  const AsyncComp = defineAsyncComponent(() =&gt; import('./MyComponent.vue'))
 }
 ```
 
 ### 6. 与 Teleport 配合
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { defineAsyncComponent } from 'vue'
 
-const AsyncModal = defineAsyncComponent(() =>
+const AsyncModal = defineAsyncComponent(() =&gt;
   import('./AsyncModal.vue')
 )
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <Teleport to="body">
-    <Suspense>
-      <AsyncModal v-if="showModal" />
-      <template #fallback>
-        <div class="modal-backdrop">
-          <div class="modal-loading">加载中...</div>
-        </div>
-      </template>
-    </Suspense>
-  </Teleport>
-</template>
+`&lt;template&gt;`
+  &lt;Teleport to="body"&gt;
+    &lt;Suspense&gt;
+      &lt;AsyncModal v-if="showModal" /&gt;
+      `&lt;template&gt;`
+        &lt;div class="modal-backdrop"&gt;
+          &lt;div class="modal-loading"&gt;加载中...&lt;/div&gt;
+        &lt;/div&gt;
+      `&lt;/template&gt;`
+    &lt;/Suspense&gt;
+  &lt;/Teleport&gt;
+`&lt;/template&gt;`
 ```
 
 ## 使用场景
 
 ### 1. 条件加载的大型组件
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, defineAsyncComponent } from 'vue'
 
 const showChart = ref(false)
 
 const HeavyChart = defineAsyncComponent({
-  loader: () => import('./HeavyChart.vue'),
-  loadingComponent: () => h('div', 'Loading chart...'),
+  loader: () =&gt; import('./HeavyChart.vue'),
+  loadingComponent: () =&gt; h('div', 'Loading chart...'),
   delay: 300
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <button @click="showChart = !showChart">
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;button @click="showChart = !showChart"&gt;
       {{ showChart ? '隐藏' : '显示' }}图表
-    </button>
+    &lt;/button&gt;
 
-    <Suspense v-if="showChart">
-      <template #default>
-        <HeavyChart :data="chartData" />
-      </template>
-      <template #fallback>
-        <div class="chart-placeholder">
-          <span>图表加载中...</span>
-        </div>
-      </template>
-    </Suspense>
-  </div>
-</template>
+    &lt;Suspense v-if="showChart"&gt;
+      `&lt;template&gt;`
+        &lt;HeavyChart :data="chartData" /&gt;
+      `&lt;/template&gt;`
+      `&lt;template&gt;`
+        &lt;div class="chart-placeholder"&gt;
+          &lt;span&gt;图表加载中...&lt;/span&gt;
+        &lt;/div&gt;
+      `&lt;/template&gt;`
+    &lt;/Suspense&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 2. 代码分割和路由懒加载
 
-```javascript
+```text
 // router/index.js
 import { createRouter } from 'vue-router'
 
 const routes = [
   {
     path: '/',
-    component: () => import('@/views/Home.vue')
+    component: () =&gt; import('@/views/Home.vue')
   },
   {
     path: '/dashboard',
-    component: () => import('@/views/Dashboard.vue')
+    component: () =&gt; import('@/views/Dashboard.vue')
   },
   {
     path: '/settings',
-    component: () => import('@/views/Settings.vue')
+    component: () =&gt; import('@/views/Settings.vue')
   }
 ]
 
@@ -446,9 +446,9 @@ const routes = [
 
 ### 3. 功能模块按需加载
 
-```javascript
+```text
 // 根据用户权限加载不同的组件
-const AdminPanel = defineAsyncComponent(async () => {
+const AdminPanel = defineAsyncComponent(async () =&gt; {
   const { hasPermission } = await import('@/utils/permissions')
 
   if (hasPermission('admin')) {
@@ -461,14 +461,14 @@ const AdminPanel = defineAsyncComponent(async () => {
 
 ### 4. 图表库懒加载
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, defineAsyncComponent } from 'vue'
 
 const showChart = ref(false)
 
 const ChartLibrary = defineAsyncComponent({
-  loader: async () => {
+  loader: async () =&gt; {
     // 延迟加载图表库
     const module = await import('echarts')
     await import('echarts/lib/chart/bar')
@@ -477,68 +477,68 @@ const ChartLibrary = defineAsyncComponent({
   },
   delay: 500
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <button @click="showChart = true">显示图表</button>
+`&lt;template&gt;`
+  &lt;button @click="showChart = true"&gt;显示图表&lt;/button&gt;
 
-  <Suspense v-if="showChart">
-    <template #default>
-      <ChartLibrary :option="chartOption" />
-    </template>
-    <template #fallback>
-      <div>图表库加载中...</div>
-    </template>
-  </Suspense>
-</template>
+  &lt;Suspense v-if="showChart"&gt;
+    `&lt;template&gt;`
+      &lt;ChartLibrary :option="chartOption" /&gt;
+    `&lt;/template&gt;`
+    `&lt;template&gt;`
+      &lt;div&gt;图表库加载中...&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/Suspense&gt;
+`&lt;/template&gt;`
 ```
 
 ### 5. 编辑器组件懒加载
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, defineAsyncComponent } from 'vue'
 
 const isEditing = ref(false)
 
 const CodeEditor = defineAsyncComponent({
-  loader: () => import('@/components/CodeEditor.vue'),
-  loadingComponent: () => h('div', { class: 'editor-placeholder' }, '编辑器加载中...'),
+  loader: () =&gt; import('@/components/CodeEditor.vue'),
+  loadingComponent: () =&gt; h('div', { class: 'editor-placeholder' }, '编辑器加载中...'),
   delay: 200,
   timeout: 10000
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div>
-    <button @click="isEditing = !isEditing">
+`&lt;template&gt;`
+  &lt;div&gt;
+    &lt;button @click="isEditing = !isEditing"&gt;
       {{ isEditing ? '完成' : '编辑' }}
-    </button>
+    &lt;/button&gt;
 
-    <Suspense v-if="isEditing">
-      <template #default>
-        <CodeEditor v-model="code" />
-      </template>
-      <template #fallback>
-        <div class="editor-loading">
-          <span>编辑器加载中...</span>
-        </div>
-      </template>
-    </Suspense>
-  </div>
-</template>
+    &lt;Suspense v-if="isEditing"&gt;
+      `&lt;template&gt;`
+        &lt;CodeEditor v-model="code" /&gt;
+      `&lt;/template&gt;`
+      `&lt;template&gt;`
+        &lt;div class="editor-loading"&gt;
+          &lt;span&gt;编辑器加载中...&lt;/span&gt;
+        &lt;/div&gt;
+      `&lt;/template&gt;`
+    &lt;/Suspense&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 6. 地图组件懒加载
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, defineAsyncComponent } from 'vue'
 
 const showMap = ref(false)
 
 const MapComponent = defineAsyncComponent({
-  loader: async () => {
+  loader: async () =&gt; {
     // 动态导入地图库
     await import('leaflet/dist/leaflet.css')
     return import('@/components/MapComponent.vue')
@@ -547,24 +547,24 @@ const MapComponent = defineAsyncComponent({
   onError(error, retry, fail) {
     if (error.message.includes('network')) {
       console.log('网络错误，重试中...')
-      setTimeout(() => retry(), 2000)
+      setTimeout(() =&gt; retry(), 2000)
     } else {
       fail()
     }
   }
 })
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 7. 第三方组件库按需加载
 
-```javascript
+```text
 // 只在需要时加载特定的组件
-const DatePicker = defineAsyncComponent(() =>
+const DatePicker = defineAsyncComponent(() =&gt;
   import('element-plus/lib/date-picker')
 )
 
-const Upload = defineAsyncComponent(() =>
+const Upload = defineAsyncComponent(() =&gt;
   import('element-plus/lib/upload')
 )
 
@@ -574,48 +574,48 @@ const Upload = defineAsyncComponent(() =>
 
 ### 8. 虚拟滚动组件懒加载
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { ref, defineAsyncComponent, computed } from 'vue'
 
 const items = ref([])
 
 const VirtualScroller = defineAsyncComponent({
-  loader: () => import('vue-virtual-scroller/src/VirtualScroller.vue'),
+  loader: () =&gt; import('vue-virtual-scroller/src/VirtualScroller.vue'),
   delay: 200
 })
 
 // 只有在列表很长时才加载虚拟滚动组件
-const useVirtualScroll = computed(() => items.value.length > 100)
-</script>
+const useVirtualScroll = computed(() =&gt; items.value.length &gt; 100)
+`&lt;/script&gt;`
 
-<template>
-  <VirtualScroller v-if="useVirtualScroll" :items="items">
-    <template #default="{ item }">
-      <div>{{ item.name }}</div>
-    </template>
-  </VirtualScroller>
+`&lt;template&gt;`
+  &lt;VirtualScroller v-if="useVirtualScroll" :items="items"&gt;
+    `&lt;template&gt;`
+      &lt;div&gt;{{ item.name }}&lt;/div&gt;
+    `&lt;/template&gt;`
+  &lt;/VirtualScroller&gt;
 
-  <div v-else>
-    <div v-for="item in items" :key="item.id">
+  &lt;div v-else&gt;
+    &lt;div v-for="item in items" :key="item.id"&gt;
       {{ item.name }}
-    </div>
-  </div>
-</template>
+    &lt;/div&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 9. 带重试机制的组件加载
 
-```javascript
+```text
 const AsyncComponent = defineAsyncComponent({
-  loader: () => import('./Component.vue'),
+  loader: () =&gt; import('./Component.vue'),
   onError(error, retry, fail) {
     if (error.message.match(/fetch/)) {
       // 处理 fetch 错误，重试
       retry()
     } else if (error.message.match(/timeout/)) {
       // 超时错误，延迟后重试
-      setTimeout(() => retry(), 2000)
+      setTimeout(() =&gt; retry(), 2000)
     } else {
       // 其他错误，直接失败
       fail()
@@ -626,14 +626,14 @@ const AsyncComponent = defineAsyncComponent({
 
 ### 10. 预加载组件
 
-```javascript
+```text
 // 鼠标悬停时预加载
-const preloadComponent = () => {
+const preloadComponent = () =&gt; {
   import('./HeavyComponent.vue')
 }
 
 // 或在路由导航时预加载
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from, next) =&gt; {
   if (to.path === '/dashboard') {
     // 预加载 dashboard 组件
     import('@/views/Dashboard.vue')
@@ -646,7 +646,7 @@ router.beforeEach((to, from, next) => {
 
 | 选项 | 类型 | 默认值 | 说明 |
 |-----|------|--------|------|
-| loader | () => Promise<Component> | - | 返回组件的函数 |
+| loader | () => Promise&lt;Component> | - | 返回组件的函数 |
 | loadingComponent | Component | - | 加载中显示的组件 |
 | errorComponent | Component | - | 加载失败显示的组件 |
 | delay | number | 200 | 延迟显示 loading 的时间 |

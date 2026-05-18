@@ -7,9 +7,9 @@
 
 ### 基本用法
 
-```vue
-<!-- 祖先组件 -->
-<script setup>
+```text
+&lt;!-- 祖先组件 --&gt;
+`&lt;script setup&gt;`
 import { provide, ref } from 'vue'
 
 const message = ref('Hello from ancestor')
@@ -21,16 +21,16 @@ provide('message', message)
 provide('config', { theme: 'dark' })
 
 // 提供方法
-provide('updateMessage', (newMsg) => {
+provide('updateMessage', (newMsg) =&gt; {
   message.value = newMsg
 })
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 提供响应式数据
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { provide, ref, reactive } from 'vue'
 
 // 使用 ref
@@ -48,48 +48,48 @@ provide('user', user)
 import { readonly } from 'vue'
 const config = reactive({ theme: 'dark' })
 provide('config', readonly(config))
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 提供计算属性
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { provide, computed, ref } from 'vue'
 
 const count = ref(0)
-const double = computed(() => count.value * 2)
+const double = computed(() =&gt; count.value * 2)
 
 provide('double', double)
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 提供方法/函数
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { provide, ref } from 'vue'
 
 const isVisible = ref(true)
 
-provide('toggle', () => {
+provide('toggle', () =&gt; {
   isVisible.value = !isVisible.value
 })
 
-provide('show', () => {
+provide('show', () =&gt; {
   isVisible.value = true
 })
 
-provide('hide', () => {
+provide('hide', () =&gt; {
   isVisible.value = false
 })
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 提供 Symbol key
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { provide } from 'vue'
 
 // 使用 Symbol 避免命名冲突
@@ -101,12 +101,12 @@ provide(LocaleKey, 'zh-CN')
 
 // 可以导出 key 供后代组件使用
 export { ThemeKey, LocaleKey }
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 在 setup 函数中使用
 
-```javascript
+```text
 import { provide } from 'vue'
 
 export default {
@@ -122,7 +122,7 @@ export default {
 
 ### 在选项式 API 中使用
 
-```javascript
+```text
 export default {
   data() {
     return {
@@ -135,7 +135,7 @@ export default {
       message: this.message,
 
       // 提供方法
-      updateMessage: (newMsg) => {
+      updateMessage: (newMsg) =&gt; {
         this.message = newMsg
       }
     }
@@ -145,8 +145,8 @@ export default {
 
 ### TypeScript 支持
 
-```vue
-<script setup lang="ts">
+```text
+&lt;script setup lang="ts"&gt;
 import { provide, ref } from 'vue'
 
 interface User {
@@ -154,25 +154,25 @@ interface User {
   age: number
 }
 
-const user = ref<User>({
+const user = ref&lt;User&gt;({
   name: 'Vue',
   age: 3
 })
 
 // 使用类型断言
-provide<User>('user', user.value)
+provide&lt;User&gt;('user', user.value)
 
 // 使用 Symbol 作为 key
 const UserKey = Symbol('user')
 provide(UserKey, user)
 
 export { UserKey }
-</script>
+`&lt;/script&gt;`
 ```
 
 ### 应用级别的 provide
 
-```javascript
+```text
 import { createApp } from 'vue'
 import App from './App.vue'
 
@@ -189,18 +189,18 @@ app.mount('#app')
 
 ### 创建可组合的 provide 函数
 
-```javascript
+```text
 // useTheme.js
 import { provide, ref, readonly } from 'vue'
 
 export function provideTheme() {
   const theme = ref('light')
 
-  const setTheme = (newTheme) => {
+  const setTheme = (newTheme) =&gt; {
     theme.value = newTheme
   }
 
-  const toggleTheme = () => {
+  const toggleTheme = () =&gt; {
     theme.value = theme.value === 'light' ? 'dark' : 'light'
   }
 
@@ -228,8 +228,8 @@ export default {
 
 ### 提供多个相关值
 
-```vue
-<script setup>
+```text
+`&lt;script setup&gt;`
 import { provide, ref, reactive } from 'vue'
 
 // 方式1: 分别提供
@@ -248,14 +248,14 @@ const auth = reactive({
 })
 
 provide('auth', auth)
-</script>
+`&lt;/script&gt;`
 ```
 
 ## 注意事项
 
 ### 1. 默认不是响应式的
 
-```javascript
+```text
 // ❌ 错误：普通值不是响应式的
 provide('message', 'Hello') // 不是响应式
 
@@ -266,7 +266,7 @@ provide('message', message)
 
 ### 2. 响应式链接
 
-```javascript
+```text
 const original = ref('Hello')
 
 // 提供响应式数据
@@ -278,7 +278,7 @@ original.value = 'World' // 所有使用该值的地方都会更新
 
 ### 3. 避免命名冲突
 
-```javascript
+```text
 // ⚠️ 可能冲突
 provide('data', someData) // 祖先组件A
 provide('data', otherData) // 祖先组件B - 会覆盖
@@ -293,7 +293,7 @@ provide(DataKeyB, otherData)
 
 ### 4. 提供的数据可被修改
 
-```javascript
+```text
 const user = ref({ name: 'Vue' })
 
 provide('user', user)
@@ -308,7 +308,7 @@ provide('user', readonly(user))
 
 ### 5. 与 props 的区别
 
-```javascript
+```text
 // props: 父子组件通信
 const props = defineProps(['data']) // 父组件通过 props 传递
 
@@ -318,7 +318,7 @@ provide('data', data) // 任何后代组件都可以注入
 
 ### 6. 组件卸载时的处理
 
-```javascript
+```text
 // ⚠️ 组件卸载后，provide 的值不再可用
 const timer = ref(null)
 
@@ -326,14 +326,14 @@ provide('timer', timer)
 
 // 组件卸载时，注入的组件仍然可能持有引用
 // 需要手动清理
-onUnmounted(() => {
+onUnmounted(() =&gt; {
   timer.value = null
 })
 ```
 
 ### 7. 与应用级 provide 的优先级
 
-```javascript
+```text
 // 应用级
 app.provide('config', { theme: 'light' })
 
@@ -345,7 +345,7 @@ provide('config', { theme: 'dark' })
 
 ### 8. provide 的值不是响应式代理
 
-```javascript
+```text
 const obj = { count: 0 }
 
 // ❌ 不是响应式的
@@ -360,14 +360,14 @@ provide('state', state)
 
 ### 1. 主题系统
 
-```vue
-<!-- ThemeProvider.vue -->
-<script setup>
+```text
+&lt;!-- ThemeProvider.vue --&gt;
+`&lt;script setup&gt;`
 import { provide, ref, computed } from 'vue'
 
 const theme = ref('light')
 
-const themeConfig = computed(() => ({
+const themeConfig = computed(() =&gt; ({
   isDark: theme.value === 'dark',
   colors: theme.value === 'dark' ? {
     background: '#333',
@@ -380,21 +380,21 @@ const themeConfig = computed(() => ({
 
 provide('theme', theme)
 provide('themeConfig', themeConfig)
-provide('setTheme', (newTheme) => {
+provide('setTheme', (newTheme) =&gt; {
   theme.value = newTheme
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <slot />
-</template>
+`&lt;template&gt;`
+  &lt;slot /&gt;
+`&lt;/template&gt;`
 ```
 
 ### 2. 用户认证
 
-```vue
-<!-- AuthProvider.vue -->
-<script setup>
+```text
+&lt;!-- AuthProvider.vue --&gt;
+`&lt;script setup&gt;`
 import { provide, ref, computed } from 'vue'
 import { auth } from './firebase'
 
@@ -404,7 +404,7 @@ const isLoading = ref(false)
 provide('user', user)
 provide('isLoading', isLoading)
 
-provide('login', async (email, password) => {
+provide('login', async (email, password) =&gt; {
   isLoading.value = true
   try {
     const result = await auth.signInWithEmailAndPassword(email, password)
@@ -414,24 +414,24 @@ provide('login', async (email, password) => {
   }
 })
 
-provide('logout', async () => {
+provide('logout', async () =&gt; {
   await auth.signOut()
   user.value = null
 })
 
-provide('isAuthenticated', computed(() => !!user.value))
-</script>
+provide('isAuthenticated', computed(() =&gt; !!user.value))
+`&lt;/script&gt;`
 
-<template>
-  <slot />
-</template>
+`&lt;template&gt;`
+  &lt;slot /&gt;
+`&lt;/template&gt;`
 ```
 
 ### 3. 国际化 (i18n)
 
-```vue
-<!-- I18nProvider.vue -->
-<script setup>
+```text
+&lt;!-- I18nProvider.vue --&gt;
+`&lt;script setup&gt;`
 import { provide, ref, computed } from 'vue'
 
 const locale = ref('zh-CN')
@@ -447,27 +447,27 @@ const messages = {
   }
 }
 
-const t = computed(() => (key) => {
+const t = computed(() =&gt; (key) =&gt; {
   return messages[locale.value][key] || key
 })
 
 provide('locale', locale)
 provide('t', t)
-provide('setLocale', (newLocale) => {
+provide('setLocale', (newLocale) =&gt; {
   locale.value = newLocale
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <slot />
-</template>
+`&lt;template&gt;`
+  &lt;slot /&gt;
+`&lt;/template&gt;`
 ```
 
 ### 4. 表单验证上下文
 
-```vue
-<!-- FormProvider.vue -->
-<script setup>
+```text
+&lt;!-- FormProvider.vue --&gt;
+`&lt;script setup&gt;`
 import { provide, reactive } from 'vue'
 
 const formState = reactive({
@@ -478,38 +478,38 @@ const formState = reactive({
 
 provide('formState', formState)
 
-provide('registerField', (name, initialValue) => {
+provide('registerField', (name, initialValue) =&gt; {
   formState.values[name] = initialValue
 })
 
-provide('setFieldValue', (name, value) => {
+provide('setFieldValue', (name, value) =&gt; {
   formState.values[name] = value
   validateField(name)
 })
 
-provide('setFieldError', (name, error) => {
+provide('setFieldError', (name, error) =&gt; {
   formState.errors[name] = error
 })
 
-provide('validateField', (name) => {
+provide('validateField', (name) =&gt; {
   // 验证逻辑
 })
 
-provide('validate', () => {
+provide('validate', () =&gt; {
   // 验证所有字段
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <slot />
-</template>
+`&lt;template&gt;`
+  &lt;slot /&gt;
+`&lt;/template&gt;`
 ```
 
 ### 5. 路由/导航上下文
 
-```vue
-<!-- RouterProvider.vue -->
-<script setup>
+```text
+&lt;!-- RouterProvider.vue --&gt;
+`&lt;script setup&gt;`
 import { provide, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -518,12 +518,12 @@ const routeHistory = ref([])
 
 provide('router', router)
 
-provide('navigate', (to) => {
+provide('navigate', (to) =&gt; {
   routeHistory.value.push(router.currentRoute.value)
   router.push(to)
 })
 
-provide('goBack', () => {
+provide('goBack', () =&gt; {
   const previous = routeHistory.value.pop()
   if (previous) {
     router.push(previous)
@@ -531,32 +531,32 @@ provide('goBack', () => {
     router.back()
   }
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <slot />
-</template>
+`&lt;template&gt;`
+  &lt;slot /&gt;
+`&lt;/template&gt;`
 ```
 
 ### 6. 模态框管理
 
-```vue
-<!-- ModalProvider.vue -->
-<script setup>
+```text
+&lt;!-- ModalProvider.vue --&gt;
+`&lt;script setup&gt;`
 import { provide, ref } from 'vue'
 
 const activeModal = ref(null)
 const modalStack = ref([])
 
-provide('openModal', (modalId, props = {}) => {
+provide('openModal', (modalId, props = {}) =&gt; {
   if (activeModal.value) {
     modalStack.value.push(activeModal.value)
   }
   activeModal.value = { id: modalId, props }
 })
 
-provide('closeModal', () => {
-  if (modalStack.value.length > 0) {
+provide('closeModal', () =&gt; {
+  if (modalStack.value.length &gt; 0) {
     activeModal.value = modalStack.value.pop()
   } else {
     activeModal.value = null
@@ -564,31 +564,31 @@ provide('closeModal', () => {
 })
 
 provide('activeModal', activeModal)
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <slot />
-  <component
+`&lt;template&gt;`
+  &lt;slot /&gt;
+  &lt;component
     v-if="activeModal"
     :is="activeModal.id"
     v-bind="activeModal.props"
     @close="closeModal"
-  />
-</template>
+  /&gt;
+`&lt;/template&gt;`
 ```
 
 ### 7. Toast 通知系统
 
-```vue
-<!-- ToastProvider.vue -->
-<script setup>
+```text
+&lt;!-- ToastProvider.vue --&gt;
+`&lt;script setup&gt;`
 import { provide, ref } from 'vue'
 
 const toasts = ref([])
 
 let id = 0
 
-provide('showToast', (message, options = {}) => {
+provide('showToast', (message, options = {}) =&gt; {
   const toast = {
     id: id++,
     message,
@@ -598,8 +598,8 @@ provide('showToast', (message, options = {}) => {
 
   toasts.value.push(toast)
 
-  if (toast.duration > 0) {
-    setTimeout(() => {
+  if (toast.duration &gt; 0) {
+    setTimeout(() =&gt; {
       removeToast(toast.id)
     }, toast.duration)
   }
@@ -608,34 +608,34 @@ provide('showToast', (message, options = {}) => {
 provide('removeToast', removeToast)
 
 function removeToast(id) {
-  const index = toasts.value.findIndex(t => t.id === id)
-  if (index > -1) {
+  const index = toasts.value.findIndex(t =&gt; t.id === id)
+  if (index &gt; -1) {
     toasts.value.splice(index, 1)
   }
 }
 
 provide('toasts', toasts)
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <slot />
-  <div class="toast-container">
-    <div
+`&lt;template&gt;`
+  &lt;slot /&gt;
+  &lt;div class="toast-container"&gt;
+    &lt;div
       v-for="toast in toasts"
       :key="toast.id"
       :class="['toast', toast.type]"
-    >
+    &gt;
       {{ toast.message }}
-    </div>
-  </div>
-</template>
+    &lt;/div&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ### 8. 数据库/API 上下文
 
-```vue
-<!-- ApiProvider.vue -->
-<script setup>
+```text
+&lt;!-- ApiProvider.vue --&gt;
+`&lt;script setup&gt;`
 import { provide } from 'vue'
 import axios from 'axios'
 
@@ -646,21 +646,21 @@ const api = axios.create({
 provide('api', api)
 
 // 提供便捷方法
-provide('fetchUser', (id) => api.get(`/users/${id}`))
-provide('fetchPosts', () => api.get('/posts'))
-provide('createPost', (data) => api.post('/posts', data))
-</script>
+provide('fetchUser', (id) =&gt; api.get(`/users/${id}`))
+provide('fetchPosts', () =&gt; api.get('/posts'))
+provide('createPost', (data) =&gt; api.post('/posts', data))
+`&lt;/script&gt;`
 
-<template>
-  <slot />
-</template>
+`&lt;template&gt;`
+  &lt;slot /&gt;
+`&lt;/template&gt;`
 ```
 
 ### 9. 全局配置
 
-```vue
-<!-- ConfigProvider.vue -->
-<script setup>
+```text
+&lt;!-- ConfigProvider.vue --&gt;
+`&lt;script setup&gt;`
 import { provide, reactive } from 'vue'
 
 const config = reactive({
@@ -674,18 +674,18 @@ const config = reactive({
 })
 
 provide('config', config)
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <slot />
-</template>
+`&lt;template&gt;`
+  &lt;slot /&gt;
+`&lt;/template&gt;`
 ```
 
 ### 10. 布局上下文
 
-```vue
-<!-- LayoutProvider.vue -->
-<script setup>
+```text
+&lt;!-- LayoutProvider.vue --&gt;
+`&lt;script setup&gt;`
 import { provide, ref } from 'vue'
 
 const sidebarOpen = ref(true)
@@ -696,20 +696,20 @@ provide('sidebarState', {
   collapsed: sidebarCollapsed
 })
 
-provide('toggleSidebar', () => {
+provide('toggleSidebar', () =&gt; {
   sidebarOpen.value = !sidebarOpen.value
 })
 
-provide('collapseSidebar', () => {
+provide('collapseSidebar', () =&gt; {
   sidebarCollapsed.value = !sidebarCollapsed.value
 })
-</script>
+`&lt;/script&gt;`
 
-<template>
-  <div class="layout" :class="{ 'sidebar-closed': !sidebarOpen }">
-    <slot />
-  </div>
-</template>
+`&lt;template&gt;`
+  &lt;div class="layout" :class="{ 'sidebar-closed': !sidebarOpen }"&gt;
+    &lt;slot /&gt;
+  &lt;/div&gt;
+`&lt;/template&gt;`
 ```
 
 ## 最佳实践

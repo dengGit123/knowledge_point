@@ -7,7 +7,7 @@
 
 ### 基本用法
 
-```javascript
+```text
 import { h } from 'vue'
 
 export default {
@@ -19,14 +19,14 @@ export default {
 // 或者
 export default {
   setup() {
-    return () => h('div', 'Hello World')
+    return () =&gt; h('div', 'Hello World')
   }
 }
 ```
 
 ### 创建带有属性的元素
 
-```javascript
+```text
 import { h } from 'vue'
 
 export default {
@@ -34,7 +34,7 @@ export default {
     return h('div', {
       class: 'container',
       id: 'app',
-      onClick: () => console.log('clicked')
+      onClick: () =&gt; console.log('clicked')
     }, 'Content')
   }
 }
@@ -42,15 +42,15 @@ export default {
 
 ### 创建带有子元素的元素
 
-```javascript
+```text
 import { h } from 'vue'
 
 export default {
   setup() {
-    return () => h('div', { class: 'container' }, [
+    return () =&gt; h('div', { class: 'container' }, [
       h('h1', 'Title'),
       h('p', 'Paragraph'),
-      h('button', { onClick: () => console.log('clicked') }, 'Click')
+      h('button', { onClick: () =&gt; console.log('clicked') }, 'Click')
     ])
   }
 }
@@ -58,13 +58,13 @@ export default {
 
 ### 创建组件
 
-```javascript
+```text
 import { h } from 'vue'
 import MyComponent from './MyComponent.vue'
 
 export default {
   setup() {
-    return () => h(MyComponent, {
+    return () =&gt; h(MyComponent, {
       message: 'Hello',
       count: 0
     })
@@ -74,12 +74,12 @@ export default {
 
 ### VNode 数据对象
 
-```javascript
+```text
 import { h } from 'vue'
 
 export default {
   setup() {
-    return () => h('div', {
+    return () =&gt; h('div', {
       // 属性
       id: 'unique-id',
       class: ['static-class', { 'dynamic-class': true }],
@@ -89,8 +89,8 @@ export default {
       customProp: 'value',
 
       // 事件
-      onClick: (event) => console.log('clicked', event),
-      onKeyup: (event) => console.log('key up', event.key),
+      onClick: (event) =&gt; console.log('clicked', event),
+      onKeyup: (event) =&gt; console.log('key up', event.key),
 
       // 特殊属性
       key: 'unique-key',
@@ -102,12 +102,12 @@ export default {
 
 ### 插槽处理
 
-```javascript
+```text
 import { h } from 'vue'
 
 export default {
   setup(props, { slots }) {
-    return () => h('div', [
+    return () =&gt; h('div', [
       // 默认插槽
       slots.default ? slots.default() : 'Default content',
 
@@ -123,13 +123,13 @@ export default {
 
 ### 函数式组件
 
-```javascript
+```text
 import { h } from 'vue'
 
-const FunctionalComponent = (props, { slots, emit, attrs }) => {
+const FunctionalComponent = (props, { slots, emit, attrs }) =&gt; {
   return h('div', {
     ...attrs,
-    onClick: () => emit('click')
+    onClick: () =&gt; emit('click')
   }, slots.default ? slots.default() : 'Content')
 }
 
@@ -142,22 +142,22 @@ FunctionalComponent.emits = ['click']
 
 ### 动态组件
 
-```javascript
+```text
 import { h, ref } from 'vue'
 
 const components = {
-  home: () => h('div', 'Home'),
-  about: () => h('div', 'About'),
-  contact: () => h('div', 'Contact')
+  home: () =&gt; h('div', 'Home'),
+  about: () =&gt; h('div', 'About'),
+  contact: () =&gt; h('div', 'Contact')
 }
 
 export default {
   setup() {
     const currentView = ref('home')
 
-    return () => h('div', [
-      h('button', { onClick: () => currentView.value = 'home' }, 'Home'),
-      h('button', { onClick: () => currentView.value = 'about' }, 'About'),
+    return () =&gt; h('div', [
+      h('button', { onClick: () =&gt; currentView.value = 'home' }, 'Home'),
+      h('button', { onClick: () =&gt; currentView.value = 'about' }, 'About'),
       h(components[currentView.value])
     ])
   }
@@ -166,12 +166,12 @@ export default {
 
 ### Fragment（多个根节点）
 
-```javascript
+```text
 import { h, Fragment } from 'vue'
 
 export default {
   setup() {
-    return () => h(Fragment, [
+    return () =&gt; h(Fragment, [
       h('h1', 'Title'),
       h('p', 'Paragraph')
     ])
@@ -181,14 +181,14 @@ export default {
 
 ### Comment（注释节点）
 
-```javascript
+```text
 import { h, Comment } from 'vue'
 
 export default {
   setup() {
     const showComment = true
 
-    return () => showComment
+    return () =&gt; showComment
       ? h(Comment, 'This is a comment')
       : h('div', 'Content')
   }
@@ -197,12 +197,12 @@ export default {
 
 ### Text（文本节点）
 
-```javascript
+```text
 import { h, Text } from 'vue'
 
 export default {
   setup() {
-    return () => h('div', [
+    return () =&gt; h('div', [
       h('p', 'Text content'),
       h(Text, 'Plain text node')
     ])
@@ -212,12 +212,12 @@ export default {
 
 ### teleport
 
-```javascript
+```text
 import { h, Teleport } from 'vue'
 
 export default {
   setup() {
-    return () => h(Teleport, { to: 'body' }, [
+    return () =&gt; h(Teleport, { to: 'body' }, [
       h('div', { class: 'modal' }, 'Modal content')
     ])
   }
@@ -226,14 +226,14 @@ export default {
 
 ### Suspense
 
-```javascript
+```text
 import { h, Suspense } from 'vue'
 
 export default {
   setup() {
-    return () => h(Suspense, {}, {
-      default: () => h(AsyncComponent),
-      fallback: () => h('div', 'Loading...')
+    return () =&gt; h(Suspense, {}, {
+      default: () =&gt; h(AsyncComponent),
+      fallback: () =&gt; h('div', 'Loading...')
     })
   }
 }
@@ -241,16 +241,16 @@ export default {
 
 ### Transition
 
-```javascript
+```text
 import { h, Transition } from 'vue'
 
 export default {
   setup() {
     const show = ref(true)
 
-    return () => h('div', [
-      h('button', { onClick: () => show.value = !show.value }, 'Toggle'),
-      h(Transition, { name: 'fade' }, () =>
+    return () =&gt; h('div', [
+      h('button', { onClick: () =&gt; show.value = !show.value }, 'Toggle'),
+      h(Transition, { name: 'fade' }, () =&gt;
         show.value ? h('div', 'Content') : null
       )
     ])
@@ -262,7 +262,7 @@ export default {
 
 ### 1. 第二个参数规范
 
-```javascript
+```text
 import { h } from 'vue'
 
 // ✅ 正确：第二个参数是对象或数组
@@ -275,7 +275,7 @@ h('div', 'Content') // 这里的 'Content' 是子内容，不是属性
 
 ### 2. class 和 style 的处理
 
-```javascript
+```text
 import { h } from 'vue'
 
 // class 可以是字符串、数组、对象
@@ -290,24 +290,24 @@ h('div', { style: [{ color: 'red' }, { fontSize: '14px' }] })
 
 ### 3. 事件命名规范
 
-```javascript
+```text
 import { h } from 'vue'
 
 // ✅ 使用 camelCase
 h('button', {
-  onClick: () => console.log('clicked'),
-  onKeyup: (e) => console.log(e.key)
+  onClick: () =&gt; console.log('clicked'),
+  onKeyup: (e) =&gt; console.log(e.key)
 })
 
 // ✅ 也支持 kebab-case
 h('button', {
-  'click': () => console.log('clicked')
+  'click': () =&gt; console.log('clicked')
 })
 ```
 
 ### 4. Props 传递
 
-```javascript
+```text
 import { h } from 'vue'
 import MyComponent from './MyComponent.vue'
 
@@ -327,7 +327,7 @@ h(MyComponent, {
 
 ### 5. 插槽与 children 的优先级
 
-```javascript
+```text
 import { h } from 'vue'
 
 // 当第三个参数是对象时，作为 props
@@ -346,7 +346,7 @@ h('ul', null, [
 
 ### 6. 组件与元素的区别
 
-```javascript
+```text
 import { h } from 'vue'
 import Component from './Component.vue'
 
@@ -359,7 +359,7 @@ h('div', { id: 'app' })
 
 ### 7. 指令不能使用
 
-```javascript
+```text
 import { h } from 'vue'
 
 // ❌ 渲染函数中不能使用指令
@@ -372,7 +372,7 @@ show ? h('div', 'Content') : null
 
 ### 8. ref 的处理
 
-```javascript
+```text
 import { h, ref } from 'vue'
 
 const elementRef = ref(null)
@@ -382,7 +382,7 @@ h('div', { ref: 'myRef' })
 
 // 函数形式的 ref（组合式 API）
 h('div', {
-  ref: (el) => {
+  ref: (el) =&gt; {
     elementRef.value = el
   }
 })
@@ -390,7 +390,7 @@ h('div', {
 
 ### 9. key 的使用
 
-```javascript
+```text
 import { h } from 'vue'
 
 const items = [
@@ -399,21 +399,21 @@ const items = [
 ]
 
 // 列表渲染时需要 key
-h('ul', null, items.map(item =>
+h('ul', null, items.map(item =&gt;
   h('li', { key: item.id }, item.name)
 ))
 ```
 
 ### 10. TypeScript 类型
 
-```typescript
+```text
 import { h, type VNode, type FunctionalComponent } from 'vue'
 
 // 定义 VNode 类型
 const vnode: VNode = h('div', 'Content')
 
 // 函数式组件类型
-const MyComponent: FunctionalComponent<{ message: string }> = (props) => {
+const MyComponent: FunctionalComponent&lt;{ message: string }&gt; = (props) =&gt; {
   return h('div', props.message)
 }
 ```
@@ -422,17 +422,17 @@ const MyComponent: FunctionalComponent<{ message: string }> = (props) => {
 
 ### 1. JSX 转换
 
-```javascript
+```text
 // JSX
-const App = () => (
-  <div class="container">
-    <h1>Title</h1>
-    <p>Content</p>
-  </div>
+const App = () =&gt; (
+  &lt;div class="container"&gt;
+    &lt;h1&gt;Title&lt;/h1&gt;
+    &lt;p&gt;Content&lt;/p&gt;
+  &lt;/div&gt;
 )
 
 // 等价的 h 函数
-const App = () => h('div', { class: 'container' }, [
+const App = () =&gt; h('div', { class: 'container' }, [
   h('h1', 'Title'),
   h('p', 'Content')
 ])
@@ -440,23 +440,23 @@ const App = () => h('div', { class: 'container' }, [
 
 ### 2. 动态标签名
 
-```javascript
+```text
 import { h } from 'vue'
 
 const tag = 'button'
 const label = 'Click me'
 
 // 动态创建元素
-h(tag, { onClick: () => console.log('clicked') }, label)
+h(tag, { onClick: () =&gt; console.log('clicked') }, label)
 ```
 
 ### 3. 包装组件
 
-```javascript
+```text
 import { h } from 'vue'
 import OriginalButton from './Button.vue'
 
-const WrappedButton = (props, { slots }) => {
+const WrappedButton = (props, { slots }) =&gt; {
   return h('div', { class: 'wrapper' }, [
     h(OriginalButton, props, slots)
   ])
@@ -465,11 +465,11 @@ const WrappedButton = (props, { slots }) => {
 
 ### 4. 高阶组件
 
-```javascript
+```text
 import { h } from 'vue'
 
 function withLoading(WrappedComponent) {
-  return (props, { slots }) => {
+  return (props, { slots }) =&gt; {
     if (props.loading) {
       return h('div', 'Loading...')
     }
@@ -482,7 +482,7 @@ const LoadingComponent = withLoading(MyComponent)
 
 ### 5. 列表渲染
 
-```javascript
+```text
 import { h } from 'vue'
 
 const items = [
@@ -492,7 +492,7 @@ const items = [
 
 export default {
   setup() {
-    return () => h('ul', null, items.map(item =>
+    return () =&gt; h('ul', null, items.map(item =&gt;
       h('li', { key: item.id }, item.name)
     ))
   }
@@ -501,7 +501,7 @@ export default {
 
 ### 6. 条件渲染
 
-```javascript
+```text
 import { h, ref } from 'vue'
 
 export default {
@@ -509,7 +509,7 @@ export default {
     const show = ref(true)
     const error = ref(null)
 
-    return () => {
+    return () =&gt; {
       if (error.value) {
         return h('div', { class: 'error' }, error.value.message)
       }
@@ -526,17 +526,17 @@ export default {
 
 ### 7. 插槽传递
 
-```javascript
+```text
 import { h } from 'vue'
 
 export default {
   setup(props, { slots }) {
-    return () => h('div', [
+    return () =&gt; h('div', [
       // 传递插槽给子组件
       h(ChildComponent, null, {
         default: slots.default,
         header: slots.header,
-        footer: () => h('div', 'Default Footer')
+        footer: () =&gt; h('div', 'Default Footer')
       })
     ])
   }
@@ -545,18 +545,18 @@ export default {
 
 ### 8. 响应式数据渲染
 
-```javascript
+```text
 import { h, ref, computed } from 'vue'
 
 export default {
   setup() {
     const count = ref(0)
-    const doubled = computed(() => count.value * 2)
+    const doubled = computed(() =&gt; count.value * 2)
 
-    return () => h('div', [
+    return () =&gt; h('div', [
       h('p', `Count: ${count.value}`),
       h('p', `Doubled: ${doubled.value}`),
-      h('button', { onClick: () => count.value++ }, 'Increment')
+      h('button', { onClick: () =&gt; count.value++ }, 'Increment')
     ])
   }
 }
@@ -564,7 +564,7 @@ export default {
 
 ### 9. 可复用的渲染函数
 
-```javascript
+```text
 import { h } from 'vue'
 
 function createButton(label, onClick, variant = 'primary') {
@@ -576,9 +576,9 @@ function createButton(label, onClick, variant = 'primary') {
 
 export default {
   setup() {
-    return () => h('div', [
-      createButton('Primary', () => console.log('primary'), 'primary'),
-      createButton('Secondary', () => console.log('secondary'), 'secondary')
+    return () =&gt; h('div', [
+      createButton('Primary', () =&gt; console.log('primary'), 'primary'),
+      createButton('Secondary', () =&gt; console.log('secondary'), 'secondary')
     ])
   }
 }
@@ -586,7 +586,7 @@ export default {
 
 ### 10. 表单元素
 
-```javascript
+```text
 import { h, ref } from 'vue'
 
 export default {
@@ -596,17 +596,17 @@ export default {
       password: ''
     })
 
-    return () => h('form', { onSubmit: (e) => e.preventDefault() }, [
+    return () =&gt; h('form', { onSubmit: (e) =&gt; e.preventDefault() }, [
       h('input', {
         type: 'text',
         value: form.value.username,
-        onInput: (e) => form.value.username = e.target.value,
+        onInput: (e) =&gt; form.value.username = e.target.value,
         placeholder: 'Username'
       }),
       h('input', {
         type: 'password',
         value: form.value.password,
-        onInput: (e) => form.value.password = e.target.value,
+        onInput: (e) =&gt; form.value.password = e.target.value,
         placeholder: 'Password'
       }),
       h('button', { type: 'submit' }, 'Submit')
@@ -617,7 +617,7 @@ export default {
 
 ## h 函数签名
 
-```typescript
+```text
 // 1. 标签 + 子内容
 h('div', 'Content')
 
@@ -629,8 +629,8 @@ h(Component, { message: 'Hello' })
 
 // 4. 组件 + props + 插槽
 h(Component, { message: 'Hello' }, {
-  default: () => 'Default slot',
-  header: () => 'Header'
+  default: () =&gt; 'Default slot',
+  header: () =&gt; 'Header'
 })
 ```
 
