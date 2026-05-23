@@ -1,5 +1,434 @@
 # Markdown 语法详解
 
+## 0. Frontmatter（元数据）
+
+Frontmatter 是 Markdown 文件顶部的 YAML 或 JSON 元数据区域，用于存储文档的配置信息、属性等。它由三根短横线 `---` 包裹，位于文件最开头（必须在任何正文内容之前）。
+
+### 0.1 用法说明
+
+#### 标准格式规范
+
+Frontmatter 必须位于文件首行，使用 `---` 作为分隔符：
+
+```yaml
+---
+title: 文档标题
+date: 2024-01-01
+---
+
+# 正文内容从这里开始
+```
+
+#### YAML 格式（最常用）
+
+```yaml
+---
+# 字符串类型（无需引号）
+title: 我的文章
+
+# 带引号的字符串
+description: "这是一段描述"
+
+# 数字类型
+year: 2024
+version: 1.0
+
+# 布尔类型
+published: true
+draft: false
+
+# 数组/列表类型
+tags:
+  - JavaScript
+  - Vue
+  - 前端
+
+# 嵌套对象
+author:
+  name: 张三
+  email: zhang@example.com
+
+# 多行文本（使用 | 或 >）
+bio: |
+  这是多行文本
+  第二行
+  第三行
+---
+
+正文内容...
+```
+
+#### JSON 格式
+
+```json
+---
+{
+  "title": "我的文章",
+  "date": "2024-01-01",
+  "tags": ["JavaScript", "Vue"],
+  "author": {
+    "name": "张三",
+    "email": "zhang@example.com"
+  }
+}
+---
+```
+
+#### TOML 格式（部分框架支持）
+
+```toml
++++
+title = "我的文章"
+date = 2024-01-01
+tags = ["JavaScript", "Vue"]
++++
+```
+
+#### 在不同文件类型中的应用
+
+| 文件类型 | 支持情况 | 说明 |
+|----------|----------|------|
+| Markdown (.md) | ✅ 完全支持 | 最常见的应用场景 |
+| HTML (.html) | ✅ 部分支持 | 可在 HTML 注释中包含 |
+| Vue 单文件 (.vue) | ✅ 完全支持 | `<script>` 标签内使用 |
+| JSON (.json) | ❌ 不支持 | 本身已是结构化数据 |
+
+### 0.2 核心作用
+
+#### 内容管理
+
+- **文档标识**：为每个文档提供唯一标识符
+- **版本控制**：记录文档的版本号和修订历史
+- **状态管理**：区分草稿和正式发布的文章
+- **权限控制**：设置文档的访问权限级别
+
+#### 元数据存储
+
+- **结构化信息**：以标准化格式存储文档属性
+- **便于检索**：支持按标题、日期、作者等快速检索
+- **数据交换**：便于与其他系统进行数据交互
+
+#### 页面配置
+
+- **布局控制**：指定文档使用的页面模板
+- **导航配置**：设置侧边栏菜单、面包屑等
+- **SEO 优化**：配置搜索引擎需要的元信息
+- **样式定制**：设置自定义样式类或主题
+
+#### 内容分类与筛选
+
+- **分类体系**：通过 categories 实现层级分类
+- **标签系统**：使用 tags 进行多维度标记
+- **时间归档**：按日期进行时间线归档
+- **筛选查询**：支持按属性筛选特定文档
+
+### 0.3 属性详解
+
+#### 命名规范
+
+| 规范类型 | 要求 | 示例 |
+|----------|------|------|
+| 小写字母 | 推荐使用小写 | `title`, `date`, `author` |
+| 连字符 | 推荐使用 `-` 连接 | `page-style`, `side-bar` |
+| 驼峰命名 | 部分框架支持 | `pageTitle`, `contentType` |
+| 下划线 | 部分框架支持 | `publish_date`, `author_name` |
+
+#### 常用属性列表
+
+| 属性名 | 类型 | 必需 | 说明 |
+|--------|------|------|------|
+| `title` | string | 部分 | 文档标题 |
+| `date` | date/datetime | 部分 | 发布/创建日期 |
+| `updated` | date/datetime | 否 | 最后更新时间 |
+| `author` | string/object | 否 | 作者名称 |
+| `categories` | array | 否 | 分类（层级结构） |
+| `tags` | array | 否 | 标签（扁平结构） |
+| `description` | string | 否 | 文档描述 |
+| `layout` | string | 否 | 使用的布局模板 |
+| `permalink` | string | 否 | 自定义永久链接 |
+| `draft` | boolean | 否 | 是否为草稿 |
+| `published` | boolean | 否 | 是否发布 |
+| `weight`/`priority` | number | 否 | 排序权重 |
+| `image` | string | 否 | 封面图片 |
+| `cover` | boolean | 否 | 是否显示封面 |
+| `sidebar` | boolean/object | 否 | 侧边栏配置 |
+| `math` | boolean | 否 | 是否启用数学公式 |
+| `mermaid` | boolean | 否 | 是否启用图表 |
+| `toc` | boolean | 否 | 是否显示目录 |
+
+### 0.4 属性作用详解
+
+#### title - 文档标题
+
+```yaml
+title: 我的第一篇文章
+title: "深入理解 Vue 3 响应式原理"
+```
+
+- **功能**：定义文档的显示标题
+- **取值**：字符串
+- **影响**：用于页面标题、导航菜单、SEO 标题
+- **说明**：如果不设置，某些框架会使用文件名作为标题
+
+#### date - 发布日期
+
+```yaml
+date: 2024-01-15
+date: 2024-01-15 10:30:00
+date: 2024/01/15
+```
+
+- **功能**：记录文档创建或发布时间
+- **取值**：日期格式（YYYY-MM-DD 或 YYYY-MM-DD HH:mm:ss）
+- **影响**：用于时间排序、归档显示、RSS feed 生成
+- **注意**：时区问题可能导致显示差异
+
+#### updated - 更新时间
+
+```yaml
+updated: 2024-06-20 15:00:00
+```
+
+- **功能**：记录文档最后修改时间
+- **取值**：日期格式
+- **影响**：显示"最后更新"信息，触发内容重新发布
+
+#### author - 作者
+
+```yaml
+# 简单形式
+author: 张三
+
+# 完整形式
+author:
+  name: 张三
+  email: zhang@example.com
+  url: https://zhang.example.com
+```
+
+- **功能**：标明文档作者信息
+- **取值**：字符串或对象
+- **影响**：文章署名、作者归档、阅读量统计
+
+#### categories - 分类
+
+```yaml
+categories:
+  - 技术
+  - 前端
+  - Vue
+
+# 层级分类（部分框架支持）
+categories:
+  - [技术, 前端, Vue]
+  - [技术, 后端, Node.js]
+```
+
+- **功能**：对文档进行层级分类
+- **取值**：字符串数组
+- **影响**：侧边栏导航、文章归档、面包屑导航
+- **注意**：一个文档可属于多个分类
+
+#### tags - 标签
+
+```yaml
+tags:
+  - JavaScript
+  - Vue3
+  - 响应式
+  - 源码分析
+
+# 简写形式
+tags: [JavaScript, Vue3, 响应式]
+```
+
+- **功能**：为文档添加多维度标签
+- **取值**：字符串数组
+- **影响**：标签云、相关文章推荐、专题归档
+- **区别**：与 categories 不同，tags 通常是扁平的
+
+#### description - 描述
+
+```yaml
+description: 本文深入探讨 Vue 3 的响应式系统原理...
+description: "这是页面的 meta 描述，用于 SEO"
+```
+
+- **功能**：提供文档摘要或元描述
+- **取值**：字符串
+- **影响**：SEO meta 标签、搜索结果摘要、社交分享卡片
+
+#### layout - 布局
+
+```yaml
+layout: post      # 文章页布局
+layout: page      # 独立页面布局
+layout: archive   # 归档页布局
+layout: default   # 默认布局
+```
+
+- **功能**：指定文档使用的模板布局
+- **取值**：字符串（取决于主题）
+- **影响**：决定文档的渲染样式和结构
+
+#### permalink - 永久链接
+
+```yaml
+permalink: /articles/my-first-post/
+permalink: /:year/:month/:day/:title/
+permalink: /posts/2024/vue3-guide.html
+```
+
+- **功能**：自定义文档的 URL 路径
+- **取值**：字符串
+- **影响**：生成文档的访问地址
+- **注意**：设置后固定不变，有利于 SEO
+
+#### draft - 草稿
+
+```yaml
+draft: true
+draft: false
+```
+
+- **功能**：标记文档是否为草稿状态
+- **取值**：布尔值（true/false）
+- **影响**：草稿不会在正式列表中显示
+- **注意**：部分框架可通过命令过滤显示草稿
+
+#### published - 发布状态
+
+```yaml
+published: false
+```
+
+- **功能**：控制文档是否发布
+- **取值**：布尔值
+- **影响**：未发布的文档不会公开显示
+- **注意**：`draft: true` 和 `published: false` 效果类似
+
+#### weight / priority - 排序权重
+
+```yaml
+weight: 10
+priority: 0.8
+```
+
+- **功能**：设置文档在列表中的排序优先级
+- **取值**：数字（通常 1-100 或 0.0-1.0）
+- **影响**：数值越大排序越靠前
+
+#### image / cover - 封面图片
+
+```yaml
+# 单张封面
+image: /images/cover.jpg
+cover: true
+
+# 多张图片（幻灯片）
+images:
+  - /images/slide1.jpg
+  - /images/slide2.jpg
+```
+
+- **功能**：设置文档的封面图片
+- **取值**：图片路径字符串或数组
+- **影响**：文章列表缩略图、社交分享卡片背景
+
+#### sidebar - 侧边栏配置
+
+```yaml
+# 启用自动侧边栏
+sidebar: auto
+
+# 禁用侧边栏
+sidebar: false
+
+# 自定义侧边栏内容
+sidebar:
+  - 文件1
+  - 文件2
+```
+
+- **功能**：控制侧边栏的显示和内容
+- **取值**：布尔值、字符串 "auto" 或对象
+- **影响**：侧边栏导航的展示效果
+
+#### math - 数学公式
+
+```yaml
+math: true
+```
+
+- **功能**：启用数学公式渲染（KaTeX/MathJax）
+- **取值**：布尔值
+- **影响**：支持行内 `$E=mc^2$` 和块级公式渲染
+
+#### mermaid - 图表支持
+
+```yaml
+mermaid: true
+```
+
+- **功能**：启用 Mermaid 图表渲染
+- **取值**：布尔值
+- **影响**：支持 ` ```mermaid ` 代码块的渲染
+
+#### toc - 目录显示
+
+```yaml
+# 启用自动生成目录
+toc: true
+
+# 自定义目录配置
+toc:
+  maxdepth: 3
+  mindepth: 2
+```
+
+- **功能**：控制页面右侧目录的显示
+- **取值**：布尔值或配置对象
+- **影响**：自动提取标题生成页面导航
+
+### 0.5 完整示例
+
+```yaml
+---
+title: Vue 3 响应式原理深度解析
+date: 2024-01-15 10:00:00
+updated: 2024-06-20 15:30:00
+author:
+  name: 张三
+  email: zhang@example.com
+  url: https://zhang.example.com
+categories:
+  - 技术
+  - 前端
+  - Vue
+tags:
+  - JavaScript
+  - Vue3
+  - 响应式
+  - 源码分析
+description: 深入剖析 Vue 3 响应式系统的实现原理...
+layout: post
+permalink: /articles/vue3-reactivity/
+draft: false
+image: /images/vue3-reactivity-cover.jpg
+cover: true
+sidebar: auto
+math: true
+mermaid: true
+toc: true
+---
+
+# 正文开始
+
+这是一篇关于 Vue 3 响应式原理的深度解析文章...
+```
+
+---
+
 ## 1. 标题 (Headings)
 
 ```markdown
