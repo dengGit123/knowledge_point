@@ -188,18 +188,242 @@ router.beforeEach((to, from, next) => {
 <link rel="preload" href="image.jpg" as="image">
 ```
 
-### 5.3 as 属性值
+### 5.3 as 属性详解
 
-| as 值 | 资源类型 | 是否需要 crossorigin |
-|-------|---------|---------------------|
-| `style` | CSS | ❌ |
-| `script` | JavaScript | ❌ |
-| `font` | 字体文件 | ✅ |
-| `image` | 图片 | ❌ |
-| `fetch` | fetch/XHR | ✅ |
-| `audio` | 音频 | ❌ |
-| `video` | 视频 | ❌ |
-| `track` | WebVTT | ❌ |
+#### 5.3.1 as 属性的作用
+
+`as` 属性告诉浏览器被预加载资源的类型，主要有三个作用：
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    as 属性的三大作用                          │
+├─────────────────────────────────────────────────────────────┤
+│  1. 设置正确的资源优先级（Priority）                         │
+│     → 浏览器根据资源类型分配加载优先级                        │
+│                                                              │
+│  2. 应用正确的安全策略（CORS）                               │
+│     → 某些资源类型（font、fetch）需要 CORS 验证              │
+│                                                              │
+│  3. 匹配后续资源，避免重复下载                               │
+│     → 相同 URL + as 类型会复用已下载的资源                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 5.3.2 资源优先级对比
+
+```
+优先级从高到低：
+
+Highest  │  HTML、CSS、Critical JS（viewport 内）
+         │
+High     │  Fonts、Scripts（as=script）
+         │
+Medium   │  Images（as=image）、Media
+         │
+Low      │  Prefetch 资源
+         │
+Lowest   │  Preload 没有 as 属性的资源 ⚠️
+```
+
+**没有 as 属性的后果：**
+
+```html
+<!-- ❌ 没有 as：优先级最低，等同于 XHR 请求 -->
+<link rel="preload" href="critical.css">
+
+<!-- ✅ 有 as：优先级正确 -->
+<link rel="preload" href="critical.css" as="style">
+```
+
+#### 5.3.3 as 属性值完整列表
+
+| as 值 | 资源类型 | 需要 crossorigin? | 优先级 | 典型扩展名 |
+|-------|---------|------------------|--------|-----------|
+| `style` | CSS 样式表 | ❌ | Highest | .css |
+| `script` | JavaScript 脚本 | ❌ | High | .js |
+| `font` | 字体文件 | ✅ **必须** | High | .woff2, .woff, .ttf |
+| `image` | 图片 | ❌ | Medium | .jpg, .png, .webp, .svg |
+| `fetch` | fetch/XHR 请求 | ✅ 通常需要 | Medium | - |
+| `audio` | 音频 | ❌ | Medium | .mp3, .wav, .ogg |
+| `video` | 视频 | ❌ | Medium | .mp4, .webm |
+| `track` | 字幕轨道 (WebVTT) | ❌ | Low | .vtt |
+| `worker` | Web Worker | ❌ | High | .js |
+| `embed` | embed 嵌入内容 | ❌ | Medium | - |
+| `object` | object 嵌入内容 | ❌ | Medium | - |
+| `document` | iframe/页面 | ❌ | High | .html |
+| `manifest` | manifest 文件 | ❌ | Low | .webmanifest |
+
+#### 5.3.4 各类型详细说明
+
+##### style - CSS 样式表
+
+```html
+<link rel="preload" href="main.css" as="style">
+
+<!-- 配合 onload 立即应用 -->
+<link rel="preload" href="critical.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="critical.css" rel="stylesheet"></noscript>
+```
+
+##### script - JavaScript 脚本
+
+```html
+<!-- 预加载普通脚本 -->
+<link rel="preload" href="app.js" as="script">
+
+<!-- 预加载 Worker 脚本 -->
+<link rel="preload" href="worker.js" as="worker">
+
+<!-- 注意：modulepreload 用于 ES6 模块，不是 as="module" -->
+<link rel="modulepreload" href="app.js">
+```
+
+##### font - 字体文件
+
+```html
+<!-- ⚠️ 字体必须加 crossorigin，否则会下载两次！ -->
+<link rel="preload" href="font.woff2" as="font" crossorigin>
+
+<style>
+  @font-face {
+    font-family: 'MyFont';
+    src: url('font.woff2') format('woff2');
+    font-display: swap;
+  }
+</style>
+```
+
+**为什么字体需要 crossorigin？**
+
+字体加载遵循 CORS 策略，当使用 `preload` 时：
+- 没有 `crossorigin` → 浏览器以匿名方式预加载
+- 后续 `@font-face` 使用时需要 CORS 验证
+- **验证失败 → 重新下载** ❌
+
+##### image - 图片
+
+```html
+<!-- 预加载首屏图片 -->
+<link rel="preload" href="hero-image.jpg" as="image">
+
+<!-- 响应式图片预加载 -->
+<link rel="preload" href="hero-large.jpg" as="image" media="(min-width: 1024px)">
+<link rel="preload" href="hero-small.jpg" as="image" media="(max-width: 640px)">
+
+<!-- 预加载 srcset 图片 -->
+<link rel="preload" as="image" imagesrcset="hero-320w.jpg 320w, hero-640w.jpg 640w" imagesizes="100vw">
+```
+
+##### fetch - 数据请求
+
+```html
+<!-- 预加载 API 响应数据 -->
+<link rel="preload" href="/api/user-data" as="fetch" crossorigin>
+
+<!-- JavaScript 中使用 -->
+<script>
+  fetch('/api/user-data')  // 会使用预加载的响应
+    .then(res => res.json())
+    .then(data => console.log(data));
+</script>
+```
+
+##### video/audio - 媒体文件
+
+```html
+<!-- 预加载视频 -->
+<link rel="preload" href="intro-video.mp4" as="video">
+
+<!-- 预加载音频 -->
+<link rel="preload" href="bg-music.mp3" as="audio">
+
+<!-- 只预加载元数据（不下载完整文件） -->
+<link rel="preload" href="video.mp4" as="video" media="print">
+```
+
+##### worker - Web Worker
+
+```html
+<!-- 预加载 Worker 脚本 -->
+<link rel="preload" href="worker.js" as="worker">
+
+<script>
+  const worker = new Worker('worker.js');  // 使用预加载的脚本
+</script>
+```
+
+##### document - 页面/iframe
+
+```html
+<!-- 预加载下一页面的 HTML -->
+<link rel="preload" href="/next-page.html" as="document">
+
+<!-- 预加载 iframe 内容 -->
+<link rel="preload" href="/iframe-content.html" as="document">
+```
+
+#### 5.3.5 crossorigin 属性配合
+
+```html
+<!-- 需要 CORS 的资源类型 -->
+<link rel="preload" href="font.woff2" as="font" crossorigin>                      <!-- ✅ 必须 -->
+<link rel="preload" href="api-data.json" as="fetch" crossorigin>                <!-- ✅ 需要 -->
+<link rel="preload" href="https://cdn.com/script.js" as="script" crossorigin>  <!-- ✅ 跨域时需要 -->
+
+<!-- 不需要 CORS 的资源类型 -->
+<link rel="preload" href="style.css" as="style">                                <!-- ❌ 不需要 -->
+<link rel="preload" href="image.jpg" as="image">                                <!-- ❌ 不需要 -->
+<link rel="preload" href="app.js" as="script">                                  <!-- ❌ 同域不需要 -->
+```
+
+**crossorigin 的两个值：**
+
+```html
+<!-- crossorigin 或 crossorigin="anonymous"：不发送凭证 -->
+<link rel="preload" href="font.woff2" as="font" crossorigin>
+
+<!-- crossorigin="use-credentials"：发送 Cookie 等凭证 -->
+<link rel="preload" href="api-data.json" as="fetch" crossorigin="use-credentials">
+```
+
+#### 5.3.6 常见错误
+
+```html
+<!-- ❌ 错误 1：没有 as 属性 -->
+<link rel="preload" href="style.css">
+
+<!-- ❌ 错误 2：as 值错误 -->
+<link rel="preload" href="style.css" as="stylesheet">  <!-- 应该是 style -->
+
+<!-- ❌ 错误 3：字体缺失 crossorigin（会下载两次！）-->
+<link rel="preload" href="font.woff2" as="font">
+
+<!-- ❌ 错误 4：非字体资源加了 crossorigin -->
+<link rel="preload" href="image.jpg" as="image" crossorigin>  <!-- 多余 -->
+
+<!-- ❌ 错误 5：as 类型与实际资源不匹配 -->
+<link rel="preload" href="script.js" as="style">
+
+<!-- ✅ 正确示例 -->
+<link rel="preload" href="style.css" as="style">
+<link rel="preload" href="script.js" as="script">
+<link rel="preload" href="font.woff2" as="font" crossorigin>
+<link rel="preload" href="image.jpg" as="image">
+```
+
+#### 5.3.7 media 属性配合使用
+
+```html
+<!-- 只在大屏幕预加载大图 -->
+<link rel="preload" href="hero-large.jpg" as="image" media="(min-width: 1024px)">
+
+<!-- 只在打印时预加载 -->
+<link rel="preload" href="print.css" as="style" media="print">
+
+<!-- 响应式字体预加载 -->
+<link rel="preload" href="font-large.woff2" as="font" media="(min-width: 768px)" crossorigin>
+<link rel="preload" href="font-small.woff2" as="font" media="(max-width: 767px)" crossorigin>
+```
 
 ### 5.4 使用场景
 
@@ -365,7 +589,215 @@ router.beforeEach((to, from, next) => {
 </html>
 ```
 
-## 九、JavaScript 动态控制
+## 九、script 标签属性详解
+
+### 9.1 script 属性总览
+
+| 属性 | 加载时机 | 执行时机 | 执行顺序 | 适用场景 |
+|------|---------|---------|---------|---------|
+| 无属性 | 同步，阻塞 HTML 解析 | 立即执行 | 按顺序 | 关键内联脚本（不推荐） |
+| `defer` | 异步，不阻塞 | DOM 解析完成后，`DOMContentLoaded` 前 | 按顺序 | DOM 操作脚本 |
+| `async` | 异步，不阻塞 | 加载完成后立即执行 | 不保证顺序 | 独立脚本（统计、广告） |
+| `type="module"` | 异步（默认 defer） | 按 defer 规则 | 按顺序 | ES6 模块 |
+
+### 9.2 执行时机对比图
+
+```
+HTML 解析过程：
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+无属性 script:
+解析中 → [遇到 script] → ⏸暂停解析 → 下载 → 执行 → ▶继续解析
+
+defer script:
+解析中 → [遇到 script] → 📥后台下载 → 解析完成 → 按顺序执行 → DOMContentLoaded
+
+async script:
+解析中 → [遇到 script] → 📥后台下载 → ⚡下载完立即执行 → 可能穿插解析中
+
+module script (默认 defer):
+解析中 → [遇到 module] → 📥后台下载 → 预解析依赖 → 按顺序执行 → DOMContentLoaded
+```
+
+### 9.3 详细说明
+
+#### 9.3.1 普通脚本（不推荐）
+
+```html
+<!-- ❌ 阻塞 HTML 解析，性能最差 -->
+<script src="app.js"></script>
+```
+
+**执行流程：**
+1. 遇到 script 标签，暂停 HTML 解析
+2. 下载脚本（阻塞）
+3. 执行脚本（阻塞）
+4. 继续解析剩余 HTML
+
+#### 9.3.2 defer - 延迟执行
+
+```html
+<!-- ✅ 推荐：需要操作 DOM 的脚本 -->
+<script defer src="app.js"></script>
+<script defer src="utils.js"></script>
+<script defer src="main.js"></script>
+
+<!-- 执行顺序：app.js → utils.js → main.js -->
+```
+
+**特点：**
+- 异步下载，不阻塞 HTML 解析
+- 等到 HTML 解析完成后执行
+- **按 HTML 中的顺序执行**
+- `DOMContentLoaded` 之前执行
+
+**适用场景：**
+```html
+<!-- DOM 操作脚本 -->
+<script defer src="jquery.js"></script>
+<script defer src="app.js"></script> <!-- 可以依赖 jquery.js -->
+
+<!-- 组件初始化 -->
+<script defer src="components/header.js"></script>
+<script defer src="components/sidebar.js"></script>
+```
+
+#### 9.3.3 async - 异步执行
+
+```html
+<!-- ✅ 适用：独立、无依赖的脚本 -->
+<script async src="analytics.js"></script>
+<script async src="ad-platform.js"></script>
+
+<!-- 执行顺序：不确定！谁先下载完先执行谁 -->
+```
+
+**特点：**
+- 异步下载，不阻塞 HTML 解析
+- 下载完成后**立即执行**（不等待 HTML 解析完成）
+- **不保证执行顺序**（取决于下载速度）
+- 可能在 HTML 解析过程中穿插执行
+
+**适用场景：**
+```html
+<!-- 统计分析 -->
+<script async src="https://www.google-analytics.com/analytics.js"></script>
+<script async src="https://mc.yandex.ru/metrika/watch.js"></script>
+
+<!-- 广告 -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+
+<!-- 热图/用户行为 -->
+<script async src="https://static.hotjar.com/c/hotjar-xxx.js"></script>
+```
+
+#### 9.3.4 type="module" - ES6 模块
+
+```html
+<!-- ES6 模块，默认带 defer 效果 -->
+<script type="module" src="app.js"></script>
+
+<!-- 内联模块 -->
+<script type="module">
+  import { init } from './utils.js';
+  init();
+</script>
+
+<!-- nomodule：给不支持 module 的浏览器降级 -->
+<script nomodule src="app-legacy.js"></script>
+```
+
+**特点：**
+- 自动 `defer`，不阻塞 HTML 解析
+- 自动严格模式
+- 支持 import/export
+- 支持 CSS 导入：`import styles from './style.css' assert { type: 'css' };`
+- 同一模块只执行一次
+
+### 9.4 混合使用注意事项
+
+```html
+<!-- ⚠️ 顺序可能混乱 -->
+<script defer src="a.js"></script>     <!-- DOM 后按顺序执行 -->
+<script async src="b.js"></script>     <!-- 下载完立即执行，可能比 a 先 -->
+<script src="c.js"></script>           <!-- 立即阻塞执行 -->
+<script type="module" src="d.js"></script>  <!-- DOM 后按顺序执行 -->
+
+<!-- 推荐策略：统一使用 defer，独立脚本用 async -->
+```
+
+### 9.5 最佳实践配置
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+
+  <!-- ============ 关键 CSS preload ============ -->
+  <link rel="preload" href="critical.css" as="style">
+
+  <!-- ============ 关键资源预连接 ============ -->
+  <link rel="preconnect" href="https://cdn.example.com" crossorigin>
+
+  <!-- ============ 关键 CSS ============ -->
+  <link href="critical.css" rel="stylesheet">
+
+  <!-- ============ 应用脚本：defer ============ -->
+  <!-- 需要操作 DOM 的脚本，按顺序执行 -->
+  <script defer src="vendor/vue.js"></script>
+  <script defer src="vendor/router.js"></script>
+  <script defer src="app.js"></script>
+
+  <!-- ============ 第三方脚本：async ============ -->
+  <!-- 独立脚本，不阻塞其他资源 -->
+  <script async src="https://www.google-analytics.com/analytics.js"></script>
+  <script async src="https://static.hotjar.com/c/hotjar.js"></script>
+
+  <!-- ============ ES6 模块：type=module ============ -->
+  <script type="module" src="module-app.js"></script>
+  <script nomodule src="legacy-app.js"></script>
+</head>
+<body>
+  <h1>Hello</h1>
+</body>
+</html>
+```
+
+### 9.6 快速决策指南
+
+```
+需要加载脚本？
+
+├── 是否需要操作 DOM？
+│   ├── 是 → 使用 defer ✅
+│   └── 否 ↓
+├── 是否是独立第三方脚本（统计、广告）？
+│   ├── 是 → 使用 async ✅
+│   └── 否 ↓
+├── 是否是 ES6 模块？
+│   ├── 是 → 使用 type="module" ✅
+│   └── 否 ↓
+└── 默认使用 defer ✅
+```
+
+### 9.7 script vs link 属性对比
+
+| 标签 | 属性 | 作用 | 使用场景 |
+|------|------|------|---------|
+| `script` | `defer` | 延迟执行 | DOM 操作脚本 |
+| `script` | `async` | 异步执行 | 独立脚本（统计、广告） |
+| `script` | `type="module"` | ES6 模块 | 现代模块化开发 |
+| `link` | `rel="preload"` | 预加载 | 关键资源提前下载 |
+| `link` | `rel="prefetch"` | 预取 | 下一页面资源 |
+| `link` | `rel="preconnect"` | 预连接 | 关键跨域域名 |
+| `link` | `rel="dns-prefetch"` | DNS 预解析 | 次要跨域域名 |
+
+**核心区别：**
+- **script 属性（defer/async/module）**：控制脚本的**执行时机**
+- **link 属性（preload/prefetch 等）**：控制资源的**加载优先级**
+
+## 十、JavaScript 动态控制
 
 ### 9.1 动态创建资源提示
 
@@ -427,7 +859,7 @@ if ('requestIdleCallback' in window) {
 }
 ```
 
-## 十、常见错误
+## 十一、常见错误
 
 ### 10.1 遗漏 as 属性
 
@@ -473,7 +905,7 @@ if ('requestIdleCallback' in window) {
 <link rel="preconnect" href="https://cdn.example.com" crossorigin>
 ```
 
-## 十一、浏览器兼容性
+## 十二、浏览器兼容性
 
 | 属性 | Chrome | Firefox | Safari | Edge |
 |------|--------|---------|--------|------|
@@ -483,7 +915,7 @@ if ('requestIdleCallback' in window) {
 | preload | ✅ | ✅ | ✅ | ✅ |
 | modulepreload | ✅ | ✅ | ⚠️ 16.4+ | ✅ |
 
-## 十二、性能优化检查清单
+## 十三、性能优化检查清单
 
 ### 使用前检查
 
