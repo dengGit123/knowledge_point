@@ -347,12 +347,12 @@ export default defineConfig({
 ```javascript
 // apps/web/vite.config.js
 export default {
-  envDir: './env/web'
+  envDir: './env'
 }
 
 // apps/admin/vite.config.js
 export default {
-  envDir: './env/admin'
+  envDir: './env'
 }
 ```
 
