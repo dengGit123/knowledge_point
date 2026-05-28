@@ -1505,6 +1505,70 @@ ssrEmitAssets: true   // 输出静态资源
 ssrEmitAssets: false  // 仅输出 JS（默认）
 ```
 
+## 定义类型
+
+```typescript
+{
+  target?: string | string[] | false
+  modulePreload?: boolean | { polyfill?: boolean }
+  polyfillModulePreload?: boolean
+  outDir?: string
+  assetsDir?: string
+  assetsInlineLimit?: number
+  cssCodeSplit?: boolean
+  cssTarget?: string | string[]
+  cssMinify?: boolean | 'esbuild' | 'lightningcss'
+  sourcemap?: boolean | 'inline' | 'hidden'
+  rollupOptions?: RollupOptions
+  minify?: boolean | 'esbuild' | 'terser'
+  terserOptions?: TerserOptions
+  write?: boolean
+  emptyOutDir?: boolean | (() => boolean)
+  copyPublicDir?: boolean
+  manifest?: boolean | string
+  ssrManifest?: boolean | string
+  reportCompressedSize?: boolean
+  chunkSizeWarningLimit?: number
+  watch?: boolean | null
+  commonjsOptions?: CommonJSOptions
+  dynamicImportVarsOptions?: DynamicImportVarsOptions
+  lib?: false | LibraryOptions
+  ssrEmitAssets?: boolean
+}
+```
+
+**默认值**：
+
+```javascript
+{
+  target: 'modules',
+  modulePreload: true,
+  polyfillModulePreload: true,
+  outDir: 'dist',
+  assetsDir: 'assets',
+  assetsInlineLimit: 4096,
+  cssCodeSplit: true,
+  cssTarget: undefined,
+  cssMinify: true,
+  sourcemap: false,
+  rollupOptions: {},
+  minify: 'esbuild',
+  terserOptions: {},
+  write: true,
+  emptyOutDir: undefined,
+  copyPublicDir: true,
+  manifest: false,
+  ssrManifest: false,
+  reportCompressedSize: true,
+  chunkSizeWarningLimit: 500,
+  watch: false,
+  commonjsOptions: {},
+  dynamicImportVarsOptions: {},
+  lib: false,
+  ssrEmitAssets: false
+}
+```
+
 ## 作用
 
 - 控制生产构建的输出

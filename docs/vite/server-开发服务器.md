@@ -2,7 +2,61 @@
 
 ## 定义
 
-`server` 配置开发服务器的行为。
+`server` 配置开发服务器的行为，控制主机、端口、HTTPS、代理、CORS、HMR 等开发环境相关功能。
+
+**类型**：
+
+```typescript
+{
+  host?: string | boolean
+  port?: number
+  strictPort?: boolean
+  https?: boolean | HttpsServerOptions
+  open?: boolean | string | string[] | OpenAppOptions
+  proxy?: Record<string, string | ProxyOptions>
+  cors?: boolean | CorsOptions
+  headers?: OutgoingHttpHeaders | ((headers: OutgoingHttpHeaders) => OutgoingHttpHeaders)
+  hmr?: boolean | HmrOptions
+  watch?: WatchOptions
+  fs?: FileSystemOptions
+  origin?: string
+}
+```
+
+**默认值**：
+
+```javascript
+{
+  host: 'localhost',
+  port: 5173,
+  strictPort: false,
+  https: false,
+  open: false,
+  proxy: {},
+  cors: true,
+  headers: {},
+  hmr: {
+    protocol: null,
+    host: null,
+    port: null,
+    clientPort: null,
+    path: '/vite/hmr',
+    overlay: true
+  },
+  watch: {
+    ignored: null,
+    usePolling: false,
+    interval: 100
+  },
+  fs: {
+    strict: true,
+    allow: [],
+    deny: ['.env', '.env.*', '*.{crt,pem,key}'],
+    cwd: process.cwd()
+  },
+  origin: undefined
+}
+```
 
 ## 属性层级结构
 
