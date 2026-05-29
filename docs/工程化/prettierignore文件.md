@@ -53,7 +53,7 @@ project-root/
 
 ### 通用项目
 
-```prettierignore
+```text
 # ======== 依赖目录 ========
 node_modules/
 .pnpm-store/
@@ -123,7 +123,7 @@ coverage/
 
 ### Vue 项目
 
-```prettierignore
+```text
 # 依赖
 node_modules/
 .pnp/
@@ -162,7 +162,7 @@ coverage/
 
 ### React 项目
 
-```prettierignore
+```text
 # 依赖
 node_modules/
 .pnp/
@@ -200,7 +200,7 @@ coverage/
 
 ### Next.js 项目
 
-```prettierignore
+```text
 # 依赖
 node_modules/
 .pnp
@@ -229,7 +229,7 @@ pnpm-lock.yaml
 
 ### Nuxt 3 项目
 
-```prettierignore
+```text
 # 依赖
 node_modules/
 .pnp/
@@ -255,7 +255,7 @@ coverage/
 
 ### Vite 项目
 
-```prettierignore
+```text
 # 依赖
 node_modules/
 
@@ -275,7 +275,7 @@ coverage/
 
 ### TypeScript 项目
 
-```prettierignore
+```text
 # 依赖
 node_modules/
 
@@ -297,7 +297,7 @@ coverage/
 
 ### Monorepo 项目
 
-```prettierignore
+```text
 # 依赖
 node_modules/
 .pnpm-store/
@@ -545,7 +545,7 @@ npx prettier --write path/to/ignored/file.js
 
 ### 3. 否定规则不生效
 
-```prettierignore
+```text
 # 错误示例
 **/*.js
 !src/index.js    # ❌ 可能不生效
@@ -557,7 +557,7 @@ src/index.js    # ✅ 使用更具体的规则覆盖
 
 ### 4. 忽略所有但保留部分
 
-```prettierignore
+```text
 # 忽略所有
 **/*.js
 
@@ -578,7 +578,7 @@ module.exports = {
 
 ### 推荐结构
 
-```prettierignore
+```text
 # ========== 1. 注释说明 ==========
 # Prettier 忽略文件配置
 
@@ -621,7 +621,7 @@ coverage/
 
 ### 实用技巧
 
-```prettierignore
+```text
 # 1. 使用双星号匹配所有层级
 **/dist/
 **/coverage/

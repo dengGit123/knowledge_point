@@ -827,7 +827,7 @@ const arr = [1,2,3,4]; // 不会被格式化
 
 使用 `.prettierignore`：
 
-```prettierignore
+```text
 # 忽略整个文件
 config.js
 

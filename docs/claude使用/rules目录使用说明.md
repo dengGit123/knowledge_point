@@ -8,14 +8,14 @@
 
 ## 文件位置
 
-```
+```text
 项目/.claude/rules/*.md
 全局/.claude/rules/*.md
 ```
 
 ## 目录结构
 
-```
+```text
 .claude/rules/
 ├── typescript.md      # TypeScript 文件规范
 ├── react.md           # React 组件规范
@@ -53,7 +53,7 @@
 
 ### 工作原理
 
-```
+```text
 操作文件: src/components/Button.tsx
          ↓
 检查 rules/*.md 中的 globs
@@ -345,7 +345,7 @@ description: Git 工作规范
 
 ## 提交信息规范
 使用约定式提交格式：
-```
+```text
 <type>(<scope>): <subject>
 
 <body>
@@ -382,7 +382,7 @@ description: Git 工作规范
 
 ## 配置优先级
 
-```
+```text
 全局 rules
   ↓
 项目 rules
@@ -398,7 +398,7 @@ CLAUDE.md
 
 不同主题的规则放在不同文件，便于维护：
 
-```
+```text
 ✅ 好的设计
 .claude/rules/
 ├── typescript.md
@@ -416,7 +416,7 @@ CLAUDE.md
 
 使用精确的 glob 模式，避免过度匹配：
 
-```
+```text
 ✅ 好的设计
 globs: ["src/components/**/*.tsx"]
 globs: ["**/*.test.ts"]
@@ -446,7 +446,7 @@ description: 代码规范
 
 多个规则不要覆盖相同路径，避免冲突：
 
-```
+```text
 ✅ 好的设计
 typescript.md: globs: ["**/*.ts"]
 vue.md:        globs: ["**/*.vue"]
@@ -470,7 +470,7 @@ git commit -m "docs: 添加 TypeScript 和 React 编码规范"
 
 ### 创建新规则
 
-```
+```text
 1. 确定规则主题和适用范围
    ↓
 2. 设计 glob 模式
@@ -484,7 +484,7 @@ git commit -m "docs: 添加 TypeScript 和 React 编码规范"
 
 ### 更新规则
 
-```
+```text
 1. 识别需要调整的规则
    ↓
 2. 更新规则文件
@@ -513,7 +513,7 @@ git commit -m "docs: 添加 TypeScript 和 React 编码规范"
 - **rules/**：定义特定文件类型的专项规则
 
 配合示例：
-```
+```text
 CLAUDE.md: "使用 TypeScript 编写代码"
 rules/typescript.md: "所有函数必须有返回类型注解"
 ```

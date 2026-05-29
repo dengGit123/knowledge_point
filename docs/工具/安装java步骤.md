@@ -944,7 +944,7 @@ sudo vim /usr/local/etc/redis/redis.conf
 
 <br>
 
-```conf
+```text
 # 网络配置
 bind 127.0.0.1
 port 6379

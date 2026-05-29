@@ -147,7 +147,7 @@ export default {
 
 **.gitignore 配置**：
 
-```gitignore
+```text
 .vite/
 ```
 
@@ -291,7 +291,7 @@ rm -rf .vite-cache
 
 ### 3. .gitignore 配置
 
-```gitignore
+```text
 # Vite 缓存目录
 .vite/
 .vite-cache/

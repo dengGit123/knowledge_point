@@ -401,7 +401,7 @@ VITE_API_URL=https://api.example.com  ✅ 正确
 
 **解决**：确保 `.gitignore` 包含
 
-```gitignore
+```text
 .env.local
 .env.*.local
 ```

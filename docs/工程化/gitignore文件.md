@@ -57,7 +57,7 @@ project-root/
 
 以 `!` 开头表示不忽略（重新包含）：
 
-```gitignore
+```text
 # 忽略所有 .js 文件
 *.js
 
@@ -79,7 +79,7 @@ build/
 | `pattern/` | 只匹配目录 |
 | `pattern` | 匹配文件和目录 |
 
-```gitignore
+```text
 # 只忽略根目录的 config.json
 /config.json
 
@@ -89,7 +89,7 @@ src/config.json  # ✅ 会被追踪
 
 ## 目录分隔符
 
-```gitignore
+```text
 # 推荐写法：末尾加斜杠表示目录
 node_modules/
 dist/
@@ -101,7 +101,7 @@ dist/
 
 ## 双星号 `**`
 
-```gitignore
+```text
 # 匹配所有层级目录下的 test.js
 **/test.js
 
@@ -119,7 +119,7 @@ a/**/b        # a/b, a/x/b, a/x/y/b
 
 ### 通用项目
 
-```gitignore
+```text
 # 操作系统文件
 .DS_Store
 .DS_Store?
@@ -184,7 +184,7 @@ coverage/
 
 ### 前端项目（Vue/React）
 
-```gitignore
+```text
 # 依赖
 node_modules/
 jspm_packages/
@@ -239,7 +239,7 @@ coverage/
 
 ### Node.js 后端项目
 
-```gitignore
+```text
 # 依赖
 node_modules/
 npm-debug.log*
@@ -288,7 +288,7 @@ public/uploads/
 
 ### Python 项目
 
-```gitignore
+```text
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -493,7 +493,7 @@ git ls-files --others --ignored --exclude-standard | grep "/"
 4. `.git/info/exclude`
 5. `core.excludesFile` 配置文件
 
-```gitignore
+```text
 # 子目录 .gitignore 可以覆盖父目录规则
 # project/.gitignore
 *.log
@@ -539,7 +539,7 @@ Git 不追踪空目录，需要在目录中添加 `.gitkeep`：
 touch empty-dir/.gitkeep
 ```
 
-```gitignore
+```text
 # 忽略除 .gitkeep 外的所有文件
 empty-dir/*
 !empty-dir/.gitkeep
@@ -557,7 +557,7 @@ git add -f .gitignore
 
 ### 5. 排除目录但保留子目录
 
-```gitignore
+```text
 # 忽略 node_modules 但保留 node_modules/demo
 node_modules/*
 !node_modules/demo/
@@ -565,7 +565,7 @@ node_modules/*
 
 ### 6. 特殊字符文件名
 
-```gitignore
+```text
 # 包含空格
 file\ name.txt
 
@@ -597,7 +597,7 @@ git config --global core.excludesFile "%USERPROFILE%\.gitignore_global"
 
 ### 常用全局配置
 
-```gitignore
+```text
 # ~/.gitignore_global
 
 # OS
@@ -633,7 +633,7 @@ git config --local core.excludesFile .git/info/exclude
 nano .git/info/exclude
 ```
 
-```gitignore
+```text
 # .git/info/exclude
 
 # 本地环境配置
@@ -660,7 +660,7 @@ gi node,macos,linux > .gitignore
 
 ## 最佳实践
 
-```gitignore
+```text
 # ======== 推荐顺序 ========
 # 1. 注释说明
 # ======== 依赖目录 ========
@@ -695,7 +695,7 @@ logs/
 
 ### 实用技巧
 
-```gitignore
+```text
 # 1. 精确匹配优先
 /package-lock.json      # 只忽略根目录的
 package-lock.json       # 忽略所有目录的
