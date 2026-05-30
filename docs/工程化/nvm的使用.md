@@ -290,14 +290,14 @@ npm bin -g
 **步骤 1：创建全局包目录**
 
 ```bash
-mkdir -p ~/.npm-global/lib
-mkdir -p ~/.npm-global/bin
+mkdir -p ~/npm-global/lib
+mkdir -p ~/npm-global/bin
 ```
 
 **步骤 2：配置 npm prefix**
 
 ```bash
-npm config set prefix "$HOME/.npm-global"
+npm config set prefix "$HOME/npm-global"
 ```
 
 **步骤 3：添加到 PATH**
@@ -311,7 +311,7 @@ nano ~/.zshrc
 在 nvm 配置之后添加：
 
 ```bash
-export PATH="$HOME/.npm-global/bin:$PATH"
+export PATH="$HOME/npm-global/bin:$PATH"
 ```
 
 **步骤 4：重新加载配置**
@@ -324,13 +324,13 @@ source ~/.zshrc
 
 ```bash
 npm config get prefix
-# 预期输出：/Users/你的用户名/.npm-global
+# 预期输出：/Users/你的用户名/npm-global
 
 npm root -g
-# 输出：/Users/你的用户名/.npm-global/lib/node_modules
+# 输出：/Users/你的用户名/npm-global/lib/node_modules
 
 npm bin -g
-# 输出：/Users/你的用户名/.npm-global/bin
+# 输出：/Users/你的用户名/npm-global/bin
 ```
 
 **步骤 6：测试安装全局包**
@@ -339,7 +339,7 @@ npm bin -g
 npm install -g pnpm
 
 which pnpm
-# 输出：/Users/你的用户名/.npm-global/bin/pnpm
+# 输出：/Users/你的用户名/npm-global/bin/pnpm
 ```
 
 ### 5.3 设置缓存路径
@@ -347,20 +347,20 @@ which pnpm
 **步骤 1：创建缓存目录**
 
 ```bash
-mkdir -p ~/.npm-cache
+mkdir -p ~/npm-cache
 ```
 
 **步骤 2：配置 npm cache**
 
 ```bash
-npm config set cache "$HOME/.npm-cache"
+npm config set cache "$HOME/npm-cache"
 ```
 
 **步骤 3：验证**
 
 ```bash
 npm config get cache
-# 预期输出：/Users/你的用户名/.npm-cache
+# 预期输出：/Users/你的用户名/npm-cache
 ```
 
 ### 5.4 查看所有 npm 配置
@@ -374,8 +374,8 @@ npm config list
 ```
 ; "user" config from ~/.npmrc
 
-prefix = "/Users/你的用户名/.npm-global"
-cache = "/Users/你的用户名/.npm-cache"
+prefix = "/Users/你的用户名/npm-global"
+cache = "/Users/你的用户名/npm-cache"
 registry = "https://registry.npmjs.org/"
 ```
 
@@ -442,8 +442,8 @@ export NVM_NODEJS_ORG_MIRROR=https://npmmirror.com/mirrors/node/
 
 ```bash
 # npm 全局配置
-prefix=/Users/你的用户名/.npm-global
-cache=/Users/你的用户名/.npm-cache
+prefix=/Users/你的用户名/npm-global
+cache=/Users/你的用户名/npm-cache
 registry=https://registry.npmmirror.com
 ```
 
@@ -504,10 +504,83 @@ npm config edit                 # 编辑配置文件
 │  目录位置：                                          │
 │  ├─ Node 版本：    $NVM_DIR/versions/node/         │
 │  ├─ 全局包（默认）：$NVM_DIR/versions/node/vXX/lib/ │
-│  ├─ 全局包（自定义）：~/.npm-global/lib/           │
-│  └─ 缓存（自定义）： ~/.npm-cache/                 │
+│  ├─ 全局包（自定义）：~/npm-global/lib/           │
+│  └─ 缓存（自定义）： ~/npm-cache/                 │
 │                                                     │
 └─────────────────────────────────────────────────────┘
+```
+
+> 官方文档：https://github.com/nvm-sh/nvm
+
+---
+
+## 九、常见问题
+
+### 9.1 终端报错：prefix setting are incompatible with nvm
+
+**错误信息：**
+
+```
+Your user's .npmrc file (${HOME}/.npmrc)
+has a `globalconfig` and/or a `prefix` setting, which are incompatible with nvm.
+Run `nvm use --delete-prefix v14.18.1 --silent` to unset it.
+```
+
+**原因：**
+
+`~/.npmrc` 中配置了 `prefix`（自定义全局包路径），nvm 与自定义 `prefix` 不兼容。nvm 需要自己管理每个 Node 版本的 `prefix`。
+
+**解决步骤：**
+
+**步骤 1：查看当前 `.npmrc` 内容**
+
+```bash
+cat ~/.npmrc
+```
+
+输出示例：
+
+```
+prefix=/Users/dyc/npm-global
+cache=/Users/dyc/npm-cache
+registry=https://registry.npmmirror.com
+```
+
+找到 `prefix` 这一行。
+
+**步骤 2：删除 prefix 配置**
+
+```bash
+npm config delete prefix
+```
+
+**步骤 3：执行 nvm 提示的修复命令**
+
+```bash
+# 将版本号替换为报错信息中提示的版本
+nvm use --delete-prefix v14.18.1 --silent
+```
+
+**步骤 4：重新加载 shell 配置**
+
+```bash
+source ~/.zshrc
+```
+
+**步骤 5：验证是否修复成功**
+
+```bash
+# 重新打开终端，不再出现报错信息
+
+# 查看 prefix，已由 nvm 自动管理
+npm config get prefix
+# 输出：/Users/你的用户名/.nvm/versions/node/v14.18.1
+
+# 查看 .npmrc，prefix 已被移除
+cat ~/.npmrc
+# 输出：
+# cache=/Users/dyc/npm-cache
+# registry=https://registry.npmmirror.com
 ```
 
 > 官方文档：https://github.com/nvm-sh/nvm
