@@ -26,349 +26,74 @@
 
 ## 一、JDK 安装
 
-<br>
+## https://www.oracle.com/java/technologies/downloads/#jdk21-mac
 
-### 选择安装方案
+1. 如果你下载的是 tar.gz 压缩包（而不是 PKG），可以手动解压到任意目录。
 
-<br>
+步骤：
 
-> **推荐选择：** Eclipse Temurin（免费、开源、商业友好）
->
-> Oracle JDK 需要商业许可证，个人学习可以使用，但企业项目建议选择 Temurin。
+下载 tar.gz 包（例如 jdk-21_macos-aarch64_bin.tar.gz）
 
-<br>
-<br>
-
----
-
-### 方案一：Eclipse Temurin（推荐）
-
-<br>
-
-#### 步骤 1：下载 JDK
-
-<br>
-
-访问 [Adoptium 官网](https://adoptium.net/) 下载
-
-<br>
-
-**下载链接：**
-
-<br>
-
-- **JDK 21** — 最新 LTS，新项目首选
-  - [macOS ARM64 pkg](https://github.com/adoptium/temurin21-binaries/releases/latest/jdk-21_macos-aarch64_bin.pkg.gz)
-
-<br>
-
-- **JDK 17** — 稳定 LTS，广泛使用
-  - [macOS ARM64 pkg](https://github.com/adoptium/temurin17-binaries/releases/latest/jdk-17_macos-aarch64_bin.pkg.gz)
-
-<br>
-
-- **JDK 11** — 旧系统兼容
-  - [macOS ARM64 pkg](https://github.com/adoptium/temurin11-binaries/releases/latest/jdk-11_macos-aarch64_bin.pkg.gz)
-
-<br>
-
-- **JDK 8** — 遗留项目
-  - [macOS ARM64 pkg](https://github.com/adoptium/temurin8-binaries/releases/latest/jdk-8_macos-aarch64_bin.pkg.gz)
-
-<br>
-<br>
-
----
-
-#### 步骤 2：安装
-
-<br>
-
-双击下载的 `.pkg` 文件
-
-按安装向导完成安装
-
-<br>
-<br>
-
----
-
-#### 步骤 3：验证安装
-
-<br>
-
-打开终端，执行以下命令：
-
-<br>
-
-```bash
-java -version
-javac -version
-```
-
-<br>
-
-**成功输出示例：**
+解压到目标目录（比如你想装到 ~/Java 目录）：
 
 ```
-openjdk version "21.0.1" 2023-10-17
-OpenJDK Runtime Environment Temurin-21.0.1+12 (build 21.0.1+12)
-OpenJDK 64-Bit Server VM Temurin-21.0.1+12 (build 21.0.1+12, mixed mode)
+# 创建目标目录（如果不存在）
+mkdir -p ~/Java
+
+# 解压到该目录
+tar -xzf ~/Downloads/jdk-21_macos-aarch64_bin.tar.gz -C ~/Java/
 ```
-
-<br>
-<br>
-
----
-
-### 方案二：Oracle JDK（商业项目）
-
-<br>
-
-#### 步骤 1：下载 JDK
-
-<br>
-
-访问 [Oracle JDK 下载页面](https://www.oracle.com/java/technologies/downloads/)
-
-<br>
-
-**下载链接：**
-
-<br>
-
-- **JDK 17 (LTS)**
-  - [macOS ARM64 PKG](https://download.oracle.com/java/17/latest/jdk-17_macos-aarch64_bin.pkg)
-
-<br>
-
-- **JDK 21 (LTS)**
-  - [macOS ARM64 PKG](https://download.oracle.com/java/21/latest/jdk-21_macos-aarch64_bin.pkg)
-
-<br>
-
-> **注意：** 需选择 **macOS Installer** → **ARM64 架构**
-
-<br>
-<br>
-
----
-
-#### 步骤 2：安装
-
-<br>
-
-双击 `.pkg` 文件
-
-按安装向导完成安装
-
-<br>
-<br>
-
----
-
-#### 步骤 3：验证安装
-
-<br>
-
-```bash
-java -version
-javac -version
-```
-
-<br>
-<br>
-
----
-
-### JDK 安装位置
-
-<br>
-
-所有 JDK 安装后统一存放在：
-
-<br>
+#解压后的结构：
 
 ```
-/Library/Java/JavaVirtualMachines/
+~/Java/jdk-21.jdk/Contents/Home/
 ```
-
-<br>
-
-**示例路径：**
-
-<br>
-
-- `/Library/Java/JavaVirtualMachines/temurin-21.jdk/`
-
-- `/Library/Java/JavaVirtualMachines/jdk-17.jdk/`
-
-<br>
-<br>
-
----
-
-### 多版本管理
-
-<br>
-
-#### 查看已安装的 JDK
-
-<br>
-
-```bash
-/usr/libexec/java_home -V
+4. 配置 JAVA_HOME：编辑 ~/.zshrc 文件：
 ```
-
-<br>
-
-**输出示例：**
-
+open ~/.zshrc
 ```
-Matching Java Virtual Machines (2):
-    21, arm64:	"Eclipse Temurin 21"	/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home
-    17.0.9, arm64:	"Eclipse Temurin 17"	/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
+添加以下内容（注意替换成你的实际路径）：
 ```
-
-<br>
-<br>
-
----
-
-#### 临时切换版本
-
-<br>
-<br>
-
----
-
-##### 切换到 JDK 17
-
-<br>
-
-```bash
-export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+export JAVA_HOME=~/Java/jdk-21.jdk/Contents/Home
+export PATH=$JAVA_HOME/bin:$PATH
+```
+5. 生效并验证：
+```
+source ~/.zshrc
 java -version
 ```
-
-<br>
-<br>
-
----
-
-##### 切换到 JDK 21
-
-<br>
-
-```bash
-export JAVA_HOME=$(/usr/libexec/java_home -v 21)
-java -version
-```
-
-<br>
-
-> **注意：** 以上切换仅对当前终端会话有效，永久切换请参考 [环境变量配置](#五环境变量配置)
-
-<br>
-<br>
-
----
-
-**官方文档：** [Adoptium Temurin](https://adoptium.net/) | [Oracle JDK](https://www.oracle.com/java/technologies/downloads/)
-
-<br>
-<br>
-<br>
-
----
-
 ## 二、Maven 安装
 
-<br>
+> **官方下载：** [Apache Maven — Binary tar.gz archive](https://maven.apache.org/download.cgi)
+
 <br>
 
 ### 步骤 1：下载 Maven
 
 <br>
 
-访问 [Maven 官网下载页](https://maven.apache.org/download.cgi) 获取最新版本
-
-<br>
-
-或使用以下命令下载：
-
-<br>
-
-**步骤 1.1：进入下载目录**
-
-<br>
-
-```bash
-cd ~/Downloads
-```
-
-<br>
-<br>
-
-**步骤 1.2：下载 Maven**
-
-<br>
-
-```bash
-curl -O https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz
-```
+访问 [Maven 官网下载页](https://maven.apache.org/download.cgi)，下载 `apache-maven-3.9.16-bin.tar.gz`
 
 <br>
 <br>
 
 ---
 
-### 步骤 2.1：创建开发工具目录
+### 步骤 2：解压到目标目录
+
+<br>
+
+解压到 `~/Java` 目录（和 JDK 放在一起）：
 
 <br>
 
 ```bash
-sudo mkdir -p /opt/devtools
+tar -xzf ~/Downloads/apache-maven-3.9.16-bin.tar.gz -C ~/Java/
 ```
 
 <br>
-<br>
 
----
-
-### 步骤 2.2：解压文件
-
-<br>
-
-```bash
-tar -xzf apache-maven-3.9.9-bin.tar.gz
-```
-
-<br>
-<br>
-
----
-
-### 步骤 2.3：移动到固定位置
-
-<br>
-
-```bash
-sudo mv apache-maven-3.9.9 /opt/devtools/maven
-```
-
-<br>
-<br>
-
----
-
-### 步骤 2.4：清理下载文件
-
-<br>
-
-```bash
-rm apache-maven-3.9.9-bin.tar.gz
-```
+解压后会得到 `~/Java/apache-maven-3.9.16/` 目录
 
 <br>
 <br>
@@ -384,25 +109,24 @@ rm apache-maven-3.9.9-bin.tar.gz
 <br>
 
 ```bash
-vim ~/.zshrc
+open ~/.zshrc
 ```
 
 <br>
 
-添加以下内容：
+添加以下内容（路径根据你的实际解压位置调整）：
 
 <br>
 
 ```bash
-# Maven
-export M2_HOME=/opt/devtools/maven
-export MAVEN_HOME=$M2_HOME
-export PATH="$M2_HOME/bin:$PATH"
+# Maven 配置
+export MAVEN_HOME=~/Java/apache-maven-3.9.16
+export PATH=$MAVEN_HOME/bin:$PATH
 ```
 
 <br>
 
-使配置生效：
+保存后使配置生效：
 
 <br>
 
@@ -427,13 +151,18 @@ mvn -version
 
 **成功输出示例：**
 
+<br>
+
 ```
-Apache Maven 3.9.9 (8e8579a9e76a7b34ff6f3f2b6d1e658e3c1b5dc5)
-Maven home: /opt/devtools/maven
-Java version: 17.0.9, vendor: Eclipse Adoptium
-Default locale: zh_CN, platform encoding: UTF-8
-OS name: "mac os x", version: "14.0", arch: "aarch64", family: "mac"
+Apache Maven 3.9.16 (...)
+Maven home: /Users/你的用户名/Java/apache-maven-3.9.16
+Java version: 21..., vendor: ...
+OS name: "mac os x", version: "...", arch: "aarch64", family: "mac"
 ```
+
+<br>
+
+> **提示：** 输出中 `arch: "aarch64"` 说明 Maven 在 M2 芯片上运行正常
 
 <br>
 <br>
@@ -505,195 +234,7 @@ vim ~/.m2/settings.xml
 
 ## 三、MySQL 安装
 
-<br>
 
-> **说明：** 以下步骤适用于 MySQL Community Server 官方安装包
-
-<br>
-<br>
-
-### 步骤 1：下载 MySQL
-
-<br>
-
-访问 [MySQL 官网下载页](https://dev.mysql.com/downloads/mysql/)
-
-<br>
-
-**选择选项：**
-
-- **Select Operating System:** macOS
-- **Select OS Version:** macOS 14 (ARM, DMG Archive)
-
-<br>
-
-> **重要：** 必须选择 **macOS ARM** 版本才能在 M2 芯片上运行
-
-<br>
-
-或直接下载：[macOS ARM DMG](https://dev.mysql.com/downloads/mysql/)
-
-<br>
-<br>
-
----
-
-### 步骤 2：安装 MySQL
-
-<br>
-
-**操作步骤：**
-
-<br>
-
-1. 双击下载的 `.dmg` 文件
-
-<br>
-
-2. 安装组件：
-
-<br>
-
-**必需组件：**
-
-- `mysql.pkg` — MySQL 服务器 ✅ 必须安装
-
-<br>
-
-**可选组件：**
-
-- `MySQL.prefPane` — 系统偏好设置面板
-- `MySQLStartupItem.pkg` — 开机自启
-
-<br>
-
-3. 安装过程中设置 **root 密码**，请妥善保存
-
-<br>
-<br>
-
----
-
-### 步骤 3：启动 MySQL 服务
-
-<br>
-
-#### 方式一：系统偏好设置
-
-<br>
-
-1. 打开 `系统设置` → `MySQL`
-
-2. 点击 `Start MySQL Server`
-
-<br>
-<br>
-
----
-
-#### 方式二：命令行
-
-<br>
-
-**启动服务：**
-
-<br>
-
-```bash
-sudo /usr/local/mysql/support-files/mysql.server start
-```
-
-<br>
-
-**停止服务：**
-
-<br>
-
-```bash
-sudo /usr/local/mysql/support-files/mysql.server stop
-```
-
-<br>
-
-**重启服务：**
-
-<br>
-
-```bash
-sudo /usr/local/mysql/support-files/mysql.server restart
-```
-
-<br>
-
-**查看状态：**
-
-<br>
-
-```bash
-sudo /usr/local/mysql/support-files/mysql.server status
-```
-
-<br>
-<br>
-
----
-
-### 步骤 4：连接 MySQL
-
-<br>
-
-```bash
-mysql -u root -p
-```
-
-<br>
-
-输入安装时设置的密码
-
-<br>
-
-**连接成功后，会看到 MySQL 提示符：**
-
-<br>
-
-```
-Welcome to the MySQL monitor.  Commands end with ; or \g.
-Your MySQL connection id is 8
-Server version: 8.0.35 MySQL Community Server
-
-mysql>
-```
-
-<br>
-<br>
-
----
-
-### 步骤 5：（可选）修改 root 密码
-
-<br>
-
-```bash
-# 登录 MySQL
-mysql -u root -p
-```
-
-<br>
-
-**在 MySQL 命令行中执行：**
-
-<br>
-
-```sql
-ALTER USER 'root'@'localhost' IDENTIFIED BY '新密码';
-FLUSH PRIVILEGES;
-EXIT;
-```
-
-<br>
-<br>
-
----
 
 ### MySQL 图形化管理工具
 
