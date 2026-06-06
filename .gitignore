@@ -54,3 +54,4 @@ coverage/
 dist/
 build/
 ddd/
+.vitepress/dist

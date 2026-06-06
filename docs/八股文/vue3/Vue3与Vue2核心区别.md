@@ -180,7 +180,7 @@ onMounted(() => {
 | 移除 | Vue 2 用法 | Vue 3 替代 |
 |------|-----------|-----------|
 | `$on` / `$off` / `$once` | 事件总线 | mitt / Pinia |
-| `filters` | `{{ msg | capitalize }}` | computed / 方法 |
+| `filters` | <code v-pre>{{ msg \| capitalize }}</code> | computed / 方法 |
 | `$children` | 访问子组件 | `ref` + `defineExpose` |
 | `$destroy` | 手动销毁 | 不再需要（由框架管理） |
 | `inline-template` | 内联模板 | 插槽 |
