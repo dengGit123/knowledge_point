@@ -184,13 +184,25 @@ const invalid = computed(() => {
   return count.value
 })
 
-// ✅ 正确：使用 watch
-watch(() => {
-  count.value++
-  return someValue
-}, (newVal) => {
-  // 处理逻辑
+// ✅ 正确：使用 watch 处理副作用
+watch(count, (newVal, oldVal) => {
+  console.log('count 变化了:', newVal)
+  // 副作用放在回调中：发请求、操作 DOM、修改其他状态等
+  someState.value = newVal * 2
 })
+
+// ✅ 正确：监听多个源
+watch([count, name], ([newCount, newName]) => {
+  // 根据 count 和 name 的变化执行副作用
+})
+
+// ✅ 正确：监听 getter 函数（只读取，不修改）
+watch(
+  () => user.value.age,       // 数据源：只读取响应式数据
+  (newAge, oldAge) => {       // 回调：在这里处理副作用
+    console.log('年龄变化:', oldAge, '→', newAge)
+  }
+)
 ```
 
 ### 3. 计算属性会自动缓存
