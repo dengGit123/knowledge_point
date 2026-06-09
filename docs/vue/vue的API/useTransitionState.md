@@ -1,6 +1,11 @@
 # useTransitionState
 
+## 作用
+
 用于获取过渡内部状态的内部 API，主要用于库作者。
+
+> 参考：[Vue 官方文档 - useTransitionState](https://cn.vuejs.org/api/)
+<!-- 该 API 为内部 API，暂无独立官方文档页 -->
 
 ## 语法
 

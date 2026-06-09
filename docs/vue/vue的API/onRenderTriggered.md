@@ -4,6 +4,8 @@
 
 `onRenderTriggered()` 是一个调试钩子，在渲染函数因依赖变化而触发重新渲染时调用。仅在开发模式下工作。
 
+> [官方文档：onRenderTriggered](https://cn.vuejs.org/api/composition-api-lifecycle#onrendertriggered)
+
 ## 基本用法
 
 ```javascript

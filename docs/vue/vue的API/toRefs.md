@@ -1,5 +1,7 @@
 # toRefs
 
+> [Vue 官方文档 - toRefs](https://cn.vuejs.org/api/reactivity-utilities#torefs)
+
 ## 作用
 `toRefs()` 将响应式对象转换为普通对象，其中每个属性都是指向原始对象相应属性的 ref。这样可以在解构响应式对象时保持响应性。
 
@@ -7,7 +9,7 @@
 
 ### 基本用法
 
-```text
+```javascript
 import { reactive, toRefs } from 'vue'
 
 const state = reactive({
@@ -29,7 +31,7 @@ console.log(state.count) // 1
 
 ### 解构响应式对象
 
-```text
+```javascript
 import { reactive, toRefs } from 'vue'
 
 const state = reactive({
@@ -51,7 +53,7 @@ count2++ // 不会触发更新
 
 ### 在 setup 函数中返回
 
-```text
+```javascript
 import { reactive, toRefs } from 'vue'
 
 export default {
@@ -64,7 +66,7 @@ export default {
     // 返回解构后的 refs
     return {
       ...toRefs(state),
-      increment: () =&gt; state.count++
+      increment: () => state.count++
     }
   }
 }
@@ -72,7 +74,7 @@ export default {
 
 ### 在组合函数中使用
 
-```text
+```javascript
 // useFeature.js
 import { reactive, toRefs } from 'vue'
 
@@ -98,25 +100,26 @@ export function useFeature() {
     updateMessage
   }
 }
+```
 
-// 在组件中使用
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { useFeature } from './useFeature'
 
 const { count, message, isLoading, increment } = useFeature()
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;{{ count }}&lt;/div&gt;
-  &lt;div&gt;{{ message }}&lt;/div&gt;
-  &lt;button @click="increment"&gt;{{ count }}&lt;/button&gt;
-`&lt;/template&gt;`
+<template>
+  <div>{{ count }}</div>
+  <div>{{ message }}</div>
+  <button @click="increment">{{ count }}</button>
+</template>
 ```
 
-### 在 `&lt;script setup&gt;` 中使用
+### 在 `<script setup>` 中使用
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { reactive, toRefs } from 'vue'
 
 const state = reactive({
@@ -133,17 +136,17 @@ const { count, message, user } = toRefs(state)
 
 // 访问嵌套属性
 console.log(user.value.name) // 'Vue'
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;{{ count }} - {{ message }}&lt;/div&gt;
-  &lt;div&gt;{{ user.name }}&lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div>{{ count }} - {{ message }}</div>
+  <div>{{ user.name }}</div>
+</template>
 ```
 
 ### 选择性转换
 
-```text
+```javascript
 import { reactive, toRefs } from 'vue'
 
 const state = reactive({
@@ -162,7 +165,7 @@ const { count, message } = toRefs(state)
 
 ### TypeScript 类型支持
 
-```text
+```javascript
 import { reactive, toRefs } from 'vue'
 
 interface State {
@@ -171,7 +174,7 @@ interface State {
   flag: boolean
 }
 
-const state = reactive&lt;State&gt;({
+const state = reactive<State>({
   count: 0,
   message: 'Hello',
   flag: true
@@ -179,14 +182,14 @@ const state = reactive&lt;State&gt;({
 
 // 类型推导正确
 const { count, message, flag } = toRefs(state)
-// count: Ref&lt;number&gt;
-// message: Ref&lt;string&gt;
-// flag: Ref&lt;boolean&gt;
+// count: Ref<number>
+// message: Ref<string>
+// flag: Ref<boolean>
 ```
 
 ### 与 computed 配合
 
-```text
+```javascript
 import { reactive, toRefs, computed } from 'vue'
 
 const state = reactive({
@@ -196,14 +199,14 @@ const state = reactive({
 
 const { firstName, lastName } = toRefs(state)
 
-const fullName = computed(() =&gt; {
+const fullName = computed(() => {
   return firstName.value + ' ' + lastName.value
 })
 ```
 
 ### 与 watch 配合
 
-```text
+```javascript
 import { reactive, toRefs, watch } from 'vue'
 
 const state = reactive({
@@ -213,7 +216,7 @@ const state = reactive({
 
 const { count, message } = toRefs(state)
 
-watch([count, message], ([newCount, newMessage]) =&gt; {
+watch([count, message], ([newCount, newMessage]) => {
   console.log('变化:', { newCount, newMessage })
 })
 ```
@@ -222,7 +225,7 @@ watch([count, message], ([newCount, newMessage]) =&gt; {
 
 ### 1. 只转换顶层属性
 
-```text
+```javascript
 const state = reactive({
   user: {
     name: 'Vue',
@@ -242,7 +245,7 @@ const { name, age } = toRefs(state.user)
 
 ### 2. 与直接解构的区别
 
-```text
+```javascript
 const state = reactive({
   count: 0,
   message: 'Hello'
@@ -259,7 +262,7 @@ countRef.value++ // 触发更新
 
 ### 3. ref 需要使用 .value
 
-```text
+```javascript
 const { count, message } = toRefs(state)
 
 // 在 JS 中需要 .value
@@ -267,12 +270,12 @@ console.log(count.value)
 count.value++
 
 // 在模板中自动解包
-// `&lt;template&gt;`{{ count }}`&lt;/template&gt;`
+// <template>{{ count }}</template>
 ```
 
 ### 4. 返回新对象
 
-```text
+```javascript
 const state = reactive({ count: 0 })
 
 const refs1 = toRefs(state)
@@ -284,7 +287,7 @@ console.log(refs1.count === refs2.count) // true
 
 ### 5. 对 null/undefined 的处理
 
-```text
+```javascript
 const state = reactive({
   value: null,
   missing: undefined
@@ -301,8 +304,8 @@ value.value = 'new value'
 
 ### 6. 与 props 一起使用
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { toRefs } from 'vue'
 
 const props = defineProps({
@@ -315,13 +318,13 @@ const props = defineProps({
 const { count, message, disabled } = toRefs(props)
 
 // 使用
-const doubled = computed(() =&gt; count.value * 2)
-`&lt;/script&gt;`
+const doubled = computed(() => count.value * 2)
+</script>
 ```
 
 ### 7. 不适用于数组
 
-```text
+```javascript
 const list = reactive([1, 2, 3])
 
 // ❌ 不要对数组使用 toRefs
@@ -338,14 +341,14 @@ const items = toRef(list, 'value') // 如果需要
 
 ### 1. 组合函数返回状态
 
-```text
+```javascript
 // useCounter.js
 import { reactive, toRefs, computed } from 'vue'
 
 export function useCounter(initialValue = 0) {
   const state = reactive({
     count: initialValue,
-    doubled: computed(() =&gt; state.count * 2)
+    doubled: computed(() => state.count * 2)
   })
 
   function increment() {
@@ -367,18 +370,19 @@ export function useCounter(initialValue = 0) {
     reset
   }
 }
+```
 
-// 使用
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { useCounter } from './useCounter'
 
 const { count, doubled, increment } = useCounter(10)
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 2. 表单状态管理
 
-```text
+```javascript
 // useForm.js
 import { reactive, toRefs, computed } from 'vue'
 
@@ -389,19 +393,19 @@ export function useForm(initialValues) {
     touched: {}
   })
 
-  const setValue = (field, value) =&gt; {
+  const setValue = (field, value) => {
     state.values[field] = value
     state.touched[field] = true
     validateField(field)
   }
 
-  const validateField = (field) =&gt; {
+  const validateField = (field) => {
     // 验证逻辑
     state.errors[field] = null
   }
 
-  const isValid = computed(() =&gt; {
-    return Object.keys(state.errors).every(key =&gt; !state.errors[key])
+  const isValid = computed(() => {
+    return Object.keys(state.errors).every(key => !state.errors[key])
   })
 
   return {
@@ -410,9 +414,10 @@ export function useForm(initialValues) {
     isValid
   }
 }
+```
 
-// 使用
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { useForm } from './useForm'
 
 const { values, errors, isValid, setValue } = useForm({
@@ -420,12 +425,12 @@ const { values, errors, isValid, setValue } = useForm({
   email: '',
   password: ''
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 3. 加载状态管理
 
-```text
+```javascript
 // useAsync.js
 import { reactive, toRefs } from 'vue'
 
@@ -454,22 +459,23 @@ export function useAsync() {
     execute
   }
 }
+```
 
-// 使用
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { useAsync } from './useAsync'
 
 const { data, isLoading, error, execute } = useAsync()
 
-onMounted(() =&gt; {
+onMounted(() => {
   execute(fetch('/api/data'))
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 4. 分页状态
 
-```text
+```javascript
 // usePagination.js
 import { reactive, toRefs, computed } from 'vue'
 
@@ -480,12 +486,12 @@ export function usePagination(totalItems, itemsPerPage = 10) {
     totalItems
   })
 
-  const totalPages = computed(() =&gt; {
+  const totalPages = computed(() => {
     return Math.ceil(state.totalItems / state.itemsPerPage)
   })
 
-  const hasNextPage = computed(() =&gt; state.currentPage &lt; totalPages.value)
-  const hasPrevPage = computed(() =&gt; state.currentPage &gt; 1)
+  const hasNextPage = computed(() => state.currentPage < totalPages.value)
+  const hasPrevPage = computed(() => state.currentPage > 1)
 
   function nextPage() {
     if (hasNextPage.value) state.currentPage++
@@ -496,7 +502,7 @@ export function usePagination(totalItems, itemsPerPage = 10) {
   }
 
   function goToPage(page) {
-    if (page &gt;= 1 && page &lt;= totalPages.value) {
+    if (page >= 1 && page <= totalPages.value) {
       state.currentPage = page
     }
   }
@@ -515,7 +521,7 @@ export function usePagination(totalItems, itemsPerPage = 10) {
 
 ### 5. 模态框状态
 
-```text
+```javascript
 // useModal.js
 import { reactive, toRefs } from 'vue'
 
@@ -552,7 +558,7 @@ export function useModal(initialOpen = false) {
 
 ### 6. 通知系统
 
-```text
+```javascript
 // useNotification.js
 import { reactive, toRefs } from 'vue'
 
@@ -572,18 +578,18 @@ export function useNotification() {
 
     state.notifications.push(notification)
 
-    if (state.notifications.length &gt; state.maxNotifications) {
+    if (state.notifications.length > state.maxNotifications) {
       state.notifications.shift()
     }
 
-    if (notification.duration &gt; 0) {
-      setTimeout(() =&gt; remove(notification.id), notification.duration)
+    if (notification.duration > 0) {
+      setTimeout(() => remove(notification.id), notification.duration)
     }
   }
 
   function remove(id) {
-    const index = state.notifications.findIndex(n =&gt; n.id === id)
-    if (index &gt; -1) {
+    const index = state.notifications.findIndex(n => n.id === id)
+    if (index > -1) {
       state.notifications.splice(index, 1)
     }
   }
@@ -608,7 +614,7 @@ export function useNotification() {
 
 ### 7. 窗口大小
 
-```text
+```javascript
 // useWindowSize.js
 import { reactive, toRefs, onMounted, onUnmounted } from 'vue'
 
@@ -623,18 +629,18 @@ export function useWindowSize() {
     state.height = window.innerHeight
   }
 
-  onMounted(() =&gt; {
+  onMounted(() => {
     window.addEventListener('resize', update)
   })
 
-  onUnmounted(() =&gt; {
+  onUnmounted(() => {
     window.removeEventListener('resize', update)
   })
 
   // 额外的计算属性
-  const isMobile = computed(() =&gt; state.width &lt; 768)
-  const isTablet = computed(() =&gt; state.width &gt;= 768 && state.width &lt; 1024)
-  const isDesktop = computed(() =&gt; state.width &gt;= 1024)
+  const isMobile = computed(() => state.width < 768)
+  const isTablet = computed(() => state.width >= 768 && state.width < 1024)
+  const isDesktop = computed(() => state.width >= 1024)
 
   return {
     ...toRefs(state),
@@ -647,7 +653,7 @@ export function useWindowSize() {
 
 ### 8. 本地存储同步
 
-```text
+```javascript
 // useStorage.js
 import { reactive, toRefs, watch } from 'vue'
 
@@ -659,8 +665,8 @@ export function useStorage(key, initialValue) {
 
   // 监听变化并保存
   watch(
-    () =&gt; state.value,
-    (newValue) =&gt; {
+    () => state.value,
+    (newValue) => {
       localStorage.setItem(key, JSON.stringify(newValue))
     },
     { deep: true }
@@ -670,21 +676,22 @@ export function useStorage(key, initialValue) {
     ...toRefs(state)
   }
 }
+```
 
-// 使用
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { useStorage } from './useStorage'
 
 const { value } = useStorage('user-preferences', {
   theme: 'light',
   language: 'zh-CN'
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 9. 鼠标位置追踪
 
-```text
+```javascript
 // useMouse.js
 import { reactive, toRefs, onMounted, onUnmounted } from 'vue'
 
@@ -699,11 +706,11 @@ export function useMouse() {
     state.y = event.clientY
   }
 
-  onMounted(() =&gt; {
+  onMounted(() => {
     window.addEventListener('mousemove', update)
   })
 
-  onUnmounted(() =&gt; {
+  onUnmounted(() => {
     window.removeEventListener('mousemove', update)
   })
 
@@ -711,22 +718,23 @@ export function useMouse() {
     ...toRefs(state)
   }
 }
+```
 
-// 使用
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { useMouse } from './useMouse'
 
 const { x, y } = useMouse()
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;鼠标位置: {{ x }}, {{ y }}&lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div>鼠标位置: {{ x }}, {{ y }}</div>
+</template>
 ```
 
 ### 10. 网络请求状态
 
-```text
+```javascript
 // useFetch.js
 import { reactive, toRefs } from 'vue'
 
@@ -763,7 +771,7 @@ export function useFetch(url) {
 
 ## toRefs vs toRef
 
-```text
+```javascript
 const state = reactive({
   count: 0,
   message: 'Hello',
@@ -776,7 +784,7 @@ const allRefs = toRefs(state)
 
 // toRef: 转换单个属性
 const countRef = toRef(state, 'count')
-// Ref&lt;number&gt;
+// Ref<number>
 ```
 
 ## 最佳实践

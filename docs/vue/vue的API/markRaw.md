@@ -4,6 +4,8 @@
 
 `markRaw()` 标记一个对象，使其永远不会被转换为响应式对象。返回对象本身。
 
+> [官方文档](https://cn.vuejs.org/api/reactivity-advanced#markraw)
+
 ## 基本用法
 
 ```javascript

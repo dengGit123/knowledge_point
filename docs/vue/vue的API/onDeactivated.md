@@ -4,6 +4,8 @@
 
 `onDeactivated()` 是 Vue 3 的生命周期钩子，用于被 `<keep-alive>` 缓存的组件。当组件被停用时调用。
 
+> 参考：[Vue 官方文档 - onDeactivated](https://cn.vuejs.org/api/composition-api-lifecycle#ondeactivated)
+
 ## 基本用法
 
 ```javascript

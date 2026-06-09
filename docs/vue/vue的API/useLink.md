@@ -2,6 +2,8 @@
 
 Vue Router 提供的组合式函数，用于创建导航链接。
 
+> 官方文档：[useLink](https://router.vuejs.org/zh/api/#uselink)
+
 ## 语法
 
 ```javascript

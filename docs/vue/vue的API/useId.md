@@ -2,6 +2,8 @@
 
 用于生成每个应用实例唯一的 ID，主要用于无障碍访问和表单元素关联。
 
+> 官方文档：[useId](https://cn.vuejs.org/api/composition-api-helpers#useid)
+
 ## 语法
 
 ```javascript

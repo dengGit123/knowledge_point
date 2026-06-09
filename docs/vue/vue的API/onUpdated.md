@@ -1,42 +1,45 @@
 # onUpdated
 
 ## 作用
+
+> [Vue 官方文档 - onUpdated](https://cn.vuejs.org/api/composition-api-lifecycle#onupdated)
+
 `onUpdated()` 是 Vue 3 的生命周期钩子，在组件因响应式状态变化而更新其 DOM 树后调用。可以在此钩子中执行依赖于 DOM 更新后的操作。
 
 ## 用法
 
 ### 基本用法
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated } from 'vue'
 
 const count = ref(0)
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   console.log('组件已更新，count:', count.value)
 })
 
 function increment() {
   count.value++
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button @click="increment"&gt;{{ count }}&lt;/button&gt;
-`&lt;/template&gt;`
+<template>
+  <button @click="increment">{{ count }}</button>
+</template>
 ```
 
 ### 访问更新后的 DOM
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated } from 'vue'
 
 const items = ref([])
 const listRef = ref(null)
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   // DOM 已更新，可以获取最新的 DOM 属性
   const listHeight = listRef.value.offsetHeight
   console.log('列表高度:', listHeight)
@@ -45,81 +48,80 @@ onUpdated(() =&gt; {
 function addItem() {
   items.value.push(`Item ${items.value.length + 1}`)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;button @click="addItem"&gt;添加项目&lt;/button&gt;
-    &lt;ul ref="listRef"&gt;
-      &lt;li v-for="(item, index) in items" :key="index"&gt;
+<template>
+  <div>
+    <button @click="addItem">添加项目</button>
+    <ul ref="listRef">
+      <li v-for="(item, index) in items" :key="index">
         {{ item }}
-      &lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+      </li>
+    </ul>
+  </div>
+</template>
 ```
 
 ### 监听特定元素变化
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated } from 'vue'
 
 const content = ref('')
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   // 检查特定元素是否更新
   const element = document.querySelector('.content-display')
   if (element) {
     console.log('内容高度:', element.scrollHeight)
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;input v-model="content" /&gt;
-    &lt;div class="content-display"&gt;{{ content }}&lt;/div&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div>
+    <input v-model="content" />
+    <div class="content-display">{{ content }}</div>
+  </div>
+</template>
 ```
 
 ### 动态计算布局
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated } from 'vue'
 
 const containerRef = ref(null)
 const columns = ref(1)
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   // 根据容器宽度动态计算列数
   const width = containerRef.value.offsetWidth
   columns.value = Math.floor(width / 200) || 1
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div ref="containerRef" class="container"&gt;
-    &lt;div class="grid" :style="{ gridTemplateColumns: `repeat(${columns}, 1fr)` }"&gt;
-      &lt;div v-for="i in 10" :key="i" class="item"&gt;
+<template>
+  <div ref="containerRef" class="container">
+    <div class="grid" :style="{ gridTemplateColumns: `repeat(${columns}, 1fr)` }">
+      <div v-for="i in 10" :key="i" class="item">
         Item {{ i }}
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+      </div>
+    </div>
+  </div>
+</template>
 ```
 
 ### 与 nextTick 配合
 
-```text
-`&lt;script setup&gt;`
+```javascript
 import { ref, onUpdated, nextTick } from 'vue'
 
 const items = ref([])
 
-onUpdated(async () =&gt; {
+onUpdated(async () => {
   // onUpdated 已经在 DOM 更新后执行
   // 但如果需要等待所有子组件更新，可以使用 nextTick
   await nextTick()
@@ -129,23 +131,22 @@ onUpdated(async () =&gt; {
 function addItem() {
   items.value.push(Date.now())
 }
-`&lt;/script&gt;`
 ```
 
 ### 防抖的更新处理
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated } from 'vue'
 
 const data = ref('')
 
 let updateTimer = null
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   // 防抖处理
   clearTimeout(updateTimer)
-  updateTimer = setTimeout(() =&gt; {
+  updateTimer = setTimeout(() => {
     console.log('DOM 更新完成，执行操作')
     saveToLocalStorage()
   }, 300)
@@ -154,16 +155,16 @@ onUpdated(() =&gt; {
 function saveToLocalStorage() {
   localStorage.setItem('data', data.value)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;textarea v-model="data"&gt;&lt;/textarea&gt;
-`&lt;/template&gt;`
+<template>
+  <textarea v-model="data"></textarea>
+</template>
 ```
 
 ### 在选项式 API 中使用
 
-```text
+```javascript
 export default {
   data() {
     return {
@@ -184,53 +185,53 @@ export default {
 
 ### TypeScript 支持
 
-```text
-&lt;script setup lang="ts"&gt;
+```vue
+<script setup lang="ts">
 import { ref, onUpdated } from 'vue'
 
-const elementRef = ref&lt;HTMLElement | null&gt;(null)
+const elementRef = ref<HTMLElement | null>(null)
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   if (elementRef.value) {
     const height = elementRef.value.offsetHeight
     console.log('元素高度:', height)
   }
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ## 注意事项
 
 ### 1. 执行时机
 
-```text
+```javascript
 import { ref, onUpdated, onBeforeUpdate } from 'vue'
 
 const count = ref(0)
 
 // 数据变化
 count.value = 1
-↓
+// ↓
 // onBeforeUpdate 执行
-onBeforeUpdate(() =&gt; {
+onBeforeUpdate(() => {
   console.log('DOM 即将更新')
 })
-↓
+// ↓
 // DOM 更新
-↓
+// ↓
 // onUpdated 执行
-onUpdated(() =&gt; {
+onUpdated(() => {
   console.log('DOM 已更新')
 })
 ```
 
 ### 2. 不要在 onUpdated 中修改响应式状态
 
-```text
+```javascript
 // ❌ 错误：可能导致无限更新循环
 const count = ref(0)
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   count.value++ // 修改状态会再次触发更新
 })
 
@@ -238,112 +239,112 @@ onUpdated(() =&gt; {
 const count = ref(0)
 const maxCount = 10
 
-onUpdated(() =&gt; {
-  if (count.value &lt; maxCount) {
+onUpdated(() => {
+  if (count.value < maxCount) {
     count.value++
   }
 })
 
 // ✅ 或者使用 watch
-watch(count, () =&gt; {
+watch(count, () => {
   // 处理逻辑
 })
 ```
 
 ### 3. 与 watchEffect/watchPostEffect 的区别
 
-```text
+```javascript
 // onUpdated: 每次组件更新时都会执行
-onUpdated(() =&gt; {
+onUpdated(() => {
   console.log('组件更新了')
 })
 
 // watch: 只在侦听的数据变化时执行
-watch(someData, () =&gt; {
+watch(someData, () => {
   console.log('someData 变化了')
 })
 
 // watchPostEffect: 依赖变化时执行，且在 DOM 更新后
-watchPostEffect(() =&gt; {
+watchPostEffect(() => {
   console.log('依赖变化且 DOM 已更新')
 })
 ```
 
 ### 4. 性能考虑
 
-```text
+```javascript
 // ⚠️ 频繁更新时 onUpdated 会频繁调用
 const list = ref([])
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   // 每次 list 变化都会执行
   // 如果有大量数据可能导致性能问题
   list.value.forEach(/* 昂贵的操作 */)
 })
 
 // ✅ 考虑使用 watch 进行防抖或节流
-watch(list, debounce((newList) =&gt; {
+watch(list, debounce((newList) => {
   newList.forEach(/* 操作 */)
 }, 300))
 ```
 
 ### 5. 父子组件更新顺序
 
-```text
-&lt;!-- 父组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 父组件 -->
+<script setup>
 import { onUpdated } from 'vue'
 import Child from './Child.vue'
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   console.log('父组件更新')
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;Child /&gt;
-`&lt;/template&gt;`
+<template>
+  <Child />
+</template>
 
-&lt;!-- 子组件 Child.vue --&gt;
-`&lt;script setup&gt;`
+<!-- 子组件 Child.vue -->
+<script setup>
 import { onUpdated } from 'vue'
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   console.log('子组件更新')
 })
-`&lt;/script&gt;`
-
-// 输出顺序：
-// 1. 子组件更新
-// 2. 父组件更新
+</script>
 ```
+
+输出顺序：
+1. 子组件更新
+2. 父组件更新
 
 ### 6. 与 keep-alive 的关系
 
-```text
-&lt;!-- 使用 keep-alive 时 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 使用 keep-alive 时 -->
+<script setup>
 import { ref, onUpdated, onActivated } from 'vue'
 
 const data = ref('')
 
 // onUpdated 在组件更新时执行
-onUpdated(() =&gt; {
+onUpdated(() => {
   console.log('组件内容更新')
 })
 
 // onActivated 在组件激活时执行
-onActivated(() =&gt; {
+onActivated(() => {
   console.log('组件被激活')
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 7. SSR 注意事项
 
-```text
+```javascript
 // ⚠️ onUpdated 只在客户端执行
-onUpdated(() =&gt; {
+onUpdated(() => {
   // 这个代码不会在服务器端执行
 })
 
@@ -352,32 +353,30 @@ onUpdated(() =&gt; {
 
 ### 8. 访问 DOM 的正确方式
 
-```text
-`&lt;script setup&gt;`
+```javascript
 import { ref, onUpdated, watchPostEffect } from 'vue'
 
 const elementRef = ref(null)
 
 // ✅ 方式1: 使用 onUpdated
-onUpdated(() =&gt; {
+onUpdated(() => {
   console.log(elementRef.value?.offsetHeight)
 })
 
 // ✅ 方式2: 使用 watchPostEffect（更推荐）
-watchPostEffect(() =&gt; {
+watchPostEffect(() => {
   console.log(elementRef.value?.offsetHeight)
 })
-`&lt;/script&gt;`
 ```
 
 ### 9. 更新次数追踪
 
-```text
+```javascript
 import { ref, onUpdated } from 'vue'
 
 const updateCount = ref(0)
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   updateCount.value++
   console.log('更新次数:', updateCount.value)
 })
@@ -385,42 +384,42 @@ onUpdated(() =&gt; {
 
 ### 10. 条件渲染的处理
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated } from 'vue'
 
 const show = ref(true)
 const content = ref('')
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   // 注意：如果 v-if="false"，元素不在 DOM 中
   const element = document.querySelector('.conditional')
   console.log('元素存在:', !!element)
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;button @click="show = !show"&gt;切换显示&lt;/button&gt;
-    &lt;div v-if="show" class="conditional"&gt;
+<template>
+  <div>
+    <button @click="show = !show">切换显示</button>
+    <div v-if="show" class="conditional">
       {{ content }}
-    &lt;/div&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    </div>
+  </div>
+</template>
 ```
 
 ## 使用场景
 
 ### 1. 自动滚动到底部
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated } from 'vue'
 
 const messages = ref([])
 const containerRef = ref(null)
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   // 每次消息更新后自动滚动到底部
   if (containerRef.value) {
     containerRef.value.scrollTop = containerRef.value.scrollHeight
@@ -430,70 +429,70 @@ onUpdated(() =&gt; {
 function addMessage(msg) {
   messages.value.push(msg)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div ref="containerRef" class="message-container"&gt;
-    &lt;div v-for="(msg, index) in messages" :key="index"&gt;
+<template>
+  <div ref="containerRef" class="message-container">
+    <div v-for="(msg, index) in messages" :key="index">
       {{ msg }}
-    &lt;/div&gt;
-  &lt;/div&gt;
-  &lt;button @click="addMessage('新消息')"&gt;添加消息&lt;/button&gt;
-`&lt;/template&gt;`
+    </div>
+  </div>
+  <button @click="addMessage('新消息')">添加消息</button>
+</template>
 
-&lt;style&gt;
+<style>
 .message-container {
   height: 300px;
   overflow-y: auto;
 }
-&lt;/style&gt;
+</style>
 ```
 
 ### 2. 动态高度调整
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated } from 'vue'
 
 const items = ref([])
 const wrapperRef = ref(null)
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   // 根据内容动态调整高度
   if (wrapperRef.value) {
     const contentHeight = wrapperRef.value.scrollHeight
-    if (contentHeight &gt; 300) {
+    if (contentHeight > 300) {
       wrapperRef.value.style.height = '300px'
       wrapperRef.value.style.overflowY = 'auto'
     }
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div ref="wrapperRef" class="dynamic-wrapper"&gt;
-    &lt;div v-for="(item, index) in items" :key="index"&gt;
+<template>
+  <div ref="wrapperRef" class="dynamic-wrapper">
+    <div v-for="(item, index) in items" :key="index">
       {{ item }}
-    &lt;/div&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    </div>
+  </div>
+</template>
 ```
 
 ### 3. 图片懒加载检测
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated } from 'vue'
 
 const images = ref([])
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   // 检查图片是否进入视口
   const imageElements = document.querySelectorAll('.lazy-image')
 
-  imageElements.forEach(img =&gt; {
+  imageElements.forEach(img => {
     const rect = img.getBoundingClientRect()
-    if (rect.top &lt; window.innerHeight) {
+    if (rect.top < window.innerHeight) {
       img.src = img.dataset.src
       img.classList.remove('lazy-image')
     }
@@ -503,30 +502,30 @@ onUpdated(() =&gt; {
 function loadMoreImages() {
   images.value.push(/* 更多图片 */)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;button @click="loadMoreImages"&gt;加载更多&lt;/button&gt;
-    &lt;img
+<template>
+  <div>
+    <button @click="loadMoreImages">加载更多</button>
+    <img
       v-for="(img, index) in images"
       :key="index"
       :data-src="img.url"
       class="lazy-image"
-    /&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    />
+  </div>
+</template>
 ```
 
 ### 4. 自定义滚动条更新
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated } from 'vue'
 
 const content = ref('')
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   // 更新自定义滚动条
   updateCustomScrollbar()
 })
@@ -539,60 +538,60 @@ function updateCustomScrollbar() {
     updateScrollbarThumb(percentage)
   }
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div class="scroll-container" @scroll="onUpdated"&gt;
+<template>
+  <div class="scroll-container" @scroll="onUpdated">
     {{ content }}
-  &lt;/div&gt;
-`&lt;/template&gt;`
+  </div>
+</template>
 ```
 
 ### 5. 文本区域自适应高度
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated } from 'vue'
 
 const text = ref('')
 const textareaRef = ref(null)
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   if (textareaRef.value) {
     // 自动调整高度
     textareaRef.value.style.height = 'auto'
     textareaRef.value.style.height = textareaRef.value.scrollHeight + 'px'
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;textarea
+<template>
+  <textarea
     ref="textareaRef"
     v-model="text"
     placeholder="输入内容..."
     class="auto-resize"
-  &gt;&lt;/textarea&gt;
-`&lt;/template&gt;`
+  ></textarea>
+</template>
 
-&lt;style&gt;
+<style>
 .auto-resize {
   min-height: 50px;
   overflow: hidden;
 }
-&lt;/style&gt;
+</style>
 ```
 
 ### 6. 拖拽后更新位置
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated } from 'vue'
 
 const position = ref({ x: 0, y: 0 })
 const elementRef = ref(null)
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   // 确保位置正确应用
   if (elementRef.value) {
     elementRef.value.style.transform = `translate(${position.value.x}px, ${position.value.y}px)`
@@ -602,45 +601,45 @@ onUpdated(() =&gt; {
 function onDrag(newX, newY) {
   position.value = { x: newX, y: newY }
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div ref="elementRef" class="draggable" @mousedown="startDrag"&gt;
+<template>
+  <div ref="elementRef" class="draggable" @mousedown="startDrag">
     拖拽我
-  &lt;/div&gt;
-`&lt;/template&gt;`
+  </div>
+</template>
 ```
 
 ### 7. 高亮代码更新
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated, nextTick } from 'vue'
 import hljs from 'highlight.js'
 
 const code = ref('')
 
-onUpdated(async () =&gt; {
+onUpdated(async () => {
   await nextTick()
   // 重新高亮代码
-  document.querySelectorAll('pre code').forEach((block) =&gt; {
+  document.querySelectorAll('pre code').forEach((block) => {
     hljs.highlightElement(block)
   })
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;textarea v-model="code"&gt;&lt;/textarea&gt;
-    &lt;pre&gt;&lt;code&gt;{{ code }}&lt;/code&gt;&lt;/pre&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div>
+    <textarea v-model="code"></textarea>
+    <pre><code>{{ code }}</code></pre>
+  </div>
+</template>
 ```
 
 ### 8. 数据变化后重新计算布局
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated } from 'vue'
 
 const nodes = ref([
@@ -648,7 +647,7 @@ const nodes = ref([
   { id: 2, x: 100, y: 50 }
 ])
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   // 重新计算节点连接线
   drawConnections()
 })
@@ -660,7 +659,7 @@ function drawConnections() {
   const ctx = canvas.getContext('2d')
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  for (let i = 0; i &lt; nodes.value.length - 1; i++) {
+  for (let i = 0; i < nodes.value.length - 1; i++) {
     const from = nodes.value[i]
     const to = nodes.value[i + 1]
     ctx.beginPath()
@@ -669,22 +668,21 @@ function drawConnections() {
     ctx.stroke()
   }
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;canvas&gt;&lt;/canvas&gt;
-    &lt;div v-for="node in nodes" :key="node.id" :style="{ left: node.x + 'px', top: node.y + 'px' }"&gt;
+<template>
+  <div>
+    <canvas></canvas>
+    <div v-for="node in nodes" :key="node.id" :style="{ left: node.x + 'px', top: node.y + 'px' }">
       节点 {{ node.id }}
-    &lt;/div&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    </div>
+  </div>
+</template>
 ```
 
 ### 9. 表格列宽自动调整
 
-```text
-`&lt;script setup&gt;`
+```javascript
 import { ref, onUpdated } from 'vue'
 
 const columns = ref(['Name', 'Age', 'Email'])
@@ -693,63 +691,62 @@ const data = ref([
   { name: 'Bob', age: 30, email: 'bob@example.com' }
 ])
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   // 自动调整列宽以适应内容
   autoResizeColumns()
 })
 
 function autoResizeColumns() {
   const headers = document.querySelectorAll('th')
-  headers.forEach((th, index) =&gt; {
+  headers.forEach((th, index) => {
     const maxWidth = Math.max(
       th.offsetWidth,
       ...document.querySelectorAll(`td:nth-child(${index + 1})`)
-        .map(td =&gt; td.offsetWidth)
+        .map(td => td.offsetWidth)
     )
     th.style.width = maxWidth + 'px'
   })
 }
-`&lt;/script&gt;`
 ```
 
 ### 10. 虚拟滚动更新
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUpdated } from 'vue'
 
-const items = ref(Array.from({ length: 1000 }, (_, i) =&gt; i))
+const items = ref(Array.from({ length: 1000 }, (_, i) => i))
 const scrollTop = ref(0)
 const itemHeight = 50
 const visibleCount = 10
 
-const visibleItems = computed(() =&gt; {
+const visibleItems = computed(() => {
   const start = Math.floor(scrollTop.value / itemHeight)
   return items.value.slice(start, start + visibleCount)
 })
 
-onUpdated(() =&gt; {
+onUpdated(() => {
   // 更新滚动位置
   const container = document.querySelector('.virtual-scroll')
   if (container) {
     scrollTop.value = container.scrollTop
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div class="virtual-scroll" @scroll="scrollTop = $event.target.scrollTop"&gt;
-    &lt;div :style="{ height: items.length * itemHeight + 'px' }"&gt;
-      &lt;div
+<template>
+  <div class="virtual-scroll" @scroll="scrollTop = $event.target.scrollTop">
+    <div :style="{ height: items.length * itemHeight + 'px' }">
+      <div
         v-for="item in visibleItems"
         :key="item"
         :style="{ transform: `translateY(${items.indexOf(item) * itemHeight}px)` }"
-      &gt;
+      >
         Item {{ item }}
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+      </div>
+    </div>
+  </div>
+</template>
 ```
 
 ## 生命周期对比

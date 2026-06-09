@@ -1,14 +1,17 @@
 # v-for
 
 ## 作用
+
 `v-for` 是 Vue 的列表渲染指令，基于数组或对象来渲染列表或重复元素。它需要使用 `key` 来帮助 Vue 跟踪每个节点的身份。
+
+> [官方文档：v-for](https://cn.vuejs.org/api/built-in-directives#v-for)
 
 ## 用法
 
 ### 基本用法 - 数组
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const items = ref([
@@ -16,34 +19,34 @@ const items = ref([
   { id: 2, name: 'Item 2' },
   { id: 3, name: 'Item 3' }
 ])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;ul&gt;
-    &lt;li v-for="item in items" :key="item.id"&gt;
+<template>
+  <ul>
+    <li v-for="item in items" :key="item.id">
       {{ item.name }}
-    &lt;/li&gt;
-  &lt;/ul&gt;
-`&lt;/template&gt;`
+    </li>
+  </ul>
+</template>
 ```
 
 ### 使用索引
 
-```text
-`&lt;template&gt;`
-  &lt;ul&gt;
-    &lt;!-- 语法: (item, index) in items --&gt;
-    &lt;li v-for="(item, index) in items" :key="item.id"&gt;
+```vue
+<template>
+  <ul>
+    <!-- 语法: (item, index) in items -->
+    <li v-for="(item, index) in items" :key="item.id">
       {{ index + 1 }}. {{ item.name }}
-    &lt;/li&gt;
-  &lt;/ul&gt;
-`&lt;/template&gt;`
+    </li>
+  </ul>
+</template>
 ```
 
 ### 对象遍历
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { reactive } from 'vue'
 
 const user = reactive({
@@ -51,48 +54,48 @@ const user = reactive({
   age: 3,
   role: 'framework'
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;ul&gt;
-    &lt;!-- 语法: (value, key, index) in object --&gt;
-    &lt;li v-for="(value, key, index) in user" :key="key"&gt;
+<template>
+  <ul>
+    <!-- 语法: (value, key, index) in object -->
+    <li v-for="(value, key, index) in user" :key="key">
       {{ index }}. {{ key }}: {{ value }}
-    &lt;/li&gt;
-  &lt;/ul&gt;
-`&lt;/template&gt;`
+    </li>
+  </ul>
+</template>
 ```
 
 ### 数字遍历
 
-```text
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;span v-for="n in 10" :key="n"&gt;
+```vue
+<template>
+  <div>
+    <span v-for="n in 10" :key="n">
       {{ n }}
-    &lt;/span&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    </span>
+  </div>
+</template>
 ```
 
 ### 字符串遍历
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const message = 'Hello'
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;span v-for="(char, index) in message" :key="index"&gt;
+<template>
+  <span v-for="(char, index) in message" :key="index">
     {{ char }}
-  &lt;/span&gt;
-`&lt;/template&gt;`
+  </span>
+</template>
 ```
 
 ### 嵌套循环
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const categories = ref([
@@ -105,24 +108,24 @@ const categories = ref([
     items: ['Item 3', 'Item 4']
   }
 ])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div v-for="category in categories" :key="category.name"&gt;
-    &lt;h3&gt;{{ category.name }}&lt;/h3&gt;
-    &lt;ul&gt;
-      &lt;li v-for="(item, index) in category.items" :key="index"&gt;
+<template>
+  <div v-for="category in categories" :key="category.name">
+    <h3>{{ category.name }}</h3>
+    <ul>
+      <li v-for="(item, index) in category.items" :key="index">
         {{ item }}
-      &lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+      </li>
+    </ul>
+  </div>
+</template>
 ```
 
 ### 在组件上使用
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 import TodoItem from './TodoItem.vue'
 
@@ -130,109 +133,109 @@ const todos = ref([
   { id: 1, text: 'Learn Vue', done: false },
   { id: 2, text: 'Build something', done: false }
 ])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;TodoItem
+<template>
+  <TodoItem
     v-for="todo in todos"
     :key="todo.id"
     :todo="todo"
-  /&gt;
-`&lt;/template&gt;`
+  />
+</template>
 ```
 
 ### 使用 template
 
-```text
-`&lt;template&gt;`
-  &lt;!-- 渲染多个元素 --&gt;
-  `&lt;template&gt;`
-    &lt;div class="header"&gt;{{ item.title }}&lt;/div&gt;
-    &lt;div class="content"&gt;{{ item.description }}&lt;/div&gt;
-    &lt;div class="footer"&gt;{{ item.footer }}&lt;/div&gt;
-  `&lt;/template&gt;`
-`&lt;/template&gt;`
+```vue
+<template>
+  <!-- 渲染多个元素 -->
+  <template v-for="item in items" :key="item.id">
+    <div class="header">{{ item.title }}</div>
+    <div class="content">{{ item.description }}</div>
+    <div class="footer">{{ item.footer }}</div>
+  </template>
+</template>
 ```
 
 ### 与 v-if 配合
 
-```text
-`&lt;template&gt;`
-  &lt;!-- Vue 3 中 v-if 优先级更高 --&gt;
-  `&lt;template&gt;`
-    &lt;li v-if="item.visible"&gt;
+```vue
+<template>
+  <!-- Vue 3 中 v-if 优先级更高 -->
+  <template v-for="item in items" :key="item.id">
+    <li v-if="item.visible">
       {{ item.name }}
-    &lt;/li&gt;
-  `&lt;/template&gt;`
+    </li>
+  </template>
 
-  &lt;!-- 或使用计算属性过滤（推荐） --&gt;
-  &lt;li v-for="item in visibleItems" :key="item.id"&gt;
+  <!-- 或使用计算属性过滤（推荐） -->
+  <li v-for="item in visibleItems" :key="item.id">
     {{ item.name }}
-  &lt;/li&gt;
-`&lt;/template&gt;`
+  </li>
+</template>
 ```
 
 ### of 作为分隔符
 
-```text
-`&lt;template&gt;`
-  &lt;!-- in 和 of 可以互换 --&gt;
-  &lt;div v-for="item of items" :key="item.id"&gt;
+```vue
+<template>
+  <!-- in 和 of 可以互换 -->
+  <div v-for="item of items" :key="item.id">
     {{ item.name }}
-  &lt;/div&gt;
-`&lt;/template&gt;`
+  </div>
+</template>
 ```
 
 ## 注意事项
 
 ### 1. 必须使用 key
 
-```text
-`&lt;template&gt;`
-  &lt;!-- ✅ 正确：使用唯一的 key --&gt;
-  &lt;li v-for="item in items" :key="item.id"&gt;
+```vue
+<template>
+  <!-- ✅ 正确：使用唯一的 key -->
+  <li v-for="item in items" :key="item.id">
     {{ item.name }}
-  &lt;/li&gt;
+  </li>
 
-  &lt;!-- ❌ 错误：不使用 key --&gt;
-  &lt;li v-for="item in items"&gt;
+  <!-- ❌ 错误：不使用 key -->
+  <li v-for="item in items">
     {{ item.name }}
-  &lt;/li&gt;
+  </li>
 
-  &lt;!-- ❌ 错误：使用索引作为 key --&gt;
-  &lt;li v-for="(item, index) in items" :key="index"&gt;
+  <!-- ❌ 错误：使用索引作为 key -->
+  <li v-for="(item, index) in items" :key="index">
     {{ item.name }}
-  &lt;/li&gt;
-`&lt;/template&gt;`
+  </li>
+</template>
 ```
 
 ### 2. key 的唯一性
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const items = ref([
   { id: 1, name: 'Item 1' },
   { id: 1, name: 'Item 2' } // 重复的 id
 ])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- ❌ key 必须唯一 --&gt;
-  &lt;li v-for="item in items" :key="item.id"&gt;
+<template>
+  <!-- ❌ key 必须唯一 -->
+  <li v-for="item in items" :key="item.id">
     {{ item.name }}
-  &lt;/li&gt;
+  </li>
 
-  &lt;!-- ✅ 使用组合键确保唯一性 --&gt;
-  &lt;li v-for="(item, index) in items" :key="`${item.id}-${index}`"&gt;
+  <!-- ✅ 使用组合键确保唯一性 -->
+  <li v-for="(item, index) in items" :key="`${item.id}-${index}`">
     {{ item.name }}
-  &lt;/li&gt;
-`&lt;/template&gt;`
+  </li>
+</template>
 ```
 
 ### 3. 避免在模板中修改数组
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const items = ref([1, 2, 3])
@@ -246,19 +249,19 @@ function addNewItem() {
 function addNewItem() {
   items.value.push(4)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div v-for="item in items" :key="item"&gt;
+<template>
+  <div v-for="item in items" :key="item">
     {{ item }}
-  &lt;/div&gt;
-`&lt;/template&gt;`
+  </div>
+</template>
 ```
 
 ### 4. 响应式更新数组
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const items = ref([1, 2, 3])
@@ -277,82 +280,82 @@ items.value[0] = 99           // 不会触发更新
 
 // ✅ 正确方式
 items.value.splice(0, 1, 99)  // 会触发更新
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 5. v-for 和 v-if 的优先级
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const items = ref([
   { id: 1, name: 'Item 1', visible: true },
   { id: 2, name: 'Item 2', visible: false }
 ])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- Vue 3: v-if 优先级更高，只渲染可见项 --&gt;
-  &lt;li v-for="item in items" v-if="item.visible" :key="item.id"&gt;
+<template>
+  <!-- Vue 3: v-if 优先级更高，只渲染可见项 -->
+  <li v-for="item in items" v-if="item.visible" :key="item.id">
     {{ item.name }}
-  &lt;/li&gt;
+  </li>
 
-  &lt;!-- 推荐使用计算属性过滤 --&gt;
-  &lt;li v-for="item in visibleItems" :key="item.id"&gt;
+  <!-- 推荐使用计算属性过滤 -->
+  <li v-for="item in visibleItems" :key="item.id">
     {{ item.name }}
-  &lt;/li&gt;
-`&lt;/template&gt;`
+  </li>
+</template>
 ```
 
 ### 6. 大列表性能
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 // 对于大列表，考虑虚拟滚动
-const largeList = ref(Array.from({ length: 10000 }, (_, i) =&gt; ({
+const largeList = ref(Array.from({ length: 10000 }, (_, i) => ({
   id: i,
   name: `Item ${i}`
-}))
-`&lt;/script&gt;`
+})))
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- 使用虚拟滚动组件 --&gt;
-  &lt;VirtualScroller :items="largeList" /&gt;
-`&lt;/template&gt;`
+<template>
+  <!-- 使用虚拟滚动组件 -->
+  <VirtualScroller :items="largeList" />
+</template>
 ```
 
 ### 7. 在循环中使用 ref
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onMounted } from 'vue'
 
 const items = ref([1, 2, 3])
 const itemRefs = ref([])
 
-onMounted(() =&gt; {
+onMounted(() => {
   console.log(itemRefs.value) // [div, div, div]
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div
+<template>
+  <div
     v-for="(item, index) in items"
     :key="item"
-    :ref="(el) =&gt; { if (el) itemRefs[index] = el }"
-  &gt;
+    :ref="(el) => { if (el) itemRefs[index] = el }"
+  >
     {{ item }}
-  &lt;/div&gt;
-`&lt;/template&gt;`
+  </div>
+</template>
 ```
 
 ### 8. 对象遍历的顺序
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { reactive } from 'vue'
 
 const obj = reactive({
@@ -363,21 +366,21 @@ const obj = reactive({
 
 // Object.keys() 的顺序不一定
 // 在大多数现代浏览器中会按插入顺序
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div v-for="(value, key) in obj" :key="key"&gt;
+<template>
+  <div v-for="(value, key) in obj" :key="key">
     {{ key }}: {{ value }}
-  &lt;/div&gt;
-`&lt;/template&gt;`
+  </div>
+</template>
 ```
 
 ## 使用场景
 
 ### 1. 列表渲染
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const products = ref([
@@ -385,28 +388,28 @@ const products = ref([
   { id: 2, name: 'Product 2', price: 149.99 },
   { id: 3, name: 'Product 3', price: 199.99 }
 ])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div class="product-list"&gt;
-    &lt;div
+<template>
+  <div class="product-list">
+    <div
       v-for="product in products"
       :key="product.id"
       class="product-card"
-    &gt;
-      &lt;h3&gt;{{ product.name }}&lt;/h3&gt;
-      &lt;p&gt;¥{{ product.price }}&lt;/p&gt;
-      &lt;button&gt;Add to Cart&lt;/button&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    >
+      <h3>{{ product.name }}</h3>
+      <p>¥{{ product.price }}</p>
+      <button>Add to Cart</button>
+    </div>
+  </div>
+</template>
 ```
 
 ### 2. 动态表单字段
 
-```text
-`&lt;script setup&gt;`
-import { ref } from 'vue'
+```vue
+<script setup>
+import { ref, reactive } from 'vue'
 
 const fields = ref([
   { name: 'username', label: '用户名', type: 'text' },
@@ -415,26 +418,26 @@ const fields = ref([
 ])
 
 const formData = reactive({})
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;form&gt;
-    &lt;div v-for="field in fields" :key="field.name"&gt;
-      &lt;label&gt;{{ field.label }}&lt;/label&gt;
-      &lt;input
+<template>
+  <form>
+    <div v-for="field in fields" :key="field.name">
+      <label>{{ field.label }}</label>
+      <input
         :type="field.type"
         v-model="formData[field.name]"
-      /&gt;
-    &lt;/div&gt;
-    &lt;button type="submit"&gt;提交&lt;/button&gt;
-  &lt;/form&gt;
-`&lt;/template&gt;`
+      />
+    </div>
+    <button type="submit">提交</button>
+  </form>
+</template>
 ```
 
 ### 3. 表格数据
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, computed } from 'vue'
 
 const columns = ref([
@@ -447,32 +450,32 @@ const data = ref([
   { id: 1, name: 'Alice', age: 25, email: 'alice@example.com' },
   { id: 2, name: 'Bob', age: 30, email: 'bob@example.com' }
 ])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;table&gt;
-    &lt;thead&gt;
-      &lt;tr&gt;
-        &lt;th v-for="col in columns" :key="col.key"&gt;
+<template>
+  <table>
+    <thead>
+      <tr>
+        <th v-for="col in columns" :key="col.key">
           {{ col.label }}
-        &lt;/th&gt;
-      &lt;/tr&gt;
-    &lt;/thead&gt;
-    &lt;tbody&gt;
-      &lt;tr v-for="row in data" :key="row.id"&gt;
-        &lt;td v-for="col in columns" :key="col.key"&gt;
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="row in data" :key="row.id">
+        <td v-for="col in columns" :key="col.key">
           {{ row[col.key] }}
-        &lt;/td&gt;
-      &lt;/tr&gt;
-    &lt;/tbody&gt;
-  &lt;/table&gt;
-`&lt;/template&gt;`
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</template>
 ```
 
 ### 4. 标签页
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const tabs = ref([
@@ -482,63 +485,63 @@ const tabs = ref([
 ])
 
 const activeTab = ref('home')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div class="tabs"&gt;
-    &lt;div class="tab-nav"&gt;
-      &lt;button
+<template>
+  <div class="tabs">
+    <div class="tab-nav">
+      <button
         v-for="tab in tabs"
         :key="tab.id"
         :class="{ active: activeTab === tab.id }"
         @click="activeTab = tab.id"
-      &gt;
-        &lt;i :class="tab.icon"&gt;&lt;/i&gt;
+      >
+        <i :class="tab.icon"></i>
         {{ tab.label }}
-      &lt;/button&gt;
-    &lt;/div&gt;
-    &lt;div class="tab-content"&gt;
-      &lt;slot :name="activeTab" /&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+      </button>
+    </div>
+    <div class="tab-content">
+      <slot :name="activeTab" />
+    </div>
+  </div>
+</template>
 ```
 
 ### 5. 面包屑导航
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 
-const breadcrumbs = computed(() =&gt; {
-  return route.matched.map((record, index) =&gt; ({
+const breadcrumbs = computed(() => {
+  return route.matched.map((record, index) => ({
     path: record.path,
     name: record.name,
     isLast: index === route.matched.length - 1
   }))
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;nav class="breadcrumb"&gt;
-    &lt;span v-for="(crumb, index) in breadcrumbs" :key="crumb.path"&gt;
-      &lt;router-link v-if="!crumb.isLast" :to="crumb.path"&gt;
+<template>
+  <nav class="breadcrumb">
+    <span v-for="(crumb, index) in breadcrumbs" :key="crumb.path">
+      <router-link v-if="!crumb.isLast" :to="crumb.path">
         {{ crumb.name }}
-      &lt;/router-link&gt;
-      &lt;span v-else&gt;{{ crumb.name }}&lt;/span&gt;
-      &lt;span v-if="index &lt; breadcrumbs.length - 1"&gt;/&lt;/span&gt;
-    &lt;/span&gt;
-  &lt;/nav&gt;
-`&lt;/template&gt;`
+      </router-link>
+      <span v-else>{{ crumb.name }}</span>
+      <span v-if="index < breadcrumbs.length - 1">/</span>
+    </span>
+  </nav>
+</template>
 ```
 
 ### 6. 评论列表
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const comments = ref([
@@ -557,35 +560,35 @@ const comments = ref([
     replies: []
   }
 ])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div class="comments"&gt;
-    &lt;div v-for="comment in comments" :key="comment.id" class="comment"&gt;
-      &lt;div class="comment-header"&gt;
-        &lt;strong&gt;{{ comment.author }}&lt;/strong&gt;
-      &lt;/div&gt;
-      &lt;div class="comment-body"&gt;{{ comment.content }}&lt;/div&gt;
+<template>
+  <div class="comments">
+    <div v-for="comment in comments" :key="comment.id" class="comment">
+      <div class="comment-header">
+        <strong>{{ comment.author }}</strong>
+      </div>
+      <div class="comment-body">{{ comment.content }}</div>
 
-      &lt;!-- 嵌套回复 --&gt;
-      &lt;div v-if="comment.replies.length &gt; 0" class="replies"&gt;
-        &lt;div
+      <!-- 嵌套回复 -->
+      <div v-if="comment.replies.length > 0" class="replies">
+        <div
           v-for="reply in comment.replies"
           :key="reply.id"
           class="reply"
-        &gt;
-          &lt;strong&gt;{{ reply.author }}&lt;/strong&gt;: {{ reply.content }}
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+        >
+          <strong>{{ reply.author }}</strong>: {{ reply.content }}
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 ```
 
 ### 7. 动态类名列表
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const buttons = ref([
@@ -593,25 +596,25 @@ const buttons = ref([
   { type: 'success', label: '成功按钮' },
   { type: 'danger', label: '危险按钮' }
 ])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;button
+<template>
+  <div>
+    <button
       v-for="btn in buttons"
       :key="btn.type"
       :class="['btn', `btn-${btn.type}`]"
-    &gt;
+    >
       {{ btn.label }}
-    &lt;/button&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    </button>
+  </div>
+</template>
 ```
 
 ### 8. 图片画廊
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const images = ref([
@@ -619,22 +622,22 @@ const images = ref([
   { id: 2, url: '/images/2.jpg', title: 'Image 2' },
   { id: 3, url: '/images/3.jpg', title: 'Image 3' }
 ])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div class="gallery"&gt;
-    &lt;figure v-for="image in images" :key="image.id"&gt;
-      &lt;img :src="image.url" :alt="image.title" loading="lazy" /&gt;
-      &lt;figcaption&gt;{{ image.title }}&lt;/figcaption&gt;
-    &lt;/figure&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div class="gallery">
+    <figure v-for="image in images" :key="image.id">
+      <img :src="image.url" :alt="image.title" loading="lazy" />
+      <figcaption>{{ image.title }}</figcaption>
+    </figure>
+  </div>
+</template>
 ```
 
 ### 9. 时间线
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const events = ref([
@@ -651,28 +654,28 @@ const events = ref([
     description: '完成第一阶段开发'
   }
 ])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div class="timeline"&gt;
-    &lt;div v-for="event in events" :key="event.id" class="timeline-item"&gt;
-      &lt;div class="timeline-date"&gt;{{ event.date }}&lt;/div&gt;
-      &lt;div class="timeline-content"&gt;
-        &lt;h3&gt;{{ event.title }}&lt;/h3&gt;
-        &lt;p&gt;{{ event.description }}&lt;/p&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div class="timeline">
+    <div v-for="event in events" :key="event.id" class="timeline-item">
+      <div class="timeline-date">{{ event.date }}</div>
+      <div class="timeline-content">
+        <h3>{{ event.title }}</h3>
+        <p>{{ event.description }}</p>
+      </div>
+    </div>
+  </div>
+</template>
 ```
 
 ### 10. 分页数据
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, computed } from 'vue'
 
-const items = ref(Array.from({ length: 100 }, (_, i) =&gt; ({
+const items = ref(Array.from({ length: 100 }, (_, i) => ({
   id: i + 1,
   name: `Item ${i + 1}`
 })))
@@ -680,35 +683,35 @@ const items = ref(Array.from({ length: 100 }, (_, i) =&gt; ({
 const currentPage = ref(1)
 const pageSize = 10
 
-const paginatedItems = computed(() =&gt; {
+const paginatedItems = computed(() => {
   const start = (currentPage.value - 1) * pageSize
   const end = start + pageSize
   return items.value.slice(start, end)
 })
 
-const totalPages = computed(() =&gt; Math.ceil(items.value.length / pageSize))
-`&lt;/script&gt;`
+const totalPages = computed(() => Math.ceil(items.value.length / pageSize))
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;ul&gt;
-      &lt;li v-for="item in paginatedItems" :key="item.id"&gt;
+<template>
+  <div>
+    <ul>
+      <li v-for="item in paginatedItems" :key="item.id">
         {{ item.name }}
-      &lt;/li&gt;
-    &lt;/ul&gt;
+      </li>
+    </ul>
 
-    &lt;div class="pagination"&gt;
-      &lt;button
+    <div class="pagination">
+      <button
         v-for="page in totalPages"
         :key="page"
         @click="currentPage = page"
         :class="{ active: currentPage === page }"
-      &gt;
+      >
         {{ page }}
-      &lt;/button&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+      </button>
+    </div>
+  </div>
+</template>
 ```
 
 ## v-for 最佳实践

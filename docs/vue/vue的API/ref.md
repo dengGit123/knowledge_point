@@ -1,5 +1,7 @@
 # ref
 
+> [Vue 官方文档 - ref](https://cn.vuejs.org/api/reactivity-core#ref)
+
 ## 作用
 `ref()` 是 Vue 3 组合式 API 中用于创建响应式数据的基本方法。它接受一个内部值并返回一个响应式的、可变的 ref 对象，该对象只有一个指向其内部值的属性 `.value`。
 
@@ -7,7 +9,7 @@
 
 ### 基本用法
 
-```text
+```javascript
 import { ref } from 'vue'
 
 // 创建响应式数据
@@ -18,12 +20,12 @@ console.log(count.value) // 0
 count.value = 1
 
 // 在模板中自动解包，无需 .value
-// `&lt;template&gt;`{{ count }}`&lt;/template&gt;`
+// <template>{{ count }}</template>
 ```
 
 ### 不同数据类型
 
-```text
+```javascript
 // 基本类型
 const message = ref('Hello')
 const isActive = ref(true)
@@ -45,7 +47,7 @@ items.value.push(4)
 
 ### 在 setup 中使用
 
-```text
+```javascript
 import { ref } from 'vue'
 
 export default {
@@ -64,10 +66,10 @@ export default {
 }
 ```
 
-### 在 `&lt;script setup&gt;` 中使用
+### 在 `<script setup>` 中使用
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const count = ref(0)
@@ -75,35 +77,35 @@ const count = ref(0)
 function increment() {
   count.value++
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button @click="increment"&gt;{{ count }}&lt;/button&gt;
-`&lt;/template&gt;`
+<template>
+  <button @click="increment">{{ count }}</button>
+</template>
 ```
 
 ### DOM 元素引用
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onMounted } from 'vue'
 
 const inputRef = ref(null)
 
-onMounted(() =&gt; {
+onMounted(() => {
   inputRef.value.focus()
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input ref="inputRef" /&gt;
-`&lt;/template&gt;`
+<template>
+  <input ref="inputRef" />
+</template>
 ```
 
 ### 组件引用
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 import ChildComponent from './ChildComponent.vue'
 
@@ -112,19 +114,19 @@ const child = ref(null)
 function callChildMethod() {
   child.value.someMethod()
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;ChildComponent ref="child" /&gt;
-  &lt;button @click="callChildMethod"&gt;调用子组件方法&lt;/button&gt;
-`&lt;/template&gt;`
+<template>
+  <ChildComponent ref="child" />
+  <button @click="callChildMethod">调用子组件方法</button>
+</template>
 ```
 
 ## 注意事项
 
 ### 1. .value 的使用
 
-```text
+```javascript
 // ✅ 正确：在 JS 中需要 .value
 const count = ref(0)
 count.value++
@@ -133,12 +135,12 @@ count.value++
 count++ // count 不会改变
 
 // ✅ 正确：模板中自动解包
-// `&lt;template&gt;`{{ count }}`&lt;/template&gt;`
+// <template>{{ count }}</template>
 ```
 
 ### 2. 嵌套响应式对象
 
-```text
+```javascript
 const state = ref({
   count: 0
 })
@@ -152,7 +154,7 @@ state.value = { count: 1 } // 不推荐，需要特殊处理
 
 ### 3. 解构会丢失响应性
 
-```text
+```javascript
 const state = ref({ count: 0 })
 
 // ❌ 错误：解构会丢失响应性
@@ -166,7 +168,7 @@ const { count } = toRefs(state.value)
 
 ### 4. ref 在 reactive 对象中自动解包
 
-```text
+```javascript
 import { ref, reactive } from 'vue'
 
 const count = ref(0)
@@ -184,7 +186,7 @@ state.newCount++ // ❌ 不会更新 newCount.value
 
 ### 5. 异步操作
 
-```text
+```javascript
 const data = ref(null)
 
 // ✅ 在异步操作中正确使用
@@ -198,23 +200,23 @@ async function fetchData() {
 
 ### 6. TypeScript 类型支持
 
-```text
+```typescript
 // 自动推导类型
-const count = ref(0) // Ref&lt;number&gt;
+const count = ref(0) // Ref<number>
 
 // 显式指定类型
-const count = Ref&lt;number&gt;(0)
-const user = Ref&lt;User&gt;({ name: 'Vue' })
+const count = ref<number>(0)
+const user = ref<User>({ name: 'Vue' })
 
 // 可能为 null 的 ref
-const inputRef = ref&lt;HTMLInputElement | null&gt;(null)
+const inputRef = ref<HTMLInputElement | null>(null)
 ```
 
 ## 使用场景
 
 ### 1. 定义基本类型的响应式数据
 
-```text
+```javascript
 const count = ref(0)
 const message = ref('Hello')
 const isLoading = ref(false)
@@ -222,7 +224,7 @@ const isLoading = ref(false)
 
 ### 2. 定义单一值的响应式状态
 
-```text
+```javascript
 // 适用于简单的计数器、开关等
 const isActive = ref(false)
 const counter = ref(0)
@@ -234,52 +236,52 @@ function toggle() {
 
 ### 3. 与 computed 配合使用
 
-```text
+```javascript
 const count = ref(0)
-const doubled = computed(() =&gt; count.value * 2)
+const doubled = computed(() => count.value * 2)
 ```
 
 ### 4. 模板中的动态绑定
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const title = ref('动态标题')
 const disabled = ref(false)
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;h1&gt;{{ title }}&lt;/h1&gt;
-  &lt;button :disabled="disabled"&gt;按钮&lt;/button&gt;
-`&lt;/template&gt;`
+<template>
+  <h1>{{ title }}</h1>
+  <button :disabled="disabled">按钮</button>
+</template>
 ```
 
 ### 5. 表单数据绑定
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const username = ref('')
 const password = ref('')
 const agree = ref(false)
 const gender = ref('male')
 const hobbies = ref([])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input v-model="username" /&gt;
-  &lt;input v-model="password" type="password" /&gt;
-  &lt;input v-model="agree" type="checkbox" /&gt;
-  &lt;input v-model="gender" type="radio" value="male" /&gt;
-  &lt;select v-model="hobbies" multiple&gt;
-    &lt;option value="reading"&gt;阅读&lt;/option&gt;
-    &lt;option value="coding"&gt;编程&lt;/option&gt;
-  &lt;/select&gt;
-`&lt;/template&gt;`
+<template>
+  <input v-model="username" />
+  <input v-model="password" type="password" />
+  <input v-model="agree" type="checkbox" />
+  <input v-model="gender" type="radio" value="male" />
+  <select v-model="hobbies" multiple>
+    <option value="reading">阅读</option>
+    <option value="coding">编程</option>
+  </select>
+</template>
 ```
 
 ### 6. 列表渲染
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const items = ref([
   { id: 1, text: 'Item 1' },
   { id: 2, text: 'Item 2' }
@@ -288,73 +290,73 @@ const items = ref([
 function addItem(text) {
   items.value.push({ id: Date.now(), text })
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;ul&gt;
-    &lt;li v-for="item in items" :key="item.id"&gt;
+<template>
+  <ul>
+    <li v-for="item in items" :key="item.id">
       {{ item.text }}
-    &lt;/li&gt;
-  &lt;/ul&gt;
-`&lt;/template&gt;`
+    </li>
+  </ul>
+</template>
 ```
 
 ### 7. 条件渲染控制
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const showDetails = ref(false)
 const currentTab = ref('home')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button @click="showDetails = !showDetails"&gt;切换详情&lt;/button&gt;
-  &lt;div v-if="showDetails"&gt;详情内容&lt;/div&gt;
+<template>
+  <button @click="showDetails = !showDetails">切换详情</button>
+  <div v-if="showDetails">详情内容</div>
 
-  &lt;button @click="currentTab = 'about'"&gt;关于&lt;/button&gt;
-  &lt;component :is="currentTab" /&gt;
-`&lt;/template&gt;`
+  <button @click="currentTab = 'about'">关于</button>
+  <component :is="currentTab" />
+</template>
 ```
 
 ### 8. DOM 元素引用
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const canvasRef = ref(null)
 
-onMounted(() =&gt; {
+onMounted(() => {
   const ctx = canvasRef.value.getContext('2d')
   // 使用 canvas 上下文
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;canvas ref="canvasRef"&gt;&lt;/canvas&gt;
-`&lt;/template&gt;`
+<template>
+  <canvas ref="canvasRef"></canvas>
+</template>
 ```
 
 ### 9. 组件通信（父调子）
 
-```text
-&lt;!-- 父组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 父组件 -->
+<script setup>
 import ChildComponent from './ChildComponent.vue'
 const childRef = ref(null)
 
 function validateChild() {
   childRef.value.validate()
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;ChildComponent ref="childRef" /&gt;
-  &lt;button @click="validateChild"&gt;验证子组件&lt;/button&gt;
-`&lt;/template&gt;`
+<template>
+  <ChildComponent ref="childRef" />
+  <button @click="validateChild">验证子组件</button>
+</template>
 ```
 
 ### 10. 性能优化（与 shallowRef 配合）
 
-```text
+```javascript
 // 对于大型数据，使用 shallowRef
 const bigData = shallowRef({ /* 大量数据 */ })
 

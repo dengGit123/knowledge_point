@@ -4,6 +4,8 @@
 
 `watchPostEffect()` 是 `watchEffect()` 的别名，使用 `flush: 'post'` 选项，在组件更新后执行副作用。
 
+> 参考：[Vue 官方文档 - watchPostEffect](https://cn.vuejs.org/api/reactivity-core#watchposteffect)
+
 ## 基本用法
 
 ```javascript

@@ -2,6 +2,8 @@
 
 ## 作用
 
+> [Vue 官方文档 - onBeforeUnmount](https://cn.vuejs.org/api/composition-api-lifecycle#onbeforeunmount)
+
 `onBeforeUnmount()` 是 Vue 3 的生命周期钩子，在组件卸载之前调用。这是执行清理工作的理想位置，比如清除定时器、取消事件监听、断开网络连接等。
 
 ## 用法
@@ -26,12 +28,12 @@ export default {
   setup() {
     const count = ref(0)
     let timer = null
-    
+
     // 开始定时器
     timer = setInterval(() => {
       count.value++
     }, 1000)
-    
+
     // 组件卸载前清除定时器
     onBeforeUnmount(() => {
       if (timer) {
@@ -39,7 +41,7 @@ export default {
         timer = null
       }
     })
-    
+
     return { count }
   }
 }
@@ -55,11 +57,11 @@ export default {
     const handleResize = () => {
       console.log('窗口大小:', window.innerWidth)
     }
-    
+
     onMounted(() => {
       window.addEventListener('resize', handleResize)
     })
-    
+
     onBeforeUnmount(() => {
       window.removeEventListener('resize', handleResize)
     })
@@ -67,7 +69,7 @@ export default {
 }
 ```
 
-### 在 `` `<script setup>`` 中使用
+### 在 `<script setup>` 中使用
 
 ```vue
 <script setup>
@@ -94,10 +96,10 @@ import { ref, onBeforeUnmount } from 'vue'
 export default {
   setup() {
     const abortController = ref(null)
-    
+
     const fetchData = async () => {
       abortController.value = new AbortController()
-      
+
       try {
         const response = await fetch('/api/data', {
           signal: abortController.value.signal
@@ -110,14 +112,14 @@ export default {
         }
       }
     }
-    
+
     onBeforeUnmount(() => {
       // 取消进行中的请求
       if (abortController.value) {
         abortController.value.abort()
       }
     })
-    
+
     return { fetchData }
   }
 }
@@ -132,30 +134,30 @@ export default {
   setup() {
     const socket = ref(null)
     const messages = ref([])
-    
+
     const connect = () => {
       socket.value = new WebSocket('ws://localhost:8080')
-      
+
       socket.value.onopen = () => {
         console.log('WebSocket 已连接')
       }
-      
+
       socket.value.onmessage = (event) => {
         messages.value.push(JSON.parse(event.data))
       }
-      
+
       socket.value.onerror = (error) => {
         console.error('WebSocket 错误:', error)
       }
     }
-    
+
     onBeforeUnmount(() => {
       // 关闭 WebSocket 连接
       if (socket.value && socket.value.readyState === WebSocket.OPEN) {
         socket.value.close()
       }
     })
-    
+
     return { messages, connect }
   }
 }
@@ -173,12 +175,12 @@ export default {
       email: '',
       message: ''
     })
-    
+
     onBeforeUnmount(() => {
       // 保存表单数据到 localStorage
       localStorage.setItem('draft-form', JSON.stringify(formData.value))
     })
-    
+
     return { formData }
   }
 }
@@ -193,7 +195,7 @@ export default {
   setup() {
     const chartInstance = ref(null)
     const chartRef = ref(null)
-    
+
     onMounted(() => {
       // 初始化图表
       chartInstance.value = new Chart(chartRef.value, {
@@ -207,7 +209,7 @@ export default {
         }
       })
     })
-    
+
     onBeforeUnmount(() => {
       // 销毁图表实例
       if (chartInstance.value) {
@@ -215,7 +217,7 @@ export default {
         chartInstance.value = null
       }
     })
-    
+
     return { chartRef }
   }
 }
@@ -230,7 +232,7 @@ export default {
   setup() {
     const subscription = ref(null)
     const data = ref(null)
-    
+
     const subscribe = () => {
       // 假设有一个 Observable
       subscription.value = observable$.subscribe({
@@ -242,7 +244,7 @@ export default {
         }
       })
     }
-    
+
     onBeforeUnmount(() => {
       // 取消订阅
       if (subscription.value) {
@@ -250,7 +252,7 @@ export default {
         subscription.value = null
       }
     })
-    
+
     return { data, subscribe }
   }
 }
@@ -265,27 +267,27 @@ export default {
   setup() {
     const elementRef = ref(null)
     let animationId = null
-    
+
     const animate = () => {
       if (!elementRef.value) return
-      
+
       // 动画逻辑
       elementRef.value.style.transform = `translateX(${Date.now() % 1000}px)`
-      
+
       animationId = requestAnimationFrame(animate)
     }
-    
+
     onMounted(() => {
       animationId = requestAnimationFrame(animate)
     })
-    
+
     onBeforeUnmount(() => {
       // 取消动画帧
       if (animationId) {
         cancelAnimationFrame(animationId)
       }
     })
-    
+
     return { elementRef }
   }
 }
@@ -299,22 +301,22 @@ import { ref, onBeforeUnmount, onUnmounted } from 'vue'
 export default {
   setup() {
     const data = ref(null)
-    
+
     onBeforeUnmount(() => {
       console.log('onBeforeUnmount: 组件即将卸载')
       console.log('此时组件实例仍然可用')
       console.log('仍然可以访问 data:', data.value)
-      
+
       // 可以执行最后的清理操作
       saveData(data.value)
     })
-    
+
     onUnmounted(() => {
       console.log('onUnmounted: 组件已卸载')
       console.log('此时组件实例已被销毁')
       // 大多数清理工作应该在 onBeforeUnmount 中完成
     })
-    
+
     return { data }
   }
 }
@@ -330,7 +332,7 @@ import { ref, onBeforeUnmount } from 'vue'
 export default {
   setup() {
     const elementRef = ref(null)
-    
+
     onBeforeUnmount(() => {
       // 此时 DOM 仍然存在
       if (elementRef.value) {
@@ -340,7 +342,7 @@ export default {
         console.log('元素位置:', rect)
       }
     })
-    
+
     return { elementRef }
   }
 }
@@ -354,17 +356,17 @@ import { ref, onBeforeUnmount } from 'vue'
 export default {
   setup() {
     const count = ref(0)
-    
+
     onBeforeUnmount(() => {
       // ⚠️ 不要在卸载钩子中创建新的副作用
       // setInterval(() => {
       //   count.value++
       // }, 1000) // 这是不好的做法
-      
+
       // 应该只做清理工作
       console.log('清理完成')
     })
-    
+
     return { count }
   }
 }
@@ -380,14 +382,14 @@ export default {
     let timer1 = null
     let timer2 = null
     let socket = null
-    
+
     onBeforeUnmount(() => {
       // 按正确的顺序清理资源
       // 先关闭可能依赖其他资源的连接
       if (socket) {
         socket.close()
       }
-      
+
       // 然后清除定时器
       if (timer1) clearInterval(timer1)
       if (timer2) clearInterval(timer2)
@@ -408,22 +410,22 @@ const isConnected = ref(false)
 
 const connect = () => {
   socket.value = new WebSocket('ws://localhost:8080')
-  
+
   socket.value.onopen = () => {
     isConnected.value = true
     addMessage('系统', '已连接到服务器')
   }
-  
+
   socket.value.onmessage = (event) => {
     const data = JSON.parse(event.data)
     addMessage('服务器', data.message)
   }
-  
+
   socket.value.onclose = () => {
     isConnected.value = false
     addMessage('系统', '连接已断开')
   }
-  
+
   socket.value.onerror = (error) => {
     addMessage('错误', error.message)
   }
@@ -468,12 +470,12 @@ onBeforeUnmount(() => {
         <span class="time">{{ msg.time }}</span>
       </div>
     </div>
-    
+
     <div class="controls">
       <button v-if="!isConnected" @click="connect">连接</button>
       <button v-else @click="disconnect">断开</button>
-      <input 
-        v-model="newMessage" 
+      <input
+        v-model="newMessage"
         @keyup.enter="sendMessage(newMessage)"
         :disabled="!isConnected"
         placeholder="输入消息..."

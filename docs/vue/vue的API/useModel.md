@@ -2,6 +2,8 @@
 
 Vue 3.4+ 新增的 API，用于简化组件实现 v-model 的逻辑。
 
+> 官方文档：[useModel](https://cn.vuejs.org/api/composition-api-helpers#usemodel)
+
 ## 语法
 
 ```javascript

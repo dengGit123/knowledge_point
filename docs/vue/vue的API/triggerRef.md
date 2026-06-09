@@ -4,6 +4,8 @@
 
 `triggerRef()` 手动触发与 `shallowRef()` 关联的副作用。用于更新后手动执行依赖该 ref 的副作用。
 
+> [官方文档](https://cn.vuejs.org/api/reactivity-advanced#triggerref)
+
 ## 基本用法
 
 ```javascript

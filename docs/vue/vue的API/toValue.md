@@ -1,6 +1,10 @@
 # toValue
 
+## 作用
+
 Vue 3.3+ 新增的 API，用于将值、getter 或 ref 标准化为值。
+
+> [官方文档 - toValue](https://cn.vuejs.org/api/reactivity-utilities#tovalue)
 
 ## 语法
 

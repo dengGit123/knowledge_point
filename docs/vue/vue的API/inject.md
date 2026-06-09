@@ -1,27 +1,30 @@
 # inject
 
 ## 作用
+
 `inject()` 用于注入由祖先组件提供的数据或方法。它是 Vue 3 依赖注入系统的接收端，配合 `provide()` 使用，实现跨层级组件通信。
+
+> [官方文档 - inject](https://cn.vuejs.org/api/composition-api-context#inject)
 
 ## 用法
 
 ### 基本用法
 
-```text
-&lt;!-- 后代组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 后代组件 -->
+<script setup>
 import { inject } from 'vue'
 
 // 注入数据
 const message = inject('message')
 console.log(message.value) // 'Hello from ancestor'
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 注入响应式数据
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 // 注入 ref
@@ -34,30 +37,30 @@ count.value++ // 修改会同步到提供者
 const user = inject('user')
 console.log(user.name) // 'Vue'
 user.name = 'Modified' // 修改会同步
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 设置默认值
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 // 当没有提供该 key 时使用默认值
 const theme = inject('theme', 'light')
 
 // 默认值也可以是函数
-const getConfig = inject('config', () =&gt; ({
+const getConfig = inject('config', () => ({
   apiUrl: '/api',
   timeout: 5000
 }))
-`&lt;/script&gt;`
+</script>
 ```
 
 ### TypeScript 类型注解
 
-```text
-&lt;script setup lang="ts"&gt;
+```vue
+<script setup lang="ts">
 import { inject } from 'vue'
 
 // 使用类型注解
@@ -66,36 +69,36 @@ interface User {
   age: number
 }
 
-const user = inject&lt;User&gt;('user')
-const theme = inject&lt;string&gt;('theme', 'light')
+const user = inject<User>('user')
+const theme = inject<string>('theme', 'light')
 
 // 使用 Symbol key
 const ThemeKey = Symbol('theme')
-const currentTheme = inject&lt;string&gt;(ThemeKey, 'light')
-`&lt;/script&gt;`
+const currentTheme = inject<string>(ThemeKey, 'light')
+</script>
 ```
 
 ### 注入并保持响应性
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 // ✅ 直接使用注入的 ref
 const count = inject('count')
 
 // 在模板中使用
-// `&lt;template&gt;`{{ count }}`&lt;/template&gt;`
+// <template>{{ count }}</template>
 
 // ❌ 如果解构会失去响应性
 const { value } = inject('count') // 不要这样做
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 注入方法
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 const toggle = inject('toggle')
@@ -105,17 +108,17 @@ const hide = inject('hide')
 function handleClick() {
   toggle() // 调用提供的方法
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button @click="handleClick"&gt;切换&lt;/button&gt;
-`&lt;/template&gt;`
+<template>
+  <button @click="handleClick">切换</button>
+</template>
 ```
 
 ### 可选注入
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 // 使用可选链
@@ -127,12 +130,12 @@ if (optionalValue) {
 
 // 或使用默认值
 const value = inject('optionalKey', 'default')
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 在 setup 函数中使用
 
-```text
+```javascript
 import { inject } from 'vue'
 
 export default {
@@ -148,7 +151,7 @@ export default {
 
 ### 在选项式 API 中使用
 
-```text
+```javascript
 export default {
   inject: {
     // 简写形式
@@ -163,7 +166,7 @@ export default {
     // 使用函数默认值
     config: {
       from: 'config',
-      default: () =&gt; ({ apiUrl: '/api' })
+      default: () => ({ apiUrl: '/api' })
     }
   },
 
@@ -176,20 +179,20 @@ export default {
 
 ### 注入 Symbol key
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 import { ThemeKey, LocaleKey } from './ancestor'
 
 const theme = inject(ThemeKey, 'light')
 const locale = inject(LocaleKey, 'en-US')
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 注入多个相关值
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 // 方式1: 分别注入
@@ -199,13 +202,13 @@ const isLoggedIn = inject('isLoggedIn')
 // 方式2: 注入对象（推荐）
 const auth = inject('auth')
 // auth.user, auth.isLoggedIn, auth.login 等
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 只读注入
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject, readonly } from 'vue'
 
 // 注入并设为只读
@@ -214,14 +217,14 @@ const readonlyConfig = readonly(config)
 
 // 尝试修改会报警告
 readonlyConfig.theme = 'dark' // 警告
-`&lt;/script&gt;`
+</script>
 ```
 
 ## 注意事项
 
 ### 1. 与 provide 配对使用
 
-```text
+```javascript
 // 祖先组件
 provide('key', value)
 
@@ -233,8 +236,8 @@ const injected = inject('key') // 获取 value
 
 ### 2. 响应式数据保持响应性
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 const count = inject('count')
@@ -246,12 +249,12 @@ function increment() {
 
 // ❌ 解构会失去响应性
 const { value } = count // 不要这样做
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 3. 默认值只在未提供时使用
 
-```text
+```javascript
 // 祖先组件
 provide('message', null)
 
@@ -264,7 +267,7 @@ const message = inject('message', 'default')
 
 ### 4. 注入的顺序
 
-```text
+```javascript
 // 多层 provide
 // 祖先 A: provide('key', 'value-a')
 // 祖先 B: provide('key', 'value-b')
@@ -275,7 +278,7 @@ const message = inject('message', 'default')
 
 ### 5. Symbol key 的使用
 
-```text
+```javascript
 // 导出 Symbol
 export const ThemeKey = Symbol('theme')
 
@@ -290,7 +293,7 @@ const theme = inject(ThemeKey)
 
 ### 6. 与 props 的优先级
 
-```text
+```javascript
 // props 优先级更高
 // 如果组件既有 props 又 inject 了同名的 key
 // props 的值会覆盖 inject 的值
@@ -298,7 +301,7 @@ const theme = inject(ThemeKey)
 
 ### 7. 应用级 inject
 
-```text
+```javascript
 // main.js
 app.provide('global', 'value')
 
@@ -308,22 +311,22 @@ const global = inject('global')
 
 ### 8. TypeScript 类型安全
 
-```text
+```javascript
 // ✅ 明确类型
-const user = inject&lt;User&gt;('user')
+const user = inject<User>('user')
 
 // ⚠️ 可能需要类型断言
 const config = inject('config') as Config
 
 // ✅ 使用 Symbol 提供更好的类型
 const ThemeKey = Symbol('theme')
-const theme = inject&lt;string&gt;(ThemeKey)
+const theme = inject<string>(ThemeKey)
 ```
 
 ### 9. 处理未提供的情况
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 // 方式1: 默认值
@@ -337,15 +340,15 @@ if (!value) {
 
 // 方式3: 使用可选链
 const result = value?.method?.()
-`&lt;/script&gt;`
+</script>
 ```
 
 ## 使用场景
 
 ### 1. 使用主题系统
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 import { useTheme } from './composables/useTheme'
 
@@ -356,68 +359,68 @@ const setTheme = inject('setTheme')
 function toggleTheme() {
   setTheme(theme.value === 'light' ? 'dark' : 'light')
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div :class="themeConfig.isDark && 'dark-theme'"&gt;
-    &lt;button @click="toggleTheme"&gt;
+<template>
+  <div :class="themeConfig.isDark && 'dark-theme'">
+    <button @click="toggleTheme">
       切换到 {{ theme === 'light' ? '暗' : '亮' }}色模式
-    &lt;/button&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    </button>
+  </div>
+</template>
 ```
 
 ### 2. 用户认证状态
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 const user = inject('user')
 const login = inject('login')
 const logout = inject('logout')
 const isAuthenticated = inject('isAuthenticated')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;div v-if="isAuthenticated"&gt;
-      &lt;p&gt;欢迎, {{ user.name }}&lt;/p&gt;
-      &lt;button @click="logout"&gt;登出&lt;/button&gt;
-    &lt;/div&gt;
-    &lt;form v-else @submit.prevent="login(email, password)"&gt;
-      &lt;input v-model="email" type="email" /&gt;
-      &lt;input v-model="password" type="password" /&gt;
-      &lt;button&gt;登录&lt;/button&gt;
-    &lt;/form&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div>
+    <div v-if="isAuthenticated">
+      <p>欢迎, {{ user.name }}</p>
+      <button @click="logout">登出</button>
+    </div>
+    <form v-else @submit.prevent="login(email, password)">
+      <input v-model="email" type="email" />
+      <input v-model="password" type="password" />
+      <button>登录</button>
+    </form>
+  </div>
+</template>
 ```
 
 ### 3. 国际化
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 const t = inject('t')
 const locale = inject('locale')
 const setLocale = inject('setLocale')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;h1&gt;{{ t('welcome') }}&lt;/h1&gt;
-    &lt;button @click="setLocale('zh-CN')"&gt;中文&lt;/button&gt;
-    &lt;button @click="setLocale('en-US')"&gt;English&lt;/button&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div>
+    <h1>{{ t('welcome') }}</h1>
+    <button @click="setLocale('zh-CN')">中文</button>
+    <button @click="setLocale('en-US')">English</button>
+  </div>
+</template>
 ```
 
 ### 4. 表单字段
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject, computed, onMounted } from 'vue'
 
 const props = defineProps(['name'])
@@ -427,53 +430,53 @@ const setFieldError = inject('setFieldError')
 const registerField = inject('registerField')
 
 const value = computed({
-  get: () =&gt; formState.values[props.name],
-  set: (val) =&gt; setFieldValue(props.name, val)
+  get: () => formState.values[props.name],
+  set: (val) => setFieldValue(props.name, val)
 })
 
-const error = computed(() =&gt; formState.errors[props.name])
+const error = computed(() => formState.errors[props.name])
 
-onMounted(() =&gt; {
+onMounted(() => {
   registerField(props.name, props.defaultValue || '')
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div class="form-field"&gt;
-    &lt;label :for="name"&gt;{{ label }}&lt;/label&gt;
-    &lt;input
+<template>
+  <div class="form-field">
+    <label :for="name">{{ label }}</label>
+    <input
       :id="name"
       v-model="value"
       @blur="validate"
-    /&gt;
-    &lt;span v-if="error" class="error"&gt;{{ error }}&lt;/span&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    />
+    <span v-if="error" class="error">{{ error }}</span>
+  </div>
+</template>
 ```
 
 ### 5. 使用导航上下文
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 const navigate = inject('navigate')
 const goBack = inject('goBack')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;nav&gt;
-    &lt;button @click="goBack"&gt;返回&lt;/button&gt;
-    &lt;button @click="navigate('/home')"&gt;首页&lt;/button&gt;
-    &lt;button @click="navigate('/about')"&gt;关于&lt;/button&gt;
-  &lt;/nav&gt;
-`&lt;/template&gt;`
+<template>
+  <nav>
+    <button @click="goBack">返回</button>
+    <button @click="navigate('/home')">首页</button>
+    <button @click="navigate('/about')">关于</button>
+  </nav>
+</template>
 ```
 
 ### 6. 显示模态框
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 const openModal = inject('openModal')
@@ -481,7 +484,7 @@ const openModal = inject('openModal')
 function showLoginModal() {
   openModal('LoginModal', {
     title: '登录',
-    onSuccess: () =&gt; {
+    onSuccess: () => {
       console.log('登录成功')
     }
   })
@@ -490,18 +493,18 @@ function showLoginModal() {
 function showSettingsModal() {
   openModal('SettingsModal')
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button @click="showLoginModal"&gt;登录&lt;/button&gt;
-  &lt;button @click="showSettingsModal"&gt;设置&lt;/button&gt;
-`&lt;/template&gt;`
+<template>
+  <button @click="showLoginModal">登录</button>
+  <button @click="showSettingsModal">设置</button>
+</template>
 ```
 
 ### 7. 显示通知
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 const showToast = inject('showToast')
@@ -519,18 +522,18 @@ function handleError() {
     duration: 5000
   })
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button @click="handleSuccess"&gt;成功操作&lt;/button&gt;
-  &lt;button @click="handleError"&gt;失败操作&lt;/button&gt;
-`&lt;/template&gt;`
+<template>
+  <button @click="handleSuccess">成功操作</button>
+  <button @click="handleError">失败操作</button>
+</template>
 ```
 
 ### 8. 使用 API
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject, onMounted, ref } from 'vue'
 
 const api = inject('api')
@@ -539,7 +542,7 @@ const fetchUser = inject('fetchUser')
 const user = ref(null)
 const posts = ref([])
 
-onMounted(async () =&gt; {
+onMounted(async () => {
   // 方式1: 使用注入的 api 实例
   const response = await api.get('/user')
   user.value = response.data
@@ -548,13 +551,13 @@ onMounted(async () =&gt; {
   const userData = await fetchUser(1)
   user.value = userData
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 9. 使用全局配置
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 const config = inject('config')
@@ -562,41 +565,41 @@ const config = inject('config')
 console.log(config.appName)
 console.log(config.apiUrl)
 console.log(config.features.darkMode)
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;footer&gt;
+<template>
+  <footer>
     {{ config.appName }} v{{ config.version }}
-  &lt;/footer&gt;
-`&lt;/template&gt;`
+  </footer>
+</template>
 ```
 
 ### 10. 布局控制
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject } from 'vue'
 
 const sidebarState = inject('sidebarState')
 const toggleSidebar = inject('toggleSidebar')
 const collapseSidebar = inject('collapseSidebar')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;aside :class="{ 'collapsed': sidebarState.collapsed }"&gt;
-    &lt;button @click="toggleSidebar"&gt;
+<template>
+  <aside :class="{ 'collapsed': sidebarState.collapsed }">
+    <button @click="toggleSidebar">
       {{ sidebarState.open ? '关闭' : '打开' }}
-    &lt;/button&gt;
-    &lt;button @click="collapseSidebar"&gt;
+    </button>
+    <button @click="collapseSidebar">
       {{ sidebarState.collapsed ? '展开' : '折叠' }}
-    &lt;/button&gt;
-  &lt;/aside&gt;
-`&lt;/template&gt;`
+    </button>
+  </aside>
+</template>
 ```
 
 ### 11. 组合函数中使用 inject
 
-```text
+```javascript
 // useNotification.js
 import { inject } from 'vue'
 
@@ -605,16 +608,18 @@ export function useNotification() {
   const showError = inject('showError')
 
   const notify = {
-    success: (message) =&gt; showToast(message, { type: 'success' }),
-    error: (message) =&gt; showToast(message, { type: 'error' }),
-    warning: (message) =&gt; showToast(message, { type: 'warning' })
+    success: (message) => showToast(message, { type: 'success' }),
+    error: (message) => showToast(message, { type: 'error' }),
+    warning: (message) => showToast(message, { type: 'warning' })
   }
 
   return notify
 }
+```
 
-// 在组件中使用
-`&lt;script setup&gt;`
+```vue
+<!-- 在组件中使用 -->
+<script setup>
 import { useNotification } from './useNotification'
 
 const notify = useNotification()
@@ -622,20 +627,20 @@ const notify = useNotification()
 function handleAction() {
   notify.success('操作成功！')
 }
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 12. 条件注入
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { inject, computed } from 'vue'
 
 // 注入可选的值
 const optionalFeature = inject('optionalFeature', null)
 
 // 检查是否可用
-const hasFeature = computed(() =&gt; optionalFeature !== null)
+const hasFeature = computed(() => optionalFeature !== null)
 
 function useFeature() {
   if (hasFeature.value && optionalFeature.use) {
@@ -643,23 +648,23 @@ function useFeature() {
   }
   return null
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;button v-if="hasFeature" @click="useFeature"&gt;
+<template>
+  <div>
+    <button v-if="hasFeature" @click="useFeature">
       使用功能
-    &lt;/button&gt;
-    &lt;p v-else&gt;功能不可用&lt;/p&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    </button>
+    <p v-else>功能不可用</p>
+  </div>
+</template>
 ```
 
 ## provide/inject 组合示例
 
-```text
-&lt;!-- 祖先组件 App.vue --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 祖先组件 App.vue -->
+<script setup>
 import { provide, ref } from 'vue'
 import Child from './Child.vue'
 
@@ -668,35 +673,39 @@ const user = ref({ name: 'Vue' })
 
 provide('theme', theme)
 provide('user', user)
-provide('setUser', (newUser) =&gt; {
+provide('setUser', (newUser) => {
   user.value = newUser
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;Child /&gt;
-`&lt;/template&gt;`
+<template>
+  <Child />
+</template>
+```
 
-&lt;!-- 中间层组件 Child.vue --&gt;
-`&lt;template&gt;`
-  &lt;GrandChild /&gt;
-`&lt;/template&gt;`
+```vue
+<!-- 中间层组件 Child.vue -->
+<template>
+  <GrandChild />
+</template>
+```
 
-&lt;!-- 后代组件 GrandChild.vue --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 后代组件 GrandChild.vue -->
+<script setup>
 import { inject } from 'vue'
 
 const theme = inject('theme')
 const user = inject('user')
 const setUser = inject('setUser')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div :class="theme"&gt;
-    &lt;p&gt;用户: {{ user.name }}&lt;/p&gt;
-    &lt;button @click="setUser({ name: 'React' })"&gt;修改用户&lt;/button&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div :class="theme">
+    <p>用户: {{ user.name }}</p>
+    <button @click="setUser({ name: 'Vue' })">修改用户</button>
+  </div>
+</template>
 ```
 
 ## 最佳实践

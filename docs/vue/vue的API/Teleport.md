@@ -1,116 +1,119 @@
 # Teleport
 
 ## 作用
+
 `Teleport` 是一个内置组件，用于将模板内容"传送"到 DOM 的其他位置。它允许你控制组件内容在 DOM 中的渲染位置，而不影响组件层级结构。
+
+> [官方文档：Teleport](https://cn.vuejs.org/api/built-in-components#teleport)
 
 ## 用法
 
 ### 基本用法
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const show = ref(false)
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;button @click="show = !show"&gt;切换弹窗&lt;/button&gt;
+<template>
+  <div>
+    <button @click="show = !show">切换弹窗</button>
 
-    &lt;!-- Teleport 将内容传送到 body --&gt;
-    &lt;Teleport to="body"&gt;
-      &lt;div v-if="show" class="modal"&gt;
-        &lt;p&gt;这是一个传送的弹窗&lt;/p&gt;
-        &lt;button @click="show = false"&gt;关闭&lt;/button&gt;
-      &lt;/div&gt;
-    &lt;/Teleport&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    <!-- Teleport 将内容传送到 body -->
+    <Teleport to="body">
+      <div v-if="show" class="modal">
+        <p>这是一个传送的弹窗</p>
+        <button @click="show = false">关闭</button>
+      </div>
+    </Teleport>
+  </div>
+</template>
 ```
 
 ### 传送到指定元素
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const containerId = 'modal-container'
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- 传送到指定 ID 的元素 --&gt;
-  &lt;Teleport :to="`#${containerId}`"&gt;
-    &lt;div class="modal"&gt;
+<template>
+  <!-- 传送到指定 ID 的元素 -->
+  <Teleport :to="`#${containerId}`">
+    <div class="modal">
       Modal content
-    &lt;/div&gt;
-  &lt;/Teleport&gt;
+    </div>
+  </Teleport>
 
-  &lt;!-- 目标容器 --&gt;
-  &lt;div id="modal-container"&gt;&lt;/div&gt;
-`&lt;/template&gt;`
+  <!-- 目标容器 -->
+  <div id="modal-container"></div>
+</template>
 ```
 
 ### 禁用 Teleport
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const disabled = ref(false)
 const show = ref(true)
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- 当 disabled 为 true 时，内容在原地渲染 --&gt;
-  &lt;Teleport to="body" :disabled="disabled"&gt;
-    &lt;div v-if="show" class="modal"&gt;
+<template>
+  <!-- 当 disabled 为 true 时，内容在原地渲染 -->
+  <Teleport to="body" :disabled="disabled">
+    <div v-if="show" class="modal">
       Modal content
-    &lt;/div&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+    </div>
+  </Teleport>
+</template>
 ```
 
 ### 多个 Teleport 到同一目标
 
-```text
-`&lt;template&gt;`
-  &lt;!-- 多个 Teleport 可以传送到同一个目标 --&gt;
-  &lt;Teleport to="body"&gt;
-    &lt;div class="modal-a"&gt;Modal A&lt;/div&gt;
-  &lt;/Teleport&gt;
+```vue
+<template>
+  <!-- 多个 Teleport 可以传送到同一个目标 -->
+  <Teleport to="body">
+    <div class="modal-a">Modal A</div>
+  </Teleport>
 
-  &lt;Teleport to="body"&gt;
-    &lt;div class="modal-b"&gt;Modal B&lt;/div&gt;
-  &lt;/Teleport&gt;
+  <Teleport to="body">
+    <div class="modal-b">Modal B</div>
+  </Teleport>
 
-  &lt;!-- 按照组件中的顺序渲染 --&gt;
-`&lt;/template&gt;`
+  <!-- 按照组件中的顺序渲染 -->
+</template>
 ```
 
 ### 与 Transition 配合
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const show = ref(false)
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button @click="show = true"&gt;显示弹窗&lt;/button&gt;
+<template>
+  <button @click="show = true">显示弹窗</button>
 
-  &lt;Teleport to="body"&gt;
-    &lt;Transition name="modal"&gt;
-      &lt;div v-if="show" class="modal"&gt;
-        &lt;div class="modal-content"&gt;
-          &lt;p&gt;弹窗内容&lt;/p&gt;
-          &lt;button @click="show = false"&gt;关闭&lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/Transition&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+  <Teleport to="body">
+    <Transition name="modal">
+      <div v-if="show" class="modal">
+        <div class="modal-content">
+          <p>弹窗内容</p>
+          <button @click="show = false">关闭</button>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+</template>
 
-&lt;style&gt;
+<style>
 .modal-enter-active,
 .modal-leave-active {
   transition: opacity 0.3s ease;
@@ -130,288 +133,288 @@ const show = ref(false)
 .modal-leave-to .modal-content {
   transform: scale(0.9);
 }
-&lt;/style&gt;
+</style>
 ```
 
 ### 在组件中使用
 
-```text
-&lt;!-- Modal.vue --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- Modal.vue -->
+<script setup>
 const props = defineProps({
   show: Boolean,
   title: String
 })
 
 const emit = defineEmits(['close'])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;Teleport to="body"&gt;
-    &lt;Transition name="modal"&gt;
-      &lt;div v-if="show" class="modal-overlay" @click.self="emit('close')"&gt;
-        &lt;div class="modal-content"&gt;
-          &lt;h2&gt;{{ title }}&lt;/h2&gt;
-          &lt;slot /&gt;
-          &lt;button @click="emit('close')"&gt;关闭&lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/Transition&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+<template>
+  <Teleport to="body">
+    <Transition name="modal">
+      <div v-if="show" class="modal-overlay" @click.self="emit('close')">
+        <div class="modal-content">
+          <h2>{{ title }}</h2>
+          <slot />
+          <button @click="emit('close')">关闭</button>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+</template>
 ```
 
 ### 动态目标
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const showModal = ref(false)
 const target = ref('body')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button @click="showModal = true"&gt;显示弹窗&lt;/button&gt;
+<template>
+  <button @click="showModal = true">显示弹窗</button>
 
-  &lt;!-- 动态切换目标 --&gt;
-  &lt;Teleport :to="target"&gt;
-    &lt;div v-if="showModal" class="modal"&gt;
-      &lt;button @click="target = target === 'body' ? '#container' : 'body'"&gt;
+  <!-- 动态切换目标 -->
+  <Teleport :to="target">
+    <div v-if="showModal" class="modal">
+      <button @click="target = target === 'body' ? '#container' : 'body'">
         切换位置
-      &lt;/button&gt;
-    &lt;/div&gt;
-  &lt;/Teleport&gt;
+      </button>
+    </div>
+  </Teleport>
 
-  &lt;div id="container"&gt;&lt;/div&gt;
-`&lt;/template&gt;`
+  <div id="container"></div>
+</template>
 ```
 
 ### 传送多个插槽内容
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const show = ref(false)
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;Teleport to="body"&gt;
-    &lt;Transition&gt;
-      &lt;div v-if="show" class="modal"&gt;
-        &lt;slot name="header"&gt;
-          &lt;h2&gt;默认标题&lt;/h2&gt;
-        &lt;/slot&gt;
-        &lt;slot /&gt;
-        &lt;slot name="footer"&gt;
-          &lt;button @click="show = false"&gt;关闭&lt;/button&gt;
-        &lt;/slot&gt;
-      &lt;/div&gt;
-    &lt;/Transition&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+<template>
+  <Teleport to="body">
+    <Transition>
+      <div v-if="show" class="modal">
+        <slot name="header">
+          <h2>默认标题</h2>
+        </slot>
+        <slot />
+        <slot name="footer">
+          <button @click="show = false">关闭</button>
+        </slot>
+      </div>
+    </Transition>
+  </Teleport>
+</template>
 ```
 
 ## 注意事项
 
 ### 1. Teleport 只改变渲染位置
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const count = ref(0)
 const show = ref(true)
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;p&gt;Count: {{ count }}&lt;/p&gt;
-    &lt;button @click="count++"&gt;增加&lt;/button&gt;
+<template>
+  <div>
+    <p>Count: {{ count }}</p>
+    <button @click="count++">增加</button>
 
-    &lt;!-- Teleport 的内容仍然可以访问组件的状态 --&gt;
-    &lt;Teleport to="body"&gt;
-      &lt;div v-if="show"&gt;
-        &lt;p&gt;传送的内容: {{ count }}&lt;/p&gt;
-      &lt;/div&gt;
-    &lt;/Teleport&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    <!-- Teleport 的内容仍然可以访问组件的状态 -->
+    <Teleport to="body">
+      <div v-if="show">
+        <p>传送的内容: {{ count }}</p>
+      </div>
+    </Teleport>
+  </div>
+</template>
 ```
 
 ### 2. 生命周期钩子的执行
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { onMounted } from 'vue'
 
-onMounted(() =&gt; {
+onMounted(() => {
   console.log('组件已挂载')
   // Teleport 内容的 onMounted 也会执行
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;Teleport to="body"&gt;
-    &lt;div @mounted="console.log('Teleport content mounted')"&gt;
+<template>
+  <Teleport to="body">
+    <div @mounted="console.log('Teleport content mounted')">
       Content
-    &lt;/div&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+    </div>
+  </Teleport>
+</template>
 ```
 
 ### 3. 事件冒泡
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 function handleClick() {
   console.log('Clicked')
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- Teleport 会保留事件冒泡行为 --&gt;
-  &lt;div @click="handleClick"&gt;
-    &lt;Teleport to="body"&gt;
-      &lt;button @click="handleClick"&gt;Click&lt;/button&gt;
-    &lt;/Teleport&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <!-- Teleport 会保留事件冒泡行为 -->
+  <div @click="handleClick">
+    <Teleport to="body">
+      <button @click="handleClick">Click</button>
+    </Teleport>
+  </div>
+</template>
 ```
 
 ### 4. 插槽内容
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const show = ref(true)
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- 默认插槽内容会被传送 --&gt;
-  &lt;Teleport to="body"&gt;
-    `&lt;template&gt;`
-      &lt;div&gt;传送的内容&lt;/div&gt;
-    `&lt;/template&gt;`
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+<template>
+  <!-- 默认插槽内容会被传送 -->
+  <Teleport to="body">
+    <template>
+      <div>传送的内容</div>
+    </template>
+  </Teleport>
+</template>
 ```
 
 ### 5. 目标元素必须存在
 
-```text
-`&lt;template&gt;`
-  &lt;!-- ✅ 目标元素存在 --&gt;
-  &lt;Teleport to="body"&gt;
-    &lt;div&gt;Content&lt;/div&gt;
-  &lt;/Teleport&gt;
+```vue
+<template>
+  <!-- ✅ 目标元素存在 -->
+  <Teleport to="body">
+    <div>Content</div>
+  </Teleport>
 
-  &lt;!-- ✅ 目标元素存在 --&gt;
-  &lt;div id="app"&gt;&lt;/div&gt;
-  &lt;Teleport to="#app"&gt;
-    &lt;div&gt;Content&lt;/div&gt;
-  &lt;/Teleport&gt;
+  <!-- ✅ 目标元素存在 -->
+  <div id="app"></div>
+  <Teleport to="#app">
+    <div>Content</div>
+  </Teleport>
 
-  &lt;!-- ❌ 目标元素不存在时会报错 --&gt;
-  &lt;Teleport to="#non-existent"&gt;
-    &lt;div&gt;Content&lt;/div&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+  <!-- ❌ 目标元素不存在时会报错 -->
+  <Teleport to="#non-existent">
+    <div>Content</div>
+  </Teleport>
+</template>
 ```
 
 ### 6. 作用域插槽
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const userData = ref({
   name: 'Vue',
   role: 'admin'
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;Teleport to="body"&gt;
-    &lt;div class="modal"&gt;
-      &lt;!-- 作用域插槽在 Teleport 中正常工作 --&gt;
-      &lt;slot name="content" :user="userData"&gt;
-        &lt;p&gt;默认内容&lt;/p&gt;
-      &lt;/slot&gt;
-    &lt;/div&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+<template>
+  <Teleport to="body">
+    <div class="modal">
+      <!-- 作用域插槽在 Teleport 中正常工作 -->
+      <slot name="content" :user="userData">
+        <p>默认内容</p>
+      </slot>
+    </div>
+  </Teleport>
+</template>
 ```
 
 ### 7. 组合式 API 支持
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { useModal } from './composables/useModal'
 
 const { show, open, close } = useModal()
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;Teleport to="body"&gt;
-    &lt;div v-if="show" class="modal"&gt;
-      &lt;slot :close="close" /&gt;
-    &lt;/div&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+<template>
+  <Teleport to="body">
+    <div v-if="show" class="modal">
+      <slot :close="close" />
+    </div>
+  </Teleport>
+</template>
 ```
 
 ### 8. ref 访问
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onMounted } from 'vue'
 
 const modalRef = ref(null)
 
-onMounted(() =&gt; {
+onMounted(() => {
   console.log(modalRef.value) // 可以访问 Teleport 内部的元素
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;Teleport to="body"&gt;
-    &lt;div ref="modalRef" class="modal"&gt;
+<template>
+  <Teleport to="body">
+    <div ref="modalRef" class="modal">
       Modal content
-    &lt;/div&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+    </div>
+  </Teleport>
+</template>
 ```
 
 ## 使用场景
 
 ### 1. 模态框
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const showModal = ref(false)
 const modalContent = ref('')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button @click="showModal = true"&gt;打开模态框&lt;/button&gt;
+<template>
+  <button @click="showModal = true">打开模态框</button>
 
-  &lt;Teleport to="body"&gt;
-    &lt;Transition name="modal"&gt;
-      &lt;div v-if="showModal" class="modal-overlay" @click.self="showModal = false"&gt;
-        &lt;div class="modal-content" @click.stop&gt;
-          &lt;h2&gt;模态框&lt;/h2&gt;
-          &lt;p&gt;{{ modalContent }}&lt;/p&gt;
-          &lt;button @click="showModal = false"&gt;关闭&lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/Transition&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+  <Teleport to="body">
+    <Transition name="modal">
+      <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
+        <div class="modal-content" @click.stop>
+          <h2>模态框</h2>
+          <p>{{ modalContent }}</p>
+          <button @click="showModal = false">关闭</button>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+</template>
 
-&lt;style&gt;
+<style>
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -431,13 +434,13 @@ const modalContent = ref('')
   border-radius: 8px;
   min-width: 300px;
 }
-&lt;/style&gt;
+</style>
 ```
 
 ### 2. 通知/Toast
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const toasts = ref([])
@@ -445,33 +448,33 @@ const toasts = ref([])
 function showToast(message, type = 'info') {
   const id = Date.now()
   toasts.value.push({ id, message, type })
-  setTimeout(() =&gt; {
-    toasts.value = toasts.value.filter(t =&gt; t.id !== id)
+  setTimeout(() => {
+    toasts.value = toasts.value.filter(t => t.id !== id)
   }, 3000)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button @click="showToast('操作成功!', 'success')"&gt;
+<template>
+  <button @click="showToast('操作成功!', 'success')">
     显示通知
-  &lt;/button&gt;
+  </button>
 
-  &lt;Teleport to="body"&gt;
-    &lt;div class="toast-container"&gt;
-      &lt;TransitionGroup name="toast"&gt;
-        &lt;div
+  <Teleport to="body">
+    <div class="toast-container">
+      <TransitionGroup name="toast">
+        <div
           v-for="toast in toasts"
           :key="toast.id"
           :class="['toast', toast.type]"
-        &gt;
+        >
           {{ toast.message }}
-        &lt;/div&gt;
-      &lt;/TransitionGroup&gt;
-    &lt;/div&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+        </div>
+      </TransitionGroup>
+    </div>
+  </Teleport>
+</template>
 
-&lt;style&gt;
+<style>
 .toast-container {
   position: fixed;
   top: 20px;
@@ -490,46 +493,46 @@ function showToast(message, type = 'info') {
 .toast.success {
   border-left: 4px solid #52c41a;
 }
-&lt;/style&gt;
+</style>
 ```
 
 ### 3. 下拉菜单
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onClickOutside } from '@vueuse/core'
 
 const showMenu = ref(false)
 const menuRef = ref(null)
 
-onClickOutside(menuRef, () =&gt; {
+onClickOutside(menuRef, () => {
   showMenu.value = false
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div class="dropdown" ref="menuRef"&gt;
-    &lt;button @click="showMenu = !showMenu"&gt;
+<template>
+  <div class="dropdown" ref="menuRef">
+    <button @click="showMenu = !showMenu">
       菜单
-    &lt;/button&gt;
+    </button>
 
-    &lt;Teleport to="body"&gt;
-      &lt;Transition name="dropdown"&gt;
-        &lt;div v-if="showMenu" class="dropdown-menu"&gt;
-          &lt;a href="#"&gt;选项 1&lt;/a&gt;
-          &lt;a href="#"&gt;选项 2&lt;/a&gt;
-          &lt;a href="#"&gt;选项 3&lt;/a&gt;
-        &lt;/div&gt;
-      &lt;/Transition&gt;
-    &lt;/Teleport&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    <Teleport to="body">
+      <Transition name="dropdown">
+        <div v-if="showMenu" class="dropdown-menu">
+          <a href="#">选项 1</a>
+          <a href="#">选项 2</a>
+          <a href="#">选项 3</a>
+        </div>
+      </Transition>
+    </Teleport>
+  </div>
+</template>
 ```
 
 ### 4. 加载遮罩
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const isLoading = ref(false)
@@ -542,22 +545,22 @@ async function loadData() {
     isLoading.value = false
   }
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button @click="loadData"&gt;加载数据&lt;/button&gt;
+<template>
+  <button @click="loadData">加载数据</button>
 
-  &lt;Teleport to="body"&gt;
-    &lt;Transition name="loading"&gt;
-      &lt;div v-if="isLoading" class="loading-overlay"&gt;
-        &lt;div class="spinner"&gt;&lt;/div&gt;
-        &lt;p&gt;加载中...&lt;/p&gt;
-      &lt;/div&gt;
-    &lt;/Transition&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+  <Teleport to="body">
+    <Transition name="loading">
+      <div v-if="isLoading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>加载中...</p>
+      </div>
+    </Transition>
+  </Teleport>
+</template>
 
-&lt;style&gt;
+<style>
 .loading-overlay {
   position: fixed;
   top: 0;
@@ -571,13 +574,13 @@ async function loadData() {
   align-items: center;
   z-index: 9999;
 }
-&lt;/style&gt;
+</style>
 ```
 
 ### 5. 弹出层（Popover/Tooltip）
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const showPopover = ref(false)
@@ -587,26 +590,26 @@ function show(event) {
   position.value = { x: event.clientX, y: event.clientY }
   showPopover.value = true
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;button @click="show"&gt;点击显示&lt;/button&gt;
+<template>
+  <div>
+    <button @click="show">点击显示</button>
 
-    &lt;Teleport to="body"&gt;
-      &lt;div
+    <Teleport to="body">
+      <div
         v-if="showPopover"
         class="popover"
         :style="{ left: position.x + 'px', top: position.y + 'px' }"
-      &gt;
+      >
         这是一个弹出层
-        &lt;button @click="showPopover = false" class="close-btn"&gt;×&lt;/button&gt;
-      &lt;/div&gt;
-    &lt;/Teleport&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+        <button @click="showPopover = false" class="close-btn">×</button>
+      </div>
+    </Teleport>
+  </div>
+</template>
 
-&lt;style&gt;
+<style>
 .popover {
   position: fixed;
   background: white;
@@ -616,13 +619,13 @@ function show(event) {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 1000;
 }
-&lt;/style&gt;
+</style>
 ```
 
 ### 6. 图片预览
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const previewImage = ref(null)
@@ -632,32 +635,32 @@ function showPreview(src) {
   previewImage.value = src
   previewVisible.value = true
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div class="image-grid"&gt;
-    &lt;img
+<template>
+  <div class="image-grid">
+    <img
       v-for="img in images"
       :key="img.src"
       :src="img.src"
       @click="showPreview(img.src)"
-    /&gt;
-  &lt;/div&gt;
+    />
+  </div>
 
-  &lt;Teleport to="body"&gt;
-    &lt;Transition name="preview"&gt;
-      &lt;div v-if="previewVisible" class="preview-overlay" @click="previewVisible = false"&gt;
-        &lt;img :src="previewImage" class="preview-image" /&gt;
-      &lt;/div&gt;
-    &lt;/Transition&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+  <Teleport to="body">
+    <Transition name="preview">
+      <div v-if="previewVisible" class="preview-overlay" @click="previewVisible = false">
+        <img :src="previewImage" class="preview-image" />
+      </div>
+    </Transition>
+  </Teleport>
+</template>
 ```
 
 ### 7. 右键菜单
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const contextMenu = ref({
@@ -678,59 +681,59 @@ function showContextMenu(event) {
 function hideContextMenu() {
   contextMenu.value.visible = false
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div @contextmenu.prevent="showContextMenu" class="context-area"&gt;
+<template>
+  <div @contextmenu.prevent="showContextMenu" class="context-area">
     右键点击此区域
-  &lt;/div&gt;
+  </div>
 
-  &lt;Teleport to="body"&gt;
-    &lt;Transition name="context-menu"&gt;
-      &lt;div
+  <Teleport to="body">
+    <Transition name="context-menu">
+      <div
         v-if="contextMenu.visible"
         class="context-menu"
         :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
-      &gt;
-        &lt;div @click="hideContextMenu"&gt;复制&lt;/div&gt;
-        &lt;div @click="hideContextMenu"&gt;粘贴&lt;/div&gt;
-        &lt;div @click="hideContextMenu"&gt;删除&lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/Transition&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+      >
+        <div @click="hideContextMenu">复制</div>
+        <div @click="hideContextMenu">粘贴</div>
+        <div @click="hideContextMenu">删除</div>
+      </div>
+    </Transition>
+  </Teleport>
+</template>
 ```
 
 ### 8. 全屏组件
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const isFullscreen = ref(false)
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button @click="isFullscreen = !isFullscreen"&gt;
+<template>
+  <button @click="isFullscreen = !isFullscreen">
     {{ isFullscreen ? '退出' : '进入' }}全屏
-  &lt;/button&gt;
+  </button>
 
-  &lt;Teleport to="body"&gt;
-    &lt;Transition name="fullscreen"&gt;
-      &lt;div v-if="isFullscreen" class="fullscreen-content"&gt;
-        &lt;div class="fullscreen-header"&gt;
-          &lt;h2&gt;全屏内容&lt;/h2&gt;
-          &lt;button @click="isFullscreen = false"&gt;关闭&lt;/button&gt;
-        &lt;/div&gt;
-        &lt;div class="fullscreen-body"&gt;
-          &lt;slot /&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/Transition&gt;
-  &lt;/Teleport&gt;
-`&lt;/template&gt;`
+  <Teleport to="body">
+    <Transition name="fullscreen">
+      <div v-if="isFullscreen" class="fullscreen-content">
+        <div class="fullscreen-header">
+          <h2>全屏内容</h2>
+          <button @click="isFullscreen = false">关闭</button>
+        </div>
+        <div class="fullscreen-body">
+          <slot />
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+</template>
 
-&lt;style&gt;
+<style>
 .fullscreen-content {
   position: fixed;
   top: 0;
@@ -742,7 +745,7 @@ const isFullscreen = ref(false)
   display: flex;
   flex-direction: column;
 }
-&lt;/style&gt;
+</style>
 ```
 
 ## Teleport 特性总结

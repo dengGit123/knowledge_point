@@ -4,6 +4,8 @@
 
 `onActivated()` 是 Vue 3 的生命周期钩子，用于被 `<keep-alive>` 缓存的组件。当组件被激活时调用。
 
+> 参考：[Vue 官方文档 - onActivated](https://cn.vuejs.org/api/composition-api-lifecycle#onactivated)
+
 ## 基本用法
 
 ```javascript

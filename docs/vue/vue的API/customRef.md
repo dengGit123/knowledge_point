@@ -4,6 +4,8 @@
 
 `customRef()` 用于创建一个自定义的 ref，可以显式控制其依赖追踪和触发响应。
 
+> [官方文档](https://cn.vuejs.org/api/reactivity-advanced#customref)
+
 ## 基本用法
 
 ```javascript

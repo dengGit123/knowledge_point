@@ -2,6 +2,8 @@
 
 Vue Router 提供的组合式函数，用于访问当前路由。
 
+> 官方文档：[useRoute](https://router.vuejs.org/zh/api/#useroute)
+
 ## 语法
 
 ```javascript

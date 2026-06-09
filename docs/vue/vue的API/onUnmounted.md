@@ -1,33 +1,36 @@
 # onUnmounted
 
 ## 作用
+
+> [Vue 官方文档 - onUnmounted](https://cn.vuejs.org/api/composition-api-lifecycle#onunmounted)
+
 `onUnmounted()` 是 Vue 3 的生命周期钩子，在组件实例被卸载之后调用。这是执行清理工作的理想位置，例如移除事件监听器、取消定时器等。
 
 ## 用法
 
 ### 基本用法
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { onUnmounted } from 'vue'
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   console.log('组件已卸载')
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 清理定时器
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUnmounted } from 'vue'
 
 const count = ref(0)
 let timer = null
 
-const startTimer = () =&gt; {
-  timer = setInterval(() =&gt; {
+const startTimer = () => {
+  timer = setInterval(() => {
     count.value++
   }, 1000)
 }
@@ -36,66 +39,66 @@ const startTimer = () =&gt; {
 startTimer()
 
 // 组件卸载时清理
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   if (timer) {
     clearInterval(timer)
     timer = null
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;{{ count }}&lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div>{{ count }}</div>
+</template>
 ```
 
 ### 移除事件监听器
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { onMounted, onUnmounted } from 'vue'
 
-const handleResize = () =&gt; {
+const handleResize = () => {
   console.log('Window resized:', window.innerWidth)
 }
 
-onMounted(() =&gt; {
+onMounted(() => {
   window.addEventListener('resize', handleResize)
 })
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 清理 WebSocket 连接
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { onUnmounted } from 'vue'
 
 const socket = new WebSocket('ws://localhost:8080')
 
-socket.onopen = () =&gt; {
+socket.onopen = () => {
   console.log('WebSocket 已连接')
 }
 
-socket.onmessage = (event) =&gt; {
+socket.onmessage = (event) => {
   console.log('收到消息:', event.data)
 }
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   socket.close()
   console.log('WebSocket 已关闭')
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 取消网络请求
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { onUnmounted, ref } from 'vue'
 
 const abortController = new AbortController()
@@ -116,15 +119,15 @@ async function fetchData() {
 
 fetchData()
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   abortController.abort()
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 在选项式 API 中使用
 
-```text
+```javascript
 export default {
   data() {
     return {
@@ -133,7 +136,7 @@ export default {
     }
   },
   mounted() {
-    this.timer = setInterval(() =&gt; {
+    this.timer = setInterval(() => {
       this.count++
     }, 1000)
   },
@@ -147,122 +150,122 @@ export default {
 
 ### 与 watchCleanupEffect 配合
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { watchEffect, onUnmounted } from 'vue'
 
-const stop = watchEffect((onCleanup) =&gt; {
-  const timer = setInterval(() =&gt; {
+const stop = watchEffect((onCleanup) => {
+  const timer = setInterval(() => {
     console.log('Tick')
   }, 1000)
 
-  onCleanup(() =&gt; {
+  onCleanup(() => {
     clearInterval(timer)
   })
 })
 
 // 组件卸载时自动停止 watchEffect
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   stop()
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 清理第三方库实例
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { onUnmounted } from 'vue'
 import Chart from 'chart.js/auto'
 
 const canvasRef = ref(null)
 let chartInstance = null
 
-onMounted(() =&gt; {
+onMounted(() => {
   chartInstance = new Chart(canvasRef.value, {
     type: 'bar',
     data: { /* ... */ }
   })
 })
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   if (chartInstance) {
     chartInstance.destroy()
     chartInstance = null
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;canvas ref="canvasRef"&gt;&lt;/canvas&gt;
-`&lt;/template&gt;`
+<template>
+  <canvas ref="canvasRef"></canvas>
+</template>
 ```
 
 ### 清理订阅
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { onUnmounted } from 'vue'
 import { eventBus } from './eventBus'
 
-const handleEvent = (data) =&gt; {
+const handleEvent = (data) => {
   console.log('Event received:', data)
 }
 
 eventBus.on('custom-event', handleEvent)
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   eventBus.off('custom-event', handleEvent)
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 与 provide/inject 清理
 
-```text
-&lt;!-- 父组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 父组件 -->
+<script setup>
 import { provide, onUnmounted } from 'vue'
 
 const cleanupCallbacks = []
 
-provide('registerCleanup', (callback) =&gt; {
+provide('registerCleanup', (callback) => {
   cleanupCallbacks.push(callback)
 })
 
-onUnmounted(() =&gt; {
-  cleanupCallbacks.forEach(cb =&gt; cb())
+onUnmounted(() => {
+  cleanupCallbacks.forEach(cb => cb())
 })
-`&lt;/script&gt;`
+</script>
 
-&lt;!-- 子组件 --&gt;
-`&lt;script setup&gt;`
+<!-- 子组件 -->
+<script setup>
 import { inject, onUnmounted } from 'vue'
 
 const registerCleanup = inject('registerCleanup')
 
-onMounted(() =&gt; {
-  const cleanup = () =&gt; {
+onMounted(() => {
+  const cleanup = () => {
     // 清理逻辑
   }
 
   registerCleanup(cleanup)
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ## 注意事项
 
 ### 1. 执行时机
 
-```text
+```javascript
 // 组件卸载流程：
 // 1. onBeforeUnmount 执行
 // 2. 组件实例卸载
 // 3. onUnmounted 执行
 // 4. DOM 元素移除
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   // 此时组件已从 DOM 中移除
   // 不要访问组件的 DOM
 })
@@ -270,72 +273,65 @@ onUnmounted(() =&gt; {
 
 ### 2. 访问组件状态
 
-```text
-`&lt;script setup&gt;`
+```javascript
 import { ref, onUnmounted } from 'vue'
 
 const count = ref(0)
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   // ⚠️ 可以访问响应式状态
   console.log(count.value) // 可以访问
 
   // ❌ 但状态更新不会触发任何响应
   count.value++ // 不会有效果
 })
-`&lt;/script&gt;`
 ```
 
 ### 3. 与 watch 的自动清理
 
-```text
-`&lt;script setup&gt;`
+```javascript
 import { watch, onUnmounted } from 'vue'
 
 const source = ref(0)
 
 // watch 会在组件卸载时自动停止
-watch(source, (value) =&gt; {
+watch(source, (value) => {
   console.log('Source changed:', value)
 })
 
 // 不需要手动停止 watch
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   // watch 已经自动停止
 })
-`&lt;/script&gt;`
 ```
 
 ### 4. 清理函数的执行顺序
 
-```text
-`&lt;script setup&gt;`
+```javascript
 import { onUnmounted } from 'vue'
 
 // 多个 onUnmounted 按注册顺序执行
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   console.log(1) // 先执行
 })
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   console.log(2) // 后执行
 })
-`&lt;/script&gt;`
 ```
 
 ### 5. 异步清理
 
-```text
-`&lt;script setup&gt;`
+```javascript
 import { onUnmounted } from 'vue'
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   // ⚠️ onUnmounted 不支持 async
   // 需要异步操作时，使用回调
 })
 
 // ✅ 正确的异步清理方式
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   cleanupAsync().catch(console.error)
 })
 
@@ -343,49 +339,45 @@ async function cleanupAsync() {
   await saveData()
   await closeConnections()
 }
-`&lt;/script&gt;`
 ```
 
 ### 6. 在 Suspense 中
 
-```text
-`&lt;script setup&gt;`
+```javascript
 import { onUnmounted } from 'vue'
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   // 在 Suspense 组件卸载时也会执行
   console.log('组件卸载（包括在 Suspense 中）')
 })
-`&lt;/script&gt;`
 ```
 
 ### 7. 与 keep-alive
 
-```text
-&lt;!-- 使用 keep-alive 时 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 使用 keep-alive 时 -->
+<script setup>
 import { onUnmounted, onDeactivated } from 'vue'
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   // 只在组件真正被销毁时执行
   // keep-alive 缓存的组件不会触发
   console.log('组件销毁（keep-alive 不触发）')
 })
 
-onDeactivated(() =&gt; {
+onDeactivated(() => {
   // keep-alive 组件停用时执行
   console.log('组件停用（keep-alive 触发）')
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 8. 错误处理
 
-```text
-`&lt;script setup&gt;`
+```javascript
 import { onUnmounted } from 'vue'
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   try {
     // 清理逻辑
     cleanup()
@@ -394,77 +386,76 @@ onUnmounted(() =&gt; {
     // 确保即使出错也继续执行其他清理
   }
 })
-`&lt;/script&gt;`
 ```
 
 ## 使用场景
 
 ### 1. 定时器清理
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUnmounted } from 'vue'
 
 const currentTime = ref(new Date())
 let timer = null
 
-const updateTime = () =&gt; {
-  timer = setInterval(() =&gt; {
+const updateTime = () => {
+  timer = setInterval(() => {
     currentTime.value = new Date()
   }, 1000)
 }
 
 updateTime()
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   if (timer) {
     clearInterval(timer)
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;{{ currentTime.toLocaleString() }}&lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div>{{ currentTime.toLocaleString() }}</div>
+</template>
 ```
 
 ### 2. 地图实例清理
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { onMounted, onUnmounted } from 'vue'
 
 let map = null
 
-onMounted(() =&gt; {
+onMounted(() => {
   map = L.map('map-container').setView([39.9, 116.4], 11)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
 })
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   if (map) {
     map.remove()
     map = null
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div id="map-container" style="height: 400px;"&gt;&lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div id="map-container" style="height: 400px;"></div>
+</template>
 ```
 
 ### 3. 动画取消
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { onMounted, onUnmounted } from 'vue'
 import gsap from 'gsap'
 
 const elementRef = ref(null)
 let animation = null
 
-onMounted(() =&gt; {
+onMounted(() => {
   animation = gsap.to(elementRef.value, {
     x: 100,
     duration: 2,
@@ -473,50 +464,50 @@ onMounted(() =&gt; {
   })
 })
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   if (animation) {
     animation.kill()
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div ref="elementRef"&gt;Animated&lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div ref="elementRef">Animated</div>
+</template>
 ```
 
 ### 4. 自定义事件清理
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { onMounted, onUnmounted } from 'vue'
 
-const handleCustomEvent = (event) =&gt; {
+const handleCustomEvent = (event) => {
   console.log('Custom event:', event.detail)
 }
 
-onMounted(() =&gt; {
+onMounted(() => {
   window.addEventListener('custom-event', handleCustomEvent)
 })
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   window.removeEventListener('custom-event', handleCustomEvent)
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 5. Intersection Observer 清理
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { onMounted, onUnmounted } from 'vue'
 
 const targetRef = ref(null)
 let observer = null
 
-onMounted(() =&gt; {
-  observer = new IntersectionObserver((entries) =&gt; {
-    entries.forEach(entry =&gt; {
+onMounted(() => {
+  observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
       console.log('Intersection:', entry.isIntersecting)
     })
   })
@@ -526,30 +517,29 @@ onMounted(() =&gt; {
   }
 })
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   if (observer) {
     observer.disconnect()
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div ref="targetRef"&gt;Target&lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div ref="targetRef">Target</div>
+</template>
 ```
 
 ### 6. Mutation Observer 清理
 
-```text
-`&lt;script setup&gt;`
+```javascript
 import { onMounted, onUnmounted } from 'vue'
 
 const targetRef = ref(null)
 let observer = null
 
-onMounted(() =&gt; {
-  observer = new MutationObserver((mutations) =&gt; {
-    mutations.forEach(mutation =&gt; {
+onMounted(() => {
+  observer = new MutationObserver((mutations) => {
+    mutations.forEach(mutation => {
       console.log('DOM changed:', mutation)
     })
   })
@@ -562,51 +552,47 @@ onMounted(() =&gt; {
   }
 })
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   if (observer) {
     observer.disconnect()
   }
 })
-`&lt;/script&gt;`
 ```
 
 ### 7. 防抖/节流清理
 
-```text
-`&lt;script setup&gt;`
+```javascript
 import { onUnmounted } from 'vue'
 
 let debounceTimer = null
 let throttleTimer = null
 
 function debounce(fn, delay) {
-  return (...args) =&gt; {
+  return (...args) => {
     clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(() =&gt; fn(...args), delay)
+    debounceTimer = setTimeout(() => fn(...args), delay)
   }
 }
 
 function throttle(fn, delay) {
-  return (...args) =&gt; {
+  return (...args) => {
     if (throttleTimer) return
-    throttleTimer = setTimeout(() =&gt; {
+    throttleTimer = setTimeout(() => {
       fn(...args)
       throttleTimer = null
     }, delay)
   }
 }
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   clearTimeout(debounceTimer)
   clearTimeout(throttleTimer)
 })
-`&lt;/script&gt;`
 ```
 
 ### 8. 数据持久化
 
-```text
-`&lt;script setup&gt;`
+```javascript
 import { ref, onUnmounted } from 'vue'
 
 const formData = ref({
@@ -614,48 +600,45 @@ const formData = ref({
   email: ''
 })
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   // 组件卸载时保存草稿
   localStorage.setItem('form-draft', JSON.stringify(formData.value))
 })
-`&lt;/script&gt;`
 ```
 
 ### 9. 音频/视频停止
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onUnmounted } from 'vue'
 
 const audioRef = ref(null)
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   if (audioRef.value) {
     audioRef.value.pause()
     audioRef.value.currentTime = 0
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;audio ref="audioRef" src="/music.mp3" controls /&gt;
-`&lt;/template&gt;`
+<template>
+  <audio ref="audioRef" src="/music.mp3" controls />
+</template>
 ```
 
 ### 10. 状态重置
 
-```text
-`&lt;script setup&gt;`
+```javascript
 import { onUnmounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   // 重置状态
   userStore.$reset()
 })
-`&lt;/script&gt;`
 ```
 
 ## 生命周期对比

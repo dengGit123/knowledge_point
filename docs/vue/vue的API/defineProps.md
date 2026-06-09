@@ -1,14 +1,17 @@
 # defineProps
 
 ## 作用
-`defineProps()` 是 ``&lt;script setup&gt;`` 中用于声明 props 的编译器宏。它不需要显式导入，可以在 ``&lt;script setup&gt;`` 中直接使用。用于接收从父组件传递过来的数据。
+
+`defineProps()` 是 `<script setup>` 中用于声明 props 的编译器宏。它不需要显式导入，可以在 `<script setup>` 中直接使用。用于接收从父组件传递过来的数据。
+
+> [官方文档 - defineProps / defineEmits](https://cn.vuejs.org/api/sfc-script-setup#defineprops-defineemits)
 
 ## 用法
 
 ### 基本用法
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const props = defineProps({
   title: String,
   count: Number,
@@ -17,30 +20,30 @@ const props = defineProps({
 
 console.log(props.title)
 console.log(props.count)
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div :class="{ active: props.isActive }"&gt;
-    &lt;h1&gt;{{ props.title }}&lt;/h1&gt;
-    &lt;p&gt;Count: {{ props.count }}&lt;/p&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div :class="{ active: props.isActive }">
+    <h1>{{ props.title }}</h1>
+    <p>Count: {{ props.count }}</p>
+  </div>
+</template>
 ```
 
 ### 数组语法
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const props = defineProps(['title', 'count', 'isActive'])
 
 // 没有类型检查
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 对象语法
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const props = defineProps({
   // 基础类型检查
   title: String,
@@ -84,13 +87,13 @@ const props = defineProps({
     }
   }
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### TypeScript 类型声明
 
-```text
-&lt;script setup lang="ts"&gt;
+```vue
+<script setup lang="ts">
 interface Props {
   title: string
   count?: number
@@ -98,52 +101,52 @@ interface Props {
 }
 
 // withDefaults 提供默认值
-const props = withDefaults(defineProps&lt;Props&gt;(), {
+const props = withDefaults(defineProps<Props>(), {
   count: 0,
   isActive: false
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 泛型类型
 
-```text
-&lt;script setup lang="ts"&gt;
+```vue
+<script setup lang="ts">
 interface ListItem {
   id: number
   name: string
 }
 
-defineProps&lt;{
+defineProps<{
   items: ListItem[]
   selectedId: number
-}&gt;()
-`&lt;/script&gt;`
+}>()
+</script>
 ```
 
 ### 响应式 props
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const props = defineProps({
   modelValue: String
 })
 
 // props 本身是响应式的
-watch(() =&gt; props.modelValue, (newVal) =&gt; {
+watch(() => props.modelValue, (newVal) => {
   console.log('modelValue changed:', newVal)
 })
 
 // ✅ 可以直接在模板中使用
 // ❌ 但不要解构 props
 const { modelValue } = props // 会失去响应性
-`&lt;/script&gt;`
+</script>
 ```
 
 ### Prop 验证
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const props = defineProps({
   // 基础类型检查
   propA: Number,
@@ -174,88 +177,88 @@ const props = defineProps({
   // 自定义验证
   propF: {
     validator(value) {
-      return value &gt;= 0
+      return value >= 0
     }
   }
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 动态 Props
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const props = defineProps({
   attributeName: String,
   attributeValue: [String, Number]
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- 动态绑定属性 --&gt;
-  &lt;div :[props.attributeName]="props.attributeValue"&gt;
+<template>
+  <!-- 动态绑定属性 -->
+  <div :[props.attributeName]="props.attributeValue">
     Dynamic attribute
-  &lt;/div&gt;
-`&lt;/template&gt;`
+  </div>
+</template>
 ```
 
 ### 与 v-model 配合
 
-```text
-&lt;!-- 父组件 --&gt;
-&lt;MyComponent v-model="count" /&gt;
+```vue
+<!-- 父组件 -->
+<MyComponent v-model="count" />
 
-&lt;!-- 子组件 --&gt;
-`&lt;script setup&gt;`
+<!-- 子组件 -->
+<script setup>
 const props = defineProps(['modelValue'])
 const emit = defineEmits(['update:modelValue'])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input
+<template>
+  <input
     :value="props.modelValue"
     @input="emit('update:modelValue', $event.target.value)"
-  /&gt;
-`&lt;/template&gt;`
+  />
+</template>
 ```
 
 ### 多个 v-model
 
-```text
-&lt;!-- 父组件 --&gt;
-&lt;UserForm
+```vue
+<!-- 父组件 -->
+<UserForm
   v-model:first-name="first"
   v-model:last-name="last"
-/&gt;
+/>
 
-&lt;!-- 子组件 --&gt;
-`&lt;script setup&gt;`
+<!-- 子组件 -->
+<script setup>
 const props = defineProps({
   firstName: String,
   lastName: String
 })
 
 const emit = defineEmits(['update:firstName', 'update:lastName'])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input
+<template>
+  <input
     :value="props.firstName"
     @input="emit('update:firstName', $event.target.value)"
-  /&gt;
-  &lt;input
+  />
+  <input
     :value="props.lastName"
     @input="emit('update:lastName', $event.target.value)"
-  /&gt;
-`&lt;/template&gt;`
+  />
+</template>
 ```
 
 ## 注意事项
 
 ### 1. props 是只读的
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const props = defineProps({
   count: Number
 })
@@ -264,17 +267,17 @@ const props = defineProps({
 props.count = 10 // 警告
 
 // ✅ 使用计算属性
-const doubled = computed(() =&gt; props.count * 2)
+const doubled = computed(() => props.count * 2)
 
 // 或使用本地状态
 const localCount = ref(props.count)
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 2. 解构会失去响应性
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const props = defineProps({
   count: Number,
   message: String
@@ -286,13 +289,13 @@ const { count, message } = props
 // ✅ 使用 toRefs 保持响应性
 import { toRefs } from 'vue'
 const { count, message } = toRefs(props)
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 3. 命名规范
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 // ✅ 推荐：camelCase
 defineProps({
   userName: String,
@@ -300,34 +303,34 @@ defineProps({
 })
 
 // 在 HTML 中使用 kebab-case
-// &lt;MyComponent user-name="Vue" is-active /&gt;
-`&lt;/script&gt;`
+// <MyComponent user-name="Vue" is-active />
+</script>
 ```
 
 ### 4. Boolean 类型转换
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 defineProps({
   disabled: Boolean
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- 以下写法都会传递 true --&gt;
-  &lt;MyComponent disabled /&gt;
-  &lt;MyComponent disabled="" /&gt;
-  &lt;MyComponent disabled="disabled" /&gt;
+<template>
+  <!-- 以下写法都会传递 true -->
+  <MyComponent disabled />
+  <MyComponent disabled="" />
+  <MyComponent disabled="disabled" />
 
-  &lt;!-- 传递 false --&gt;
-  &lt;MyComponent :disabled="false" /&gt;
-`&lt;/template&gt;`
+  <!-- 传递 false -->
+  <MyComponent :disabled="false" />
+</template>
 ```
 
 ### 5. 对象和数组默认值
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 defineProps({
   // ✅ 对象默认值必须是函数
   config: {
@@ -345,51 +348,51 @@ defineProps({
     }
   }
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 6. Prop 验证时机
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 defineProps({
   // 验证函数在组件创建前执行
   // 这时无法访问组件实例（this）
   value: {
     validator(val) {
       console.log(this) // undefined
-      return val &gt; 0
+      return val > 0
     }
   }
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 7. TypeScript 类型限制
 
-```text
-&lt;script setup lang="ts"&gt;
+```vue
+<script setup lang="ts">
 // ✅ 只能使用类型或构造函数
-defineProps&lt;{
+defineProps<{
   title: string
   count: number
-}&gt;()
+}>()
 
 // ❌ 不能混合使用运行时声明
-defineProps&lt;{
+defineProps<{
   title: string
   count: number
 } & {
   // 类型声明和运行时声明不能混用
   count: Number
-}&gt;()
-`&lt;/script&gt;`
+}>()
+</script>
 ```
 
 ### 8. 使用 PropType
 
-```text
-&lt;script setup lang="ts"&gt;
+```vue
+<script setup lang="ts">
 import { PropType } from 'vue'
 
 interface User {
@@ -399,55 +402,55 @@ interface User {
 
 defineProps({
   user: {
-    type: Object as PropType&lt;User&gt;,
+    type: Object as PropType<User>,
     required: true
   },
 
   users: {
-    type: Array as PropType&lt;User[]&gt;,
-    default: () =&gt; []
+    type: Array as PropType<User[]>,
+    default: () => []
   }
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ## 使用场景
 
 ### 1. 基础数据传递
 
-```text
-&lt;!-- 父组件 --&gt;
-&lt;UserCard
+```vue
+<!-- 父组件 -->
+<UserCard
   name="Vue"
   :age="3"
   :is-active="true"
-/&gt;
+/>
 
-&lt;!-- 子组件 UserCard.vue --&gt;
-`&lt;script setup&gt;`
+<!-- 子组件 UserCard.vue -->
+<script setup>
 const props = defineProps({
   name: String,
   age: Number,
   isActive: Boolean
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div :class="{ active: props.isActive }"&gt;
-    &lt;h2&gt;{{ props.name }}&lt;/h2&gt;
-    &lt;p&gt;Age: {{ props.age }}&lt;/p&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div :class="{ active: props.isActive }">
+    <h2>{{ props.name }}</h2>
+    <p>Age: {{ props.age }}</p>
+  </div>
+</template>
 ```
 
 ### 2. 函数 Prop
 
-```text
-&lt;!-- 父组件 --&gt;
-&lt;MyComponent :on-click="handleClick" /&gt;
+```vue
+<!-- 父组件 -->
+<MyComponent :on-click="handleClick" />
 
-&lt;!-- 子组件 --&gt;
-`&lt;script setup&gt;`
+<!-- 子组件 -->
+<script setup>
 const props = defineProps({
   onClick: Function
 })
@@ -455,99 +458,99 @@ const props = defineProps({
 function handleClick() {
   props.onClick?.('data from child')
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button @click="handleClick"&gt;Click&lt;/button&gt;
-`&lt;/template&gt;`
+<template>
+  <button @click="handleClick">Click</button>
+</template>
 ```
 
 ### 3. 配置对象
 
-```text
-&lt;!-- 父组件 --&gt;
-&lt;DataTable
+```vue
+<!-- 父组件 -->
+<DataTable
   :columns="[
     { key: 'name', label: 'Name' },
     { key: 'age', label: 'Age' }
   ]"
   :data="tableData"
-/&gt;
+/>
 
-&lt;!-- 子组件 --&gt;
-`&lt;script setup&gt;`
+<!-- 子组件 -->
+<script setup>
 defineProps({
   columns: {
     type: Array,
-    default: () =&gt; []
+    default: () => []
   },
   data: {
     type: Array,
-    default: () =&gt; []
+    default: () => []
   }
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 4. 条件渲染
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const props = defineProps({
   type: {
     type: String,
     default: 'default',
-    validator: (value) =&gt; ['primary', 'success', 'warning', 'danger'].includes(value)
+    validator: (value) => ['primary', 'success', 'warning', 'danger'].includes(value)
   }
 })
 
-const buttonClass = computed(() =&gt; `btn btn-${props.type}`)
-`&lt;/script&gt;`
+const buttonClass = computed(() => `btn btn-${props.type}`)
+</script>
 
-`&lt;template&gt;`
-  &lt;button :class="buttonClass"&gt;
-    &lt;slot /&gt;
-  &lt;/button&gt;
-`&lt;/template&gt;`
+<template>
+  <button :class="buttonClass">
+    <slot />
+  </button>
+</template>
 ```
 
 ### 5. 响应式更新
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const props = defineProps({
   items: Array
 })
 
 // 监听 props 变化
-watch(() =&gt; props.items, (newItems) =&gt; {
+watch(() => props.items, (newItems) => {
   console.log('Items updated:', newItems)
 }, { deep: true })
 
 // 计算属性
-const itemCount = computed(() =&gt; props.items?.length || 0)
-`&lt;/script&gt;`
+const itemCount = computed(() => props.items?.length || 0)
+</script>
 ```
 
 ### 6. 默认值合并
 
-```text
-`&lt;script setup&gt;`
-const props = withDefaults(defineProps&lt;{
+```vue
+<script setup>
+const props = withDefaults(defineProps<{
   size?: 'small' | 'medium' | 'large'
   theme?: 'light' | 'dark'
-}&gt;(), {
+}>(), {
   size: 'medium',
   theme: 'light'
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 7. 传递复杂对象
 
-```text
-&lt;!-- 父组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 父组件 -->
+<script setup>
 const config = reactive({
   pagination: {
     pageSize: 10,
@@ -557,54 +560,56 @@ const config = reactive({
     status: 'active'
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;DataTable :config="config" /&gt;
-`&lt;/template&gt;`
+<template>
+  <DataTable :config="config" />
+</template>
+```
 
-&lt;!-- 子组件 --&gt;
-&lt;script setup lang="ts"&gt;
-defineProps&lt;{
+```vue
+<!-- 子组件 -->
+<script setup lang="ts">
+defineProps<{
   config: {
     pagination: {
       pageSize: number
       currentPage: number
     }
-    filters: Record&lt;string, any&gt;
+    filters: Record<string, any>
   }
-}&gt;()
-`&lt;/script&gt;`
+}>()
+</script>
 ```
 
 ### 8. Prop 验证
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 defineProps({
   email: {
     type: String,
     required: true,
-    validator: (value) =&gt; {
+    validator: (value) => {
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
     }
   },
 
   age: {
     type: Number,
-    validator: (value) =&gt; {
-      return value &gt;= 0 && value &lt;= 150
+    validator: (value) => {
+      return value >= 0 && value <= 150
     }
   },
 
   password: {
     type: String,
-    validator: (value) =&gt; {
-      return value.length &gt;= 8
+    validator: (value) => {
+      return value.length >= 8
     }
   }
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ## defineProps 最佳实践

@@ -4,6 +4,8 @@
 
 `effectScope()` 创建一个作用域对象，用于捕获其中创建的响应式副作用（如 `effect`、`computed`、`watch`），可以统一 disposal。
 
+> [官方文档：effectScope](https://cn.vuejs.org/api/reactivity-advanced#effectscope)
+
 ## 基本用法
 
 ```javascript

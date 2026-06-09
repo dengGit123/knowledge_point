@@ -3,11 +3,13 @@
 ## 作用
 `defineComponent()` 是 Vue 3 提供的一个类型辅助函数，用于定义具有类型推导功能的 Vue 组件。它主要在 TypeScript 中使用，帮助 IDE 和编译器正确推导组件选项的类型。
 
+> 官方文档：[defineComponent](https://cn.vuejs.org/api/general#definecomponent)
+
 ## 用法
 
 ### 基本用法（选项式 API）
 
-```text
+```javascript
 import { defineComponent } from 'vue'
 
 export default defineComponent({
@@ -43,7 +45,7 @@ export default defineComponent({
 
 ### TypeScript 中使用
 
-```text
+```javascript
 import { defineComponent } from 'vue'
 
 interface User {
@@ -57,21 +59,21 @@ export default defineComponent({
 
   props: {
     users: {
-      type: Array as PropType&lt;User[]&gt;,
+      type: Array as PropType<User[]>,
       required: true
     }
   },
 
   emits: {
-    select: (user: User) =&gt; true,
-    delete: (userId: number) =&gt; true
+    select: (user: User) => true,
+    delete: (userId: number) => true
   },
 
   setup(props) {
     // props.users 的类型被正确推导为 User[]
     console.log(props.users[0].name)
 
-    const selectedUser = ref&lt;User | null&gt;(null)
+    const selectedUser = ref<User | null>(null)
 
     function selectUser(user: User) {
       selectedUser.value = user
@@ -87,38 +89,38 @@ export default defineComponent({
 
 ### 组合式 API 使用
 
-```text
-&lt;script setup lang="ts"&gt;
+```vue
+<script setup lang="ts">
 import { defineComponent, ref, computed } from 'vue'
 
-// 在 `&lt;script setup&gt;` 中通常不需要显式使用 defineComponent
+// 在 `<script setup>` 中通常不需要显式使用 defineComponent
 // 但可以用于添加组件选项
 
 const count = ref(0)
 
-const doubled = computed(() =&gt; count.value * 2)
+const doubled = computed(() => count.value * 2)
 
 function increment() {
   count.value++
 }
 
 // 可以定义 script setup 的选项
-defineProps&lt;{
+defineProps<{
   message: string
-}&gt;()
+}>()
 
-defineEmits&lt;{
+defineEmits<{
   (e: 'update', value: number): void
-}&gt;()
+}>()
 
 // 在 script setup 中很少需要显式使用 defineComponent
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 在 .vue 文件中使用
 
-```text
-&lt;script&gt;
+```vue
+<script>
 import { defineComponent } from 'vue'
 
 export default defineComponent({
@@ -160,20 +162,20 @@ export default defineComponent({
     }
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;h1&gt;{{ displayTitle }}&lt;/h1&gt;
-    &lt;p&gt;Count: {{ count }}&lt;/p&gt;
-    &lt;button @click="increment"&gt;Increment&lt;/button&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div>
+    <h1>{{ displayTitle }}</h1>
+    <p>Count: {{ count }}</p>
+    <button @click="increment">Increment</button>
+  </div>
+</template>
 ```
 
 ### 渲染函数中使用
 
-```text
+```javascript
 import { defineComponent, h } from 'vue'
 
 export default defineComponent({
@@ -181,7 +183,7 @@ export default defineComponent({
 
   props: {
     type: {
-      type: String as PropType&lt;'primary' | 'secondary' | 'danger'&gt;,
+      type: String as PropType<'primary' | 'secondary' | 'danger'>,
       default: 'primary'
     },
     disabled: Boolean
@@ -190,12 +192,12 @@ export default defineComponent({
   emits: ['click'],
 
   setup(props, { emit }) {
-    return () =&gt; h(
+    return () => h(
       'button',
       {
         class: [`btn btn-${props.type}`, { disabled: props.disabled }],
         disabled: props.disabled,
-        onClick: () =&gt; emit('click')
+        onClick: () => emit('click')
       },
       'Click me'
     )
@@ -205,7 +207,7 @@ export default defineComponent({
 
 ### 组件继承
 
-```text
+```javascript
 import { defineComponent } from 'vue'
 
 // 基础组件
@@ -246,7 +248,7 @@ export default defineComponent({
 
 ### 混入使用
 
-```text
+```javascript
 import { defineComponent } from 'vue'
 
 const loggingMixin = defineComponent({
@@ -270,7 +272,7 @@ export default defineComponent({
 
 ### 插槽类型定义
 
-```text
+```javascript
 import { defineComponent } from 'vue'
 
 export default defineComponent({
@@ -278,12 +280,12 @@ export default defineComponent({
 
   setup(_, { slots }) {
     // slots 的类型被正确推导
-    return () =&gt; (
-      &lt;div class="card"&gt;
+    return () => (
+      <div class="card">
         {slots.header?.()}
         {slots.default?.()}
         {slots.footer?.()}
-      &lt;/div&gt;
+      </div>
     )
   }
 })
@@ -293,12 +295,12 @@ export default defineComponent({
 
 ### 1. 不带参数使用
 
-```text
+```javascript
 // ✅ 正确：用于推导 setup 的返回类型
 export default defineComponent({
   setup() {
     const count = ref(0)
-    const doubled = computed(() =&gt; count.value * 2)
+    const doubled = computed(() => count.value * 2)
 
     return {
       count,
@@ -312,7 +314,7 @@ export default defineComponent({
 
 ### 2. 组件名称
 
-```text
+```javascript
 export default defineComponent({
   name: 'MyComponent', // 用于调试和 DevTools
 
@@ -323,7 +325,7 @@ export default defineComponent({
 
 ### 3. props 类型定义
 
-```text
+```javascript
 import { defineComponent, PropType } from 'vue'
 
 export default defineComponent({
@@ -334,34 +336,34 @@ export default defineComponent({
     boolProp: Boolean,
 
     // 复杂类型
-    objectProp: Object as PropType&lt;{ id: number }&gt;,
-    arrayProp: Array as PropType&lt;string[]&gt;,
-    functionProp: Function as PropType&lt;(value: number) =&gt; void&gt;,
+    objectProp: Object as PropType<{ id: number }>,
+    arrayProp: Array as PropType<string[]>,
+    functionProp: Function as PropType<(value: number) => void>,
 
     // 联合类型
-    unionProp: String as PropType&lt;'success' | 'warning' | 'error'&gt;,
+    unionProp: String as PropType<'success' | 'warning' | 'error'>,
 
     // 自定义类
-    classProp: Object as PropType&lt;MyClass&gt;
+    classProp: Object as PropType<MyClass>
   }
 })
 ```
 
 ### 4. emits 类型定义
 
-```text
+```javascript
 export default defineComponent({
   emits: {
     // 无载荷
     click: null,
 
     // 有载荷，带验证
-    submit: (payload: { email: string; password: string }) =&gt; {
+    submit: (payload: { email: string; password: string }) => {
       return payload.email.includes('@')
     },
 
     // 函数签名形式
-    update: (value: number) =&gt; true
+    update: (value: number) => true
   },
 
   setup(props, { emit }) {
@@ -375,16 +377,16 @@ export default defineComponent({
 
 ### 5. setup 上下文类型
 
-```text
+```javascript
 import { DefineComponent } from 'vue'
 
 export default defineComponent({
   setup(props, context) {
     // context 的类型被正确推导
-    context.attrs // attrs: Record&lt;string, unknown&gt;
+    context.attrs // attrs: Record<string, unknown>
     context.slots // slots: Slots
-    context.emit // emit: (event: string, ...args: any[]) =&gt; void
-    context.expose // expose: (exposed: Record&lt;string, any&gt;) =&gt; void
+    context.emit // emit: (event: string, ...args: any[]) => void
+    context.expose // expose: (exposed: Record<string, any>) => void
 
     // 解构使用
     const { attrs, slots, emit, expose } = context
@@ -392,11 +394,11 @@ export default defineComponent({
 })
 ```
 
-### 6. 与 `&lt;script setup&gt;` 的关系
+### 6. 与 `<script setup>` 的关系
 
-```text
-&lt;!-- 在 `&lt;script setup&gt;` 中通常不需要显式使用 defineComponent --&gt;
-&lt;script setup lang="ts"&gt;
+```vue
+<!-- 在 `<script setup>` 中通常不需要显式使用 defineComponent -->
+<script setup lang="ts">
 // 直接编写组合式 API
 const count = ref(0)
 
@@ -406,20 +408,20 @@ interface Props {
   count?: number
 }
 
-defineProps&lt;Props&gt;()
+defineProps<Props>()
 
 // 定义 emits
 interface Emits {
   (e: 'update', value: number): void
 }
 
-defineEmits&lt;Emits&gt;()
-`&lt;/script&gt;`
+defineEmits<Emits>()
+</script>
 ```
 
 ### 7. 暴露公共方法
 
-```text
+```javascript
 export default defineComponent({
   setup(props, { expose }) {
     const privateCount = ref(0)
@@ -450,7 +452,7 @@ export default defineComponent({
 
 ### 8. 组件选项类型推导
 
-```text
+```javascript
 import { defineComponent } from 'vue'
 
 export default defineComponent({
@@ -481,8 +483,8 @@ export default defineComponent({
 
 ### 1. 完整的选项式组件
 
-```text
-&lt;script lang="ts"&gt;
+```vue
+<script lang="ts">
 import { defineComponent } from 'vue'
 
 export default defineComponent({
@@ -490,11 +492,11 @@ export default defineComponent({
 
   props: {
     user: {
-      type: Object as PropType&lt;{
+      type: Object as PropType<{
         id: number
         name: string
         email: string
-      }&gt;,
+      }>,
       required: true
     }
   },
@@ -556,30 +558,30 @@ export default defineComponent({
     }
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div class="user-card"&gt;
-    &lt;img :src="avatarUrl" :alt="user.name" /&gt;
-    &lt;div v-if="!isEditing"&gt;
-      &lt;h3&gt;{{ user.name }}&lt;/h3&gt;
-      &lt;p&gt;{{ user.email }}&lt;/p&gt;
-      &lt;button @click="startEdit"&gt;编辑&lt;/button&gt;
-      &lt;button @click="deleteUser"&gt;删除&lt;/button&gt;
-    &lt;/div&gt;
-    &lt;div v-else&gt;
-      &lt;input v-model="editForm.name" /&gt;
-      &lt;input v-model="editForm.email" /&gt;
-      &lt;button @click="saveEdit"&gt;保存&lt;/button&gt;
-      &lt;button @click="cancelEdit"&gt;取消&lt;/button&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div class="user-card">
+    <img :src="avatarUrl" :alt="user.name" />
+    <div v-if="!isEditing">
+      <h3>{{ user.name }}</h3>
+      <p>{{ user.email }}</p>
+      <button @click="startEdit">编辑</button>
+      <button @click="deleteUser">删除</button>
+    </div>
+    <div v-else>
+      <input v-model="editForm.name" />
+      <input v-model="editForm.email" />
+      <button @click="saveEdit">保存</button>
+      <button @click="cancelEdit">取消</button>
+    </div>
+  </div>
+</template>
 ```
 
 ### 2. 渲染函数组件
 
-```text
+```javascript
 import { defineComponent, h, Fragment } from 'vue'
 
 export default defineComponent({
@@ -587,34 +589,34 @@ export default defineComponent({
 
   props: {
     columns: {
-      type: Array as PropType&lt;{
+      type: Array as PropType<{
         key: string
         label: string
-        render?: (value: any) =&gt; any
-      }[]&gt;,
+        render?: (value: any) => any
+      }[]>,
       required: true
     },
     data: {
-      type: Array as PropType&lt;Record&lt;string, any&gt;[]&gt;,
-      default: () =&gt; []
+      type: Array as PropType<Record<string, any>[]>,
+      default: () => []
     }
   },
 
   setup(props) {
-    return () =&gt; h(
+    return () => h(
       'table',
       { class: 'data-table' },
       [
         // 表头
         h('thead', [
-          h('tr', props.columns.map(col =&gt;
+          h('tr', props.columns.map(col =>
             h('th', { key: col.key }, col.label)
           ))
         ]),
 
         // 表体
-        h('tbody', props.data.map((row, rowIndex) =&gt;
-          h('tr', { key: rowIndex }, props.columns.map(col =&gt;
+        h('tbody', props.data.map((row, rowIndex) =>
+          h('tr', { key: rowIndex }, props.columns.map(col =>
             h('td', { key: col.key },
               col.render ? col.render(row[col.key]) : row[col.key]
             )
@@ -628,7 +630,7 @@ export default defineComponent({
 
 ### 3. 函数式组件
 
-```text
+```javascript
 import { defineComponent, h } from 'vue'
 
 export default defineComponent({
@@ -638,19 +640,19 @@ export default defineComponent({
 
   props: {
     type: {
-      type: String as PropType&lt;'primary' | 'secondary'&gt;,
+      type: String as PropType<'primary' | 'secondary'>,
       default: 'primary'
     },
     disabled: Boolean
   },
 
   setup(props, { slots, emit }) {
-    return () =&gt; h(
+    return () => h(
       'button',
       {
         class: ['btn', `btn-${props.type}`, { disabled: props.disabled }],
         disabled: props.disabled,
-        onClick: () =&gt; emit('click')
+        onClick: () => emit('click')
       },
       slots.default ? slots.default() : 'Button'
     )
@@ -660,15 +662,15 @@ export default defineComponent({
 
 ### 4. 可复用的逻辑组合
 
-```text
+```javascript
 import { defineComponent } from 'vue'
 
 // 可复用的组合函数
 function useCounter(initialValue = 0) {
   const count = ref(initialValue)
 
-  const doubled = computed(() =&gt; count.value * 2)
-  const tripled = computed(() =&gt; count.value * 3)
+  const doubled = computed(() => count.value * 2)
+  const tripled = computed(() => count.value * 3)
 
   function increment() {
     count.value++
@@ -728,10 +730,10 @@ export default defineComponent({
 
 ### 5. 带泛型的组件
 
-```text
+```javascript
 import { defineComponent, PropType } from 'vue'
 
-type SelectOption&lt;T&gt; = {
+type SelectOption<T> = {
   label: string
   value: T
 }
@@ -741,23 +743,23 @@ export default defineComponent({
 
   props: {
     options: {
-      type: Array as PropType&lt;SelectOption&lt;string&gt;[]&gt;,
+      type: Array as PropType<SelectOption<string>[]>,
       required: true
     },
     modelValue: {
-      type: [String, Number] as PropType&lt;string | number&gt;,
+      type: [String, Number] as PropType<string | number>,
       required: true
     }
   },
 
   emits: {
-    'update:modelValue': (value: string | number) =&gt; true
+    'update:modelValue': (value: string | number) => true
   },
 
   setup(props, { emit }) {
     const selectedValue = computed({
-      get: () =&gt; props.modelValue,
-      set: (value) =&gt; emit('update:modelValue', value)
+      get: () => props.modelValue,
+      set: (value) => emit('update:modelValue', value)
     })
 
     return { selectedValue }

@@ -1,6 +1,10 @@
 # onScopeDispose
 
+## 作用
+
 在当前作用域被销毁时注册一个回调函数。通常用于在可组合函数中清理副作用。
+
+> [官方文档：onScopeDispose](https://cn.vuejs.org/api/reactivity-advanced#onscopedispose)
 
 ## 语法
 

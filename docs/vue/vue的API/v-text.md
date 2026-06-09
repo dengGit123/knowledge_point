@@ -1,6 +1,10 @@
 # v-text
 
+## 作用
+
 用于更新元素的 textContent，绑定值会被作为纯文本插入。
+
+> [官方文档：v-text](https://cn.vuejs.org/api/built-in-directives#v-text)
 
 ## 语法
 

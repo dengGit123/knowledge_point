@@ -4,6 +4,8 @@
 
 `defineOptions()` 用于在 `<script setup>` 中定义组件选项，如 `name`、`inheritAttrs`、`components`、`filters` 等。
 
+> 官方文档：[defineOptions](https://cn.vuejs.org/api/sfc-script-setup#defineoptions)
+
 ## 基本用法
 
 ```vue

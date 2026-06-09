@@ -2,6 +2,12 @@
 
 使用 Vue 组件语法定义自定义元素（Web Components）。
 
+## 作用
+
+将 Vue 组件编译为标准的 Web Components（自定义元素），可以在任何框架或纯 HTML 项目中使用。
+
+> 官方文档：[defineCustomElement](https://cn.vuejs.org/api/general#definecustomelement)
+
 ## 语法
 
 ```javascript
@@ -180,10 +186,10 @@ const MyElement = defineCustomElement({
 ## 生命周期
 
 ```javascript
+import { onMounted, onUnmounted } from 'vue'
+
 const MyElement = defineCustomElement({
   setup() {
-    import { onMounted, onUnmounted } from 'vue'
-
     onMounted(() => {
       console.log('自定义元素已挂载')
     })

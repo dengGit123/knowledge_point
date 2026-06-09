@@ -2,6 +2,12 @@
 
 为 defineProps 定义的 props 设置默认值。
 
+## 作用
+
+在使用基于类型的 `defineProps` 声明时，通过 `withDefaults` 为可选 props 提供默认值，是 TypeScript + `<script setup>` 场景下的标准做法。
+
+> 官方文档：[withDefaults](https://cn.vuejs.org/api/sfc-script-setup#withdefaults)
+
 ## 语法
 
 ```javascript

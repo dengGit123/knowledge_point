@@ -4,6 +4,8 @@
 
 `<Transition>` 是一个内置组件，用于为单个元素或组件添加进入/离开过渡效果。
 
+> [官方文档：Transition](https://cn.vuejs.org/api/built-in-components#transition)
+
 ## 基本用法
 
 ```vue

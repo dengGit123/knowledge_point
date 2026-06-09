@@ -4,6 +4,8 @@
 
 `<TransitionGroup>` 用于为列表中的多个元素添加过渡效果。
 
+> [官方文档：TransitionGroup](https://cn.vuejs.org/api/built-in-components#transitiongroup)
+
 ## 基本用法
 
 ```vue

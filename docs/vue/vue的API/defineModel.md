@@ -2,6 +2,12 @@
 
 Vue 3.4+ 新增的宏，用于简化组件实现 v-model 的逻辑。它是 `useModel` 的编译器宏版本，语法更简洁。
 
+## 作用
+
+用于在 `<script setup>` 中声明双向绑定的 v-model，让子组件可以方便地读取和更新父组件的数据。
+
+> 官方文档：[defineModel](https://cn.vuejs.org/api/sfc-script-setup#definemodel)
+
 ## 语法
 
 ```javascript

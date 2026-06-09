@@ -1,15 +1,18 @@
 # defineEmits
 
 ## 作用
-`defineEmits()` 是 ``&lt;script setup&gt;`` 中用于声明组件可以触发事件的编译器宏。它不需要显式导入，可以在 ``&lt;script setup&gt;`` 中直接使用。用于子组件向父组件通信。
+
+`defineEmits()` 是 `<script setup>` 中用于声明组件可以触发事件的编译器宏。它不需要显式导入，可以在 `<script setup>` 中直接使用。用于子组件向父组件通信。
+
+> [官方文档 - defineProps / defineEmits](https://cn.vuejs.org/api/sfc-script-setup#defineprops-defineemits)
 
 ## 用法
 
 ### 基本用法
 
-```text
-&lt;!-- 子组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 子组件 -->
+<script setup>
 const emit = defineEmits(['click', 'submit', 'cancel'])
 
 function handleClick() {
@@ -19,17 +22,19 @@ function handleClick() {
 function handleSubmit() {
   emit('submit', { data: 'some data' })
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;button @click="handleClick"&gt;Click&lt;/button&gt;
-    &lt;button @click="handleSubmit"&gt;Submit&lt;/button&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div>
+    <button @click="handleClick">Click</button>
+    <button @click="handleSubmit">Submit</button>
+  </div>
+</template>
+```
 
-&lt;!-- 父组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 父组件 -->
+<script setup>
 import MyComponent from './MyComponent.vue'
 
 function handleClick() {
@@ -39,23 +44,23 @@ function handleClick() {
 function handleSubmit(payload) {
   console.log('Submitted with:', payload)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;MyComponent @click="handleClick" @submit="handleSubmit" /&gt;
-`&lt;/template&gt;`
+<template>
+  <MyComponent @click="handleClick" @submit="handleSubmit" />
+</template>
 ```
 
 ### 对象语法（带验证）
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const emit = defineEmits({
   // 无验证
   click: null,
 
   // 带验证
-  submit: (payload) =&gt; {
+  submit: (payload) => {
     if (!payload.email) {
       console.warn('Email is required')
       return false
@@ -68,7 +73,7 @@ const emit = defineEmits({
   },
 
   // 带类型验证
-  'update:value': (value) =&gt; {
+  'update:value': (value) => {
     return typeof value === 'number'
   }
 })
@@ -76,107 +81,111 @@ const emit = defineEmits({
 function handleSubmit() {
   emit('submit', { email: 'user@example.com' })
 }
-`&lt;/script&gt;`
+</script>
 ```
 
 ### TypeScript 类型声明
 
-```text
-&lt;script setup lang="ts"&gt;
-const emit = defineEmits&lt;{
+```vue
+<script setup lang="ts">
+const emit = defineEmits<{
   (e: 'change', id: number): void
   (e: 'update', value: string): void
   (e: 'delete', id: number): void
-}&gt;()
+}>()
 
 // 使用
 emit('change', 1)
 emit('update', 'new value')
 emit('delete', 1)
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 与 v-model 配合
 
-```text
-&lt;!-- 子组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 子组件 -->
+<script setup>
 const props = defineProps(['modelValue'])
 const emit = defineEmits(['update:modelValue'])
 
 function updateValue(newValue) {
   emit('update:modelValue', newValue)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input
+<template>
+  <input
     :value="props.modelValue"
     @input="updateValue($event.target.value)"
-  /&gt;
-`&lt;/template&gt;`
+  />
+</template>
+```
 
-&lt;!-- 父组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 父组件 -->
+<script setup>
 const text = ref('Hello')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;MyComponent v-model="text" /&gt;
-  &lt;!-- 等同于 --&gt;
-  &lt;MyComponent
+<template>
+  <MyComponent v-model="text" />
+  <!-- 等同于 -->
+  <MyComponent
     :model-value="text"
     @update:model-value="text = $event"
-  /&gt;
-`&lt;/template&gt;`
+  />
+</template>
 ```
 
 ### 多个 v-model
 
-```text
-&lt;!-- 子组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 子组件 -->
+<script setup>
 const props = defineProps({
   firstName: String,
   lastName: String
 })
 
 const emit = defineEmits(['update:firstName', 'update:lastName'])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input
+<template>
+  <input
     :value="props.firstName"
     @input="emit('update:firstName', $event.target.value)"
-  /&gt;
-  &lt;input
+  />
+  <input
     :value="props.lastName"
     @input="emit('update:lastName', $event.target.value)"
-  /&gt;
-`&lt;/template&gt;`
+  />
+</template>
+```
 
-&lt;!-- 父组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 父组件 -->
+<script setup>
 const firstName = ref('')
 const lastName = ref('')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;UserName
+<template>
+  <UserName
     v-model:first-name="firstName"
     v-model:last-name="lastName"
-  /&gt;
-`&lt;/template&gt;`
+  />
+</template>
 ```
 
 ### 自定义修饰符
 
-```text
-&lt;!-- 子组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 子组件 -->
+<script setup>
 const props = defineProps({
   modelValue: String,
-  modelModifiers: { default: () =&gt; ({}) }
+  modelModifiers: { default: () => ({}) }
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -195,20 +204,22 @@ function emitValue(e) {
 
   emit('update:modelValue', value)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input :value="props.modelValue" @input="emitValue" /&gt;
-`&lt;/template&gt;`
+<template>
+  <input :value="props.modelValue" @input="emitValue" />
+</template>
+```
 
-&lt;!-- 父组件 --&gt;
-&lt;MyComponent v-model.capitalize.trim="text" /&gt;
+```vue
+<!-- 父组件 -->
+<MyComponent v-model.capitalize.trim="text" />
 ```
 
 ### 事件载荷
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const emit = defineEmits(['success', 'error'])
 
 async function handleAction() {
@@ -219,49 +230,49 @@ async function handleAction() {
     emit('error', { error, message: error.message })
   }
 }
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 条件触发
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const emit = defineEmits(['change'])
 
 const props = defineProps({
   value: String
 })
 
-watch(() =&gt; props.value, (newVal, oldVal) =&gt; {
+watch(() => props.value, (newVal, oldVal) => {
   if (newVal !== oldVal) {
     emit('change', { newVal, oldVal })
   }
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 原生事件
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const emit = defineEmits(['click'])
 
 function handleClick(e) {
   // 转发原生事件
   emit('click', e)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button @click="handleClick"&gt;
-    &lt;slot /&gt;
-  &lt;/button&gt;
-`&lt;/template&gt;`
+<template>
+  <button @click="handleClick">
+    <slot />
+  </button>
+</template>
 ```
 
 ### 在 setup 函数中使用
 
-```text
+```javascript
 import { defineEmits } from 'vue'
 
 export default {
@@ -282,8 +293,8 @@ export default {
 
 ### 1. emit 命名规范
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const emit = defineEmits(['click', 'update:value'])
 
 // ✅ 推荐：使用 kebab-case
@@ -293,17 +304,17 @@ emit('update:value')
 emit('update:value')
 
 // 在父组件中监听
-// &lt;MyComponent @update-value="handler" /&gt;
-// &lt;MyComponent @update:value="handler" /&gt;
-`&lt;/script&gt;`
+// <MyComponent @update-value="handler" />
+// <MyComponent @update:value="handler" />
+</script>
 ```
 
 ### 2. 事件验证
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const emit = defineEmits({
-  submit: (payload) =&gt; {
+  submit: (payload) => {
     // 返回 true 表示事件有效
     // 返回 false 或抛出错误表示事件无效
 
@@ -315,13 +326,13 @@ const emit = defineEmits({
     return true
   }
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 3. 大小写敏感
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const emit = defineEmits(['myEvent'])
 
 // emit('myevent') 不会触发
@@ -329,14 +340,14 @@ const emit = defineEmits(['myEvent'])
 // emit('myEvent') 正确
 
 // 父组件监听
-// &lt;MyComponent @my-event="handler" /&gt;
-`&lt;/script&gt;`
+// <MyComponent @my-event="handler" />
+</script>
 ```
 
 ### 4. 与原生事件区别
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const emit = defineEmits(['click'])
 
 function handleClick(e) {
@@ -344,25 +355,25 @@ function handleClick(e) {
   // e 是原生 DOM 事件对象
   emit('click', e)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- 监听自定义 click 事件 --&gt;
-  &lt;button @click="handleClick"&gt;
+<template>
+  <!-- 监听自定义 click 事件 -->
+  <button @click="handleClick">
     Click
-  &lt;/button&gt;
-`&lt;/template&gt;`
+  </button>
+</template>
 ```
 
 ### 5. TypeScript 类型
 
-```text
-&lt;script setup lang="ts"&gt;
+```vue
+<script setup lang="ts">
 // ✅ 使用函数重载声明
-const emit = defineEmits&lt;{
+const emit = defineEmits<{
   (e: 'change', value: number): void
   (e: 'update', value: string, id: number): void
-}&gt;()
+}>()
 
 // 正确使用
 emit('change', 1)
@@ -371,32 +382,32 @@ emit('update', 'text', 1)
 // ❌ 类型错误
 emit('change', 'text') // 参数类型错误
 emit('unknown') // 事件名不存在
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 6. 可选参数
 
-```text
-&lt;script setup lang="ts"&gt;
-const emit = defineEmits&lt;{
+```vue
+<script setup lang="ts">
+const emit = defineEmits<{
   (e: 'save', data?: any): void
-}&gt;()
+}>()
 
 // 可以不传递参数
 emit('save')
 
 // 也可以传递参数
 emit('save', { id: 1 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 7. 验证中的 this
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 // 在验证函数中无法访问 this
 const emit = defineEmits({
-  submit: (payload) =&gt; {
+  submit: (payload) => {
     // console.log(this) // undefined
 
     // 需要的数据通过参数传递
@@ -408,13 +419,13 @@ function validate(data) {
   // 验证逻辑
   return true
 }
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 8. 事件冒泡
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const emit = defineEmits(['row-click'])
 
 function handleRowClick(row, e) {
@@ -424,26 +435,26 @@ function handleRowClick(row, e) {
   // 触发自定义事件
   emit('row-click', row)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;table&gt;
-    &lt;tr @click="handleRowClick(row, $event)"&gt;
-      &lt;td&gt;{{ row.name }}&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/table&gt;
-`&lt;/template&gt;`
+<template>
+  <table>
+    <tr @click="handleRowClick(row, $event)">
+      <td>{{ row.name }}</td>
+    </tr>
+  </table>
+</template>
 ```
 
 ## 使用场景
 
 ### 1. 表单提交
 
-```text
-&lt;!-- FormComponent.vue --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- FormComponent.vue -->
+<script setup>
 const emit = defineEmits({
-  submit: (payload) =&gt; {
+  submit: (payload) => {
     return payload.email && payload.password
   }
 })
@@ -456,22 +467,22 @@ const formData = reactive({
 function handleSubmit() {
   emit('submit', { ...formData })
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;form @submit.prevent="handleSubmit"&gt;
-    &lt;input v-model="formData.email" /&gt;
-    &lt;input v-model="formData.password" /&gt;
-    &lt;button type="submit"&gt;Submit&lt;/button&gt;
-  &lt;/form&gt;
-`&lt;/template&gt;`
+<template>
+  <form @submit.prevent="handleSubmit">
+    <input v-model="formData.email" />
+    <input v-model="formData.password" />
+    <button type="submit">Submit</button>
+  </form>
+</template>
 ```
 
 ### 2. 对话框操作
 
-```text
-&lt;!-- Dialog.vue --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- Dialog.vue -->
+<script setup>
 const props = defineProps({
   modelValue: Boolean
 })
@@ -491,22 +502,22 @@ function handleCancel() {
   emit('cancel')
   close()
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div v-if="modelValue" class="dialog"&gt;
-    &lt;slot /&gt;
-    &lt;button @click="handleConfirm"&gt;确认&lt;/button&gt;
-    &lt;button @click="handleCancel"&gt;取消&lt;/button&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div v-if="modelValue" class="dialog">
+    <slot />
+    <button @click="handleConfirm">确认</button>
+    <button @click="handleCancel">取消</button>
+  </div>
+</template>
 ```
 
 ### 3. 列表操作
 
-```text
-&lt;!-- List.vue --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- List.vue -->
+<script setup>
 const props = defineProps({
   items: Array
 })
@@ -520,23 +531,23 @@ function handleItemClick(item) {
 function handleItemDelete(item) {
   emit('item-delete', item.id)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;ul&gt;
-    &lt;li v-for="item in items" :key="item.id"&gt;
-      &lt;span @click="handleItemClick(item)"&gt;{{ item.name }}&lt;/span&gt;
-      &lt;button @click="handleItemDelete(item)"&gt;删除&lt;/button&gt;
-    &lt;/li&gt;
-  &lt;/ul&gt;
-`&lt;/template&gt;`
+<template>
+  <ul>
+    <li v-for="item in items" :key="item.id">
+      <span @click="handleItemClick(item)">{{ item.name }}</span>
+      <button @click="handleItemDelete(item)">删除</button>
+    </li>
+  </ul>
+</template>
 ```
 
 ### 4. 通知系统
 
-```text
-&lt;!-- Notification.vue --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- Notification.vue -->
+<script setup>
 const props = defineProps({
   notification: Object
 })
@@ -545,15 +556,15 @@ const emit = defineEmits(['close', 'action'])
 
 let timer = null
 
-onMounted(() =&gt; {
+onMounted(() => {
   if (props.notification.autoClose) {
-    timer = setTimeout(() =&gt; {
+    timer = setTimeout(() => {
       emit('close')
     }, props.notification.duration)
   }
 })
 
-onUnmounted(() =&gt; {
+onUnmounted(() => {
   if (timer) clearTimeout(timer)
 })
 
@@ -561,14 +572,14 @@ function handleAction(action) {
   emit('action', action)
   emit('close')
 }
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 5. 拖拽事件
 
-```text
-&lt;!-- Draggable.vue --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- Draggable.vue -->
+<script setup>
 const emit = defineEmits(['dragstart', 'dragend', 'drop'])
 
 function handleDragStart(e) {
@@ -583,24 +594,24 @@ function handleDragEnd(e) {
     position: { x: e.clientX, y: e.clientY }
   })
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div
+<template>
+  <div
     draggable="true"
     @dragstart="handleDragStart"
     @dragend="handleDragEnd"
-  &gt;
-    &lt;slot /&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+  >
+    <slot />
+  </div>
+</template>
 ```
 
 ### 6. 步骤器
 
-```text
-&lt;!-- Stepper.vue --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- Stepper.vue -->
+<script setup>
 const props = defineProps({
   currentStep: {
     type: Number,
@@ -615,38 +626,38 @@ const props = defineProps({
 const emit = defineEmits(['next', 'prev', 'step-change'])
 
 function nextStep() {
-  if (props.currentStep &lt; props.totalSteps - 1) {
+  if (props.currentStep < props.totalSteps - 1) {
     emit('step-change', props.currentStep + 1)
     emit('next')
   }
 }
 
 function prevStep() {
-  if (props.currentStep &gt; 0) {
+  if (props.currentStep > 0) {
     emit('step-change', props.currentStep - 1)
     emit('prev')
   }
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div class="stepper"&gt;
-    &lt;button @click="prevStep" :disabled="currentStep === 0"&gt;
+<template>
+  <div class="stepper">
+    <button @click="prevStep" :disabled="currentStep === 0">
       上一步
-    &lt;/button&gt;
-    &lt;span&gt;步骤 {{ currentStep + 1 }} / {{ totalSteps }}&lt;/span&gt;
-    &lt;button @click="nextStep" :disabled="currentStep === totalSteps - 1"&gt;
+    </button>
+    <span>步骤 {{ currentStep + 1 }} / {{ totalSteps }}</span>
+    <button @click="nextStep" :disabled="currentStep === totalSteps - 1">
       下一步
-    &lt;/button&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    </button>
+  </div>
+</template>
 ```
 
 ### 7. 文件上传
 
-```text
-&lt;!-- FileUpload.vue --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- FileUpload.vue -->
+<script setup>
 const emit = defineEmits(['file-selected', 'upload-progress', 'upload-complete'])
 
 async function handleFileSelect(event) {
@@ -654,7 +665,7 @@ async function handleFileSelect(event) {
   emit('file-selected', file)
 
   try {
-    const result = await uploadFile(file, (progress) =&gt; {
+    const result = await uploadFile(file, (progress) => {
       emit('upload-progress', progress)
     })
     emit('upload-complete', result)
@@ -662,18 +673,18 @@ async function handleFileSelect(event) {
     // 错误处理
   }
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input type="file" @change="handleFileSelect" /&gt;
-`&lt;/template&gt;`
+<template>
+  <input type="file" @change="handleFileSelect" />
+</template>
 ```
 
 ### 8. 搜索组件
 
-```text
-&lt;!-- SearchInput.vue --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- SearchInput.vue -->
+<script setup>
 const props = defineProps({
   modelValue: String,
   debounceTime: {
@@ -690,19 +701,19 @@ function onInput(value) {
   emit('update:modelValue', value)
 
   clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() =&gt; {
+  debounceTimer = setTimeout(() => {
     emit('search', value)
   }, props.debounceTime)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input
+<template>
+  <input
     :value="props.modelValue"
     @input="onInput($event.target.value)"
     placeholder="搜索..."
-  /&gt;
-`&lt;/template&gt;`
+  />
+</template>
 ```
 
 ## defineEmits 与其他 API 的区别

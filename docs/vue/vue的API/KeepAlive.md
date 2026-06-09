@@ -4,6 +4,8 @@
 
 `<KeepAlive>` 是一个内置组件，用于缓存组件实例，而不是在切换时销毁它们。
 
+> 官方文档：[KeepAlive](https://cn.vuejs.org/api/built-in-components#keepalive)
+
 ## 基本用法
 
 ```vue

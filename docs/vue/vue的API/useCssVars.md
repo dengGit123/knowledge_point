@@ -2,6 +2,8 @@
 
 为单文件组件中的 CSS 变量提供响应式支持。
 
+> 官方文档：[useCssVars](https://cn.vuejs.org/api/sfc-css-features#usecssvars)
+
 ## 语法
 
 ```javascript

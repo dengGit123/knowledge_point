@@ -4,6 +4,8 @@
 
 `watchSyncEffect()` 是 `watchEffect()` 的别名，使用 `flush: 'sync'` 选项，强制效果始终同步触发。
 
+> 参考：[Vue 官方文档 - watchSyncEffect](https://cn.vuejs.org/api/reactivity-core#watchsynceffect)
+
 ## 基本用法
 
 ```javascript

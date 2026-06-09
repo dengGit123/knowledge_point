@@ -4,6 +4,8 @@
 
 `defineSlots()` 用于在 `<script setup>` 中访问插槽内容。在某些高级场景中很有用。
 
+> 官方文档：[defineSlots](https://cn.vuejs.org/api/sfc-script-setup#defineslots)
+
 ## 基本用法
 
 ```vue

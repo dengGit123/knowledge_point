@@ -3,50 +3,52 @@
 ## 作用
 `v-model` 是 Vue 的双向数据绑定指令，用于在表单控件或组件上创建双向数据绑定。它本质上是 `v-bind` 和 `v-on` 的语法糖。
 
+> 官方文档: [v-model](https://cn.vuejs.org/api/built-in-directives#v-model)
+
 ## 用法
 
 ### 基本表单输入
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const text = ref('')
 const number = ref(0)
 const checked = ref(false)
 const selected = ref('')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- 文本输入 --&gt;
-  &lt;input v-model="text" /&gt;
-  &lt;p&gt;输入的文本: {{ text }}&lt;/p&gt;
+<template>
+  <!-- 文本输入 -->
+  <input v-model="text" />
+  <p>输入的文本: {{ text }}</p>
 
-  &lt;!-- 数字输入 --&gt;
-  &lt;input v-model="number" type="number" /&gt;
-  &lt;p&gt;数字: {{ number }}&lt;/p&gt;
+  <!-- 数字输入 -->
+  <input v-model="number" type="number" />
+  <p>数字: {{ number }}</p>
 
-  &lt;!-- 复选框 --&gt;
-  &lt;input v-model="checked" type="checkbox" /&gt;
-  &lt;p&gt;选中状态: {{ checked }}&lt;/p&gt;
+  <!-- 复选框 -->
+  <input v-model="checked" type="checkbox" />
+  <p>选中状态: {{ checked }}</p>
 
-  &lt;!-- 单选按钮 --&gt;
-  &lt;input v-model="selected" type="radio" value="option1" /&gt;
-  &lt;input v-model="selected" type="radio" value="option2" /&gt;
+  <!-- 单选按钮 -->
+  <input v-model="selected" type="radio" value="option1" />
+  <input v-model="selected" type="radio" value="option2" />
 
-  &lt;!-- 选择框 --&gt;
-  &lt;select v-model="selected"&gt;
-    &lt;option value=""&gt;请选择&lt;/option&gt;
-    &lt;option value="A"&gt;Option A&lt;/option&gt;
-    &lt;option value="B"&gt;Option B&lt;/option&gt;
-  &lt;/select&gt;
-`&lt;/template&gt;`
+  <!-- 选择框 -->
+  <select v-model="selected">
+    <option value="">请选择</option>
+    <option value="A">Option A</option>
+    <option value="B">Option B</option>
+  </select>
+</template>
 ```
 
 ### 修饰符
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const message = ref('')
@@ -54,102 +56,102 @@ const message = ref('')
 // .lazy - 失去焦点时更新
 // .number - 自动转为数字
 // .trim - 自动去除首尾空格
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- 失去焦点时更新，而不是每次输入 --&gt;
-  &lt;input v-model.lazy="message" /&gt;
+<template>
+  <!-- 失去焦点时更新，而不是每次输入 -->
+  <input v-model.lazy="message" />
 
-  &lt;!-- 自动转为数字类型 --&gt;
-  &lt;input v-model.number="age" type="number" /&gt;
+  <!-- 自动转为数字类型 -->
+  <input v-model.number="age" type="number" />
 
-  &lt;!-- 自动去除首尾空格 --&gt;
-  &lt;input v-model.trim="username" /&gt;
-`&lt;/template&gt;`
+  <!-- 自动去除首尾空格 -->
+  <input v-model.trim="username" />
+</template>
 ```
 
 ### 组件 v-model
 
-```text
-&lt;!-- 子组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 子组件 -->
+<script setup>
 const props = defineProps(['modelValue'])
 const emit = defineEmits(['update:modelValue'])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input
+<template>
+  <input
     :value="props.modelValue"
     @input="emit('update:modelValue', $event.target.value)"
-  /&gt;
-`&lt;/template&gt;`
+  />
+</template>
 
-&lt;!-- 父组件 --&gt;
-`&lt;script setup&gt;`
+<!-- 父组件 -->
+<script setup>
 import { ref } from 'vue'
 import MyInput from './MyInput.vue'
 
 const text = ref('')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;MyInput v-model="text" /&gt;
-  &lt;!-- 等同于 --&gt;
-  &lt;MyInput
+<template>
+  <MyInput v-model="text" />
+  <!-- 等同于 -->
+  <MyInput
     :model-value="text"
     @update:model-value="text = $event"
-  /&gt;
-`&lt;/template&gt;`
+  />
+</template>
 ```
 
 ### 多个 v-model
 
-```text
-&lt;!-- 子组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 子组件 -->
+<script setup>
 const props = defineProps({
   firstName: String,
   lastName: String
 })
 
 const emit = defineEmits(['update:firstName', 'update:lastName'])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input
+<template>
+  <input
     :value="props.firstName"
     @input="emit('update:firstName', $event.target.value)"
-  /&gt;
-  &lt;input
+  />
+  <input
     :value="props.lastName"
     @input="emit('update:lastName', $event.target.value)"
-  /&gt;
-`&lt;/template&gt;`
+  />
+</template>
 
-&lt;!-- 父组件 --&gt;
-`&lt;script setup&gt;`
+<!-- 父组件 -->
+<script setup>
 import { ref } from 'vue'
 
 const firstName = ref('')
 const lastName = ref('')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;UserName
+<template>
+  <UserName
     v-model:first-name="firstName"
     v-model:last-name="lastName"
-  /&gt;
-`&lt;/template&gt;`
+  />
+</template>
 ```
 
 ### 自定义修饰符
 
-```text
-&lt;!-- 子组件 --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- 子组件 -->
+<script setup>
 const props = defineProps({
   modelValue: String,
-  modelModifiers: { default: () =&gt; ({}) }
+  modelModifiers: { default: () => ({}) }
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -163,60 +165,60 @@ function emitValue(e) {
 
   emit('update:modelValue', value)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input :value="props.modelValue" @input="emitValue" /&gt;
-`&lt;/template&gt;`
+<template>
+  <input :value="props.modelValue" @input="emitValue" />
+</template>
 
-&lt;!-- 父组件 --&gt;
-`&lt;template&gt;`
-  &lt;MyInput v-model.capitalize="text" /&gt;
-`&lt;/template&gt;`
+<!-- 父组件 -->
+<template>
+  <MyInput v-model.capitalize="text" />
+</template>
 ```
 
 ### 复选框组
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const checkedNames = ref([])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input v-model="checkedNames" type="checkbox" value="Jack" /&gt;
-  &lt;input v-model="checkedNames" type="checkbox" value="John" /&gt;
-  &lt;input v-model="checkedNames" type="checkbox" value="Mike" /&gt;
+<template>
+  <input v-model="checkedNames" type="checkbox" value="Jack" />
+  <input v-model="checkedNames" type="checkbox" value="John" />
+  <input v-model="checkedNames" type="checkbox" value="Mike" />
 
-  &lt;p&gt;选中的名字: {{ checkedNames }}&lt;/p&gt;
-`&lt;/template&gt;`
+  <p>选中的名字: {{ checkedNames }}</p>
+</template>
 ```
 
 ### 选择框多选
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const selected = ref([])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;select v-model="selected" multiple&gt;
-    &lt;option value="A"&gt;A&lt;/option&gt;
-    &lt;option value="B"&gt;B&lt;/option&gt;
-    &lt;option value="C"&gt;C&lt;/option&gt;
-  &lt;/select&gt;
+<template>
+  <select v-model="selected" multiple>
+    <option value="A">A</option>
+    <option value="B">B</option>
+    <option value="C">C</option>
+  </select>
 
-  &lt;p&gt;选中的: {{ selected }}&lt;/p&gt;
-`&lt;/template&gt;`
+  <p>选中的: {{ selected }}</p>
+</template>
 ```
 
 ### 绑定对象
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const selected = ref(null)
@@ -225,151 +227,151 @@ const users = [
   { id: 1, name: 'Alice' },
   { id: 2, name: 'Bob' }
 ]
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;select v-model="selected"&gt;
-    &lt;option v-for="user in users" :key="user.id" :value="user"&gt;
+<template>
+  <select v-model="selected">
+    <option v-for="user in users" :key="user.id" :value="user">
       {{ user.name }}
-    &lt;/option&gt;
-  &lt;/select&gt;
+    </option>
+  </select>
 
-  &lt;p v-if="selected"&gt;
+  <p v-if="selected">
     选中的用户: {{ selected.name }}
-  &lt;/p&gt;
-`&lt;/template&gt;`
+  </p>
+</template>
 ```
 
 ## 注意事项
 
 ### 1. v-model 的内部原理
 
-```text
-&lt;!-- v-model 的本质 --&gt;
-&lt;input v-model="searchText" /&gt;
+```vue
+<!-- v-model 的本质 -->
+<input v-model="searchText" />
 
-&lt;!-- 等同于 --&gt;
-&lt;input
+<!-- 等同于 -->
+<input
   :value="searchText"
   @input="searchText = $event.target.value"
-/&gt;
+/>
 ```
 
 ### 2. 不同元素的绑定方式
 
-```text
-`&lt;template&gt;`
-  &lt;!-- 文本/textarea --&gt;
-  &lt;input v-model="message" /&gt;
-  &lt;textarea v-model="message"&gt;&lt;/textarea&gt;
+```vue
+<template>
+  <!-- 文本/textarea -->
+  <input v-model="message" />
+  <textarea v-model="message"></textarea>
 
-  &lt;!-- 复选框（单个） --&gt;
-  &lt;input v-model="checked" type="checkbox" /&gt;
+  <!-- 复选框（单个） -->
+  <input v-model="checked" type="checkbox" />
 
-  &lt;!-- 复选框（多个） --&gt;
-  &lt;input v-model="checkedNames" type="checkbox" value="A" /&gt;
+  <!-- 复选框（多个） -->
+  <input v-model="checkedNames" type="checkbox" value="A" />
 
-  &lt;!-- 单选按钮 --&gt;
-  &lt;input v-model="picked" type="radio" value="One" /&gt;
-  &lt;input v-model="picked" type="radio" value="Two" /&gt;
+  <!-- 单选按钮 -->
+  <input v-model="picked" type="radio" value="One" />
+  <input v-model="picked" type="radio" value="Two" />
 
-  &lt;!-- 选择框 --&gt;
-  &lt;select v-model="selected"&gt;
-    &lt;option value="abc"&gt;ABC&lt;/option&gt;
-  &lt;/select&gt;
-`&lt;/template&gt;`
+  <!-- 选择框 -->
+  <select v-model="selected">
+    <option value="abc">ABC</option>
+  </select>
+</template>
 ```
 
 ### 3. lazy 修饰符
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const text = ref('')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- 默认情况下，v-model 在每次 input 事件后同步 --&gt;
-  &lt;input v-model="text" /&gt;
+<template>
+  <!-- 默认情况下，v-model 在每次 input 事件后同步 -->
+  <input v-model="text" />
 
-  &lt;!-- 使用 lazy 后，改为在 change 事件后同步 --&gt;
-  &lt;input v-model.lazy="text" /&gt;
-`&lt;/template&gt;`
+  <!-- 使用 lazy 后，改为在 change 事件后同步 -->
+  <input v-model.lazy="text" />
+</template>
 ```
 
 ### 4. number 修饰符
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const age = ref('')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- 自动将输入值转为数字 --&gt;
-  &lt;input v-model.number="age" type="number" /&gt;
+<template>
+  <!-- 自动将输入值转为数字 -->
+  <input v-model.number="age" type="number" />
 
-  &lt;!-- 如果转换失败，返回原始值 --&gt;
-  &lt;p&gt;年龄: {{ age }}&lt;/p&gt;
-`&lt;/template&gt;`
+  <!-- 如果转换失败，返回原始值 -->
+  <p>年龄: {{ age }}</p>
+</template>
 ```
 
 ### 5. trim 修饰符
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const message = ref('')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- 自动去除首尾空格 --&gt;
-  &lt;input v-model.trim="message" /&gt;
+<template>
+  <!-- 自动去除首尾空格 -->
+  <input v-model.trim="message" />
 
-  &lt;p&gt;内容长度: {{ message.length }}&lt;/p&gt;
-`&lt;/template&gt;`
+  <p>内容长度: {{ message.length }}</p>
+</template>
 ```
 
 ### 6. 组件 v-model 参数
 
-```text
-&lt;!-- Vue 2.x 语法 --&gt;
-&lt;ChildComponent v-model="page" /&gt;
+```vue
+<!-- Vue 2.x 语法 -->
+<ChildComponent v-model="page" />
 
-&lt;!-- Vue 3.x 语法（默认参数名改变） --&gt;
-&lt;ChildComponent v-model="page" /&gt;
-&lt;!-- 等同于 --&gt;
-&lt;ChildComponent :model-value="page" @update:model-value="page = $event" /&gt;
+<!-- Vue 3.x 语法（默认参数名改变） -->
+<ChildComponent v-model="page" />
+<!-- 等同于 -->
+<ChildComponent :model-value="page" @update:model-value="page = $event" />
 ```
 
 ### 7. 与 v-bind 的冲突
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 const options = ref(['A', 'B', 'C'])
 const selected = ref('A')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- ✅ 正确 --&gt;
-  &lt;select v-model="selected"&gt;
-    &lt;option v-for="opt in options" :key="opt" :value="opt"&gt;
+<template>
+  <!-- ✅ 正确 -->
+  <select v-model="selected">
+    <option v-for="opt in options" :key="opt" :value="opt">
       {{ opt }}
-    &lt;/option&gt;
-  &lt;/select&gt;
+    </option>
+  </select>
 
-  &lt;!-- ❌ 错误：不要同时使用 v-bind 和 v-model --&gt;
-  &lt;select :value="selected" v-model="selected"&gt;
-`&lt;/template&gt;`
+  <!-- ❌ 错误：不要同时使用 v-bind 和 v-model -->
+  <select :value="selected" v-model="selected">
+</template>
 ```
 
 ### 8. 动态绑定
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const fields = ref({
@@ -377,22 +379,22 @@ const fields = ref({
   email: '',
   age: null
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- 动态绑定多个字段 --&gt;
-  &lt;input v-model="fields.username" /&gt;
-  &lt;input v-model="fields.email" /&gt;
-  &lt;input v-model.number="fields.age" type="number" /&gt;
-`&lt;/template&gt;`
+<template>
+  <!-- 动态绑定多个字段 -->
+  <input v-model="fields.username" />
+  <input v-model="fields.email" />
+  <input v-model.number="fields.age" type="number" />
+</template>
 ```
 
 ## 使用场景
 
 ### 1. 登录表单
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, reactive } from 'vue'
 
 const form = reactive({
@@ -404,103 +406,103 @@ const form = reactive({
 function handleSubmit() {
   console.log('Login:', form)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;form @submit.prevent="handleSubmit"&gt;
-    &lt;input v-model="form.username" placeholder="用户名" /&gt;
-    &lt;input v-model="form.password" type="password" placeholder="密码" /&gt;
-    &lt;label&gt;
-      &lt;input v-model="form.rememberMe" type="checkbox" /&gt;
+<template>
+  <form @submit.prevent="handleSubmit">
+    <input v-model="form.username" placeholder="用户名" />
+    <input v-model="form.password" type="password" placeholder="密码" />
+    <label>
+      <input v-model="form.rememberMe" type="checkbox" />
       记住我
-    &lt;/label&gt;
-    &lt;button type="submit"&gt;登录&lt;/button&gt;
-  &lt;/form&gt;
-`&lt;/template&gt;`
+    </label>
+    <button type="submit">登录</button>
+  </form>
+</template>
 ```
 
 ### 2. 搜索框
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, watch } from 'vue'
 
 const searchQuery = ref('')
 
-watch(searchQuery, (newQuery) =&gt; {
+watch(searchQuery, (newQuery) => {
   // 防抖搜索
   console.log('Searching for:', newQuery)
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input v-model.trim="searchQuery" placeholder="搜索..." /&gt;
-  &lt;p&gt;搜索: {{ searchQuery }}&lt;/p&gt;
-`&lt;/template&gt;`
+<template>
+  <input v-model.trim="searchQuery" placeholder="搜索..." />
+  <p>搜索: {{ searchQuery }}</p>
+</template>
 ```
 
 ### 3. 计数器
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, computed } from 'vue'
 
 const count = ref(1)
 
-const total = computed(() =&gt; count.value * 100)
-`&lt;/script&gt;`
+const total = computed(() => count.value * 100)
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;button @click="count--"&gt;-&lt;/button&gt;
-    &lt;input v-model.number="count" type="number" min="1" /&gt;
-    &lt;button @click="count++"&gt;+&lt;/button&gt;
-    &lt;p&gt;总计: ¥{{ total }}&lt;/p&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div>
+    <button @click="count--">-</button>
+    <input v-model.number="count" type="number" min="1" />
+    <button @click="count++">+</button>
+    <p>总计: ¥{{ total }}</p>
+  </div>
+</template>
 ```
 
 ### 4. 富文本编辑器
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 import RichTextEditor from './RichTextEditor.vue'
 
 const content = ref('')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;RichTextEditor v-model="content" /&gt;
-  &lt;div&gt;内容预览:&lt;/div&gt;
-  &lt;div v-html="content"&gt;&lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <RichTextEditor v-model="content" />
+  <div>内容预览:</div>
+  <div v-html="content"></div>
+</template>
 ```
 
 ### 5. 日期选择器
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 import DatePicker from './DatePicker.vue'
 
 const date = ref(null)
 const dateRange = ref([])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;!-- 单日期 --&gt;
-  &lt;DatePicker v-model="date" /&gt;
+<template>
+  <!-- 单日期 -->
+  <DatePicker v-model="date" />
 
-  &lt;!-- 日期范围 --&gt;
-  &lt;DatePicker v-model="dateRange" is-range /&gt;
-`&lt;/template&gt;`
+  <!-- 日期范围 -->
+  <DatePicker v-model="dateRange" is-range />
+</template>
 ```
 
 ### 6. 标签输入
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const tags = ref(['Vue', 'React'])
@@ -516,67 +518,67 @@ function addTag() {
 function removeTag(index) {
   tags.value.splice(index, 1)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;input
+<template>
+  <div>
+    <input
       v-model.trim="newTag"
       @keyup.enter="addTag"
       placeholder="输入标签后按回车"
-    /&gt;
-    &lt;div&gt;
-      &lt;span v-for="(tag, index) in tags" :key="index"&gt;
+    />
+    <div>
+      <span v-for="(tag, index) in tags" :key="index">
         {{ tag }}
-        &lt;button @click="removeTag(index)"&gt;×&lt;/button&gt;
-      &lt;/span&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+        <button @click="removeTag(index)">×</button>
+      </span>
+    </div>
+  </div>
+</template>
 ```
 
 ### 7. 颜色选择器
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const color = ref('#ff0000')
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input v-model="color" type="color" /&gt;
-  &lt;div :style="{ backgroundColor: color }"&gt;
+<template>
+  <input v-model="color" type="color" />
+  <div :style="{ backgroundColor: color }">
     预览: {{ color }}
-  &lt;/div&gt;
-`&lt;/template&gt;`
+  </div>
+</template>
 ```
 
 ### 8. 滑块
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const volume = ref(50)
 const range = ref([20, 80])
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;label&gt;音量: {{ volume }}&lt;/label&gt;
-    &lt;input v-model="volume" type="range" min="0" max="100" /&gt;
+<template>
+  <div>
+    <label>音量: {{ volume }}</label>
+    <input v-model="volume" type="range" min="0" max="100" />
 
-    &lt;label&gt;范围: {{ range[0] }} - {{ range[1] }}&lt;/label&gt;
-    &lt;input v-model="range" type="range" multiple min="0" max="100" /&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    <label>范围: {{ range[0] }} - {{ range[1] }}</label>
+    <input v-model="range" type="range" multiple min="0" max="100" />
+  </div>
+</template>
 ```
 
 ### 9. 文件上传
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref } from 'vue'
 
 const files = ref([])
@@ -584,39 +586,39 @@ const files = ref([])
 function handleFileUpload(event) {
   files.value = Array.from(event.target.files)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;input type="file" @change="handleFileUpload" multiple /&gt;
-  &lt;div v-for="(file, index) in files" :key="index"&gt;
+<template>
+  <input type="file" @change="handleFileUpload" multiple />
+  <div v-for="(file, index) in files" :key="index">
     {{ file.name }} ({{ (file.size / 1024).toFixed(2) }} KB)
-  &lt;/div&gt;
-`&lt;/template&gt;`
+  </div>
+</template>
 ```
 
 ### 10. 自定义开关
 
-```text
-&lt;!-- ToggleSwitch.vue --&gt;
-`&lt;script setup&gt;`
+```vue
+<!-- ToggleSwitch.vue -->
+<script setup>
 const props = defineProps(['modelValue'])
 const emit = defineEmits(['update:modelValue'])
 
 function toggle() {
   emit('update:modelValue', !props.modelValue)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;button
+<template>
+  <button
     :class="{ active: props.modelValue }"
     @click="toggle"
-  &gt;
-    &lt;span class="slider"&gt;&lt;/span&gt;
-  &lt;/button&gt;
-`&lt;/template&gt;`
+  >
+    <span class="slider"></span>
+  </button>
+</template>
 
-&lt;style scoped&gt;
+<style scoped>
 button {
   width: 50px;
   height: 26px;
@@ -644,7 +646,7 @@ button.active {
 .active .slider {
   left: 26px;
 }
-&lt;/style&gt;
+</style>
 ```
 
 ## v-model 修饰符总结

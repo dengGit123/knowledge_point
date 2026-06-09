@@ -4,6 +4,8 @@
 
 `onRenderTracked()` 是一个调试钩子，在渲染函数追踪依赖时调用。仅在开发模式下工作。
 
+> 参考：[Vue 官方文档 - onRenderTracked](https://cn.vuejs.org/api/composition-api-lifecycle#onrendertracked)
+
 ## 基本用法
 
 ```javascript

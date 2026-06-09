@@ -1,6 +1,10 @@
 # v-html
 
+## 作用
+
 用于更新元素的 innerHTML，绑定值会被解析为 HTML 并插入。
+
+> [官方文档：v-html](https://cn.vuejs.org/api/built-in-directives#v-html)
 
 ## 语法
 

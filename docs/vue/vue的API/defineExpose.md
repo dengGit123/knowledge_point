@@ -2,6 +2,8 @@
 
 ## 作用
 
+> [Vue 官方文档 - defineExpose](https://cn.vuejs.org/api/sfc-script-setup#defineexpose)
+
 `defineExpose()` 用于显式暴露组件的公共 API，当父组件通过模板引用访问子组件时可用。
 
 ## 基本用法
@@ -13,7 +15,7 @@ import { ref } from 'vue'
 const count = ref(0)
 const increment = () => count.value++
 
-// 默认情况下，`<script setup>` 中的组件是私有的
+// 默认情况下，<script setup> 中的组件是私有的
 // 使用 defineExpose 显式暴露
 defineExpose({
   count,

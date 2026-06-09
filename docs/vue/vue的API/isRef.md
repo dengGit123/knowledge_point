@@ -1,13 +1,16 @@
 # isRef
 
 ## 作用
+
 `isRef()` 用于检查一个值是否是 `ref` 对象。这对于需要区分普通值和 ref 的场景很有用。
+
+> [官方文档](https://cn.vuejs.org/api/reactivity-utilities#isref)
 
 ## 用法
 
 ### 基本用法
 
-```text
+```javascript
 import { ref, isRef } from 'vue'
 
 const count = ref(0)
@@ -19,7 +22,7 @@ console.log(isRef(message))  // false
 
 ### 在组合函数中使用
 
-```text
+```javascript
 import { isRef } from 'vue'
 
 export function useValue(source) {
@@ -40,7 +43,7 @@ console.log(useValue(num)) // 10
 
 ### 条件响应式处理
 
-```text
+```javascript
 import { ref, isRef, reactive } from 'vue'
 
 function normalizeValue(value) {
@@ -58,7 +61,7 @@ console.log(normalizeValue(message)) // 'Hello'
 
 ### 与 toRef 配合
 
-```text
+```javascript
 import { reactive, toRef, isRef } from 'vue'
 
 const state = reactive({
@@ -75,8 +78,8 @@ console.log(isRef(state.count)) // false
 
 ### 在模板中使用
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, isRef } from 'vue'
 
 const count = ref(0)
@@ -85,23 +88,23 @@ const message = 'Hello'
 function checkType(val) {
   return isRef(val) ? 'Ref' : 'Normal'
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;p&gt;count 类型: {{ checkType(count) }}&lt;/p&gt;
-  &lt;p&gt;message 类型: {{ checkType(message) }}&lt;/p&gt;
-`&lt;/template&gt;`
+<template>
+  <p>count 类型: {{ checkType(count) }}</p>
+  <p>message 类型: {{ checkType(message) }}</p>
+</template>
 ```
 
 ### TypeScript 类型守卫
 
-```text
+```javascript
 import { ref, isRef, type Ref } from 'vue'
 
-function getValue(val: number | Ref&lt;number&gt;): number {
+function getValue(val: number | Ref<number>): number {
   // isRef 作为类型守卫
   if (isRef(val)) {
-    // val 的类型被推导为 Ref&lt;number&gt;
+    // val 的类型被推导为 Ref<number>
     return val.value
   }
   // val 的类型是 number
@@ -117,7 +120,7 @@ console.log(getValue(num))   // 10
 
 ### 检查 shallowRef
 
-```text
+```javascript
 import { shallowRef, isRef } from 'vue'
 
 const shallow = shallowRef({ count: 0 })
@@ -129,11 +132,11 @@ console.log(isRef(shallow.value.count)) // false
 
 ### 与 computed 配合
 
-```text
+```javascript
 import { ref, computed, isRef } from 'vue'
 
 const count = ref(0)
-const doubled = computed(() =&gt; count.value * 2)
+const doubled = computed(() => count.value * 2)
 
 console.log(isRef(count))    // true
 console.log(isRef(doubled))  // true
@@ -143,7 +146,7 @@ console.log(isRef(doubled))  // true
 
 ### 1. 只检查 ref 对象
 
-```text
+```javascript
 import { ref, reactive, isRef } from 'vue'
 
 const count = ref(0)
@@ -156,12 +159,12 @@ console.log(isRef(state.count)) // false
 
 ### 2. 与其他响应式类型的区别
 
-```text
+```javascript
 import { ref, reactive, computed, isRef, isReactive, isProxy } from 'vue'
 
 const count = ref(0)
 const state = reactive({ count: 0 })
-const doubled = computed(() =&gt; count.value * 2)
+const doubled = computed(() => count.value * 2)
 
 console.log(isRef(count))     // true
 console.log(isRef(state))     // false
@@ -178,7 +181,7 @@ console.log(isProxy(doubled)) // true
 
 ### 3. shallowRef 的检查
 
-```text
+```javascript
 import { shallowRef, ref, isRef } from 'vue'
 
 const shallow = shallowRef({ count: 0 })
@@ -195,7 +198,7 @@ normal.value.count++   // 会触发更新
 
 ### 4. readonly ref 的检查
 
-```text
+```javascript
 import { ref, readonly, isRef, isReadonly } from 'vue'
 
 const count = ref(0)
@@ -209,7 +212,7 @@ console.log(isReadonly(readonlyCount)) // true
 
 ### 5. 与 toValue 的关系
 
-```text
+```javascript
 import { ref, isRef, toValue } from 'vue'
 
 const count = ref(0)
@@ -228,17 +231,17 @@ console.log(toValue(num))   // 10
 
 ### 1. 通用组合函数
 
-```text
+```javascript
 // useValue.js
 import { isRef, toValue, watch } from 'vue'
 
 export function useValue(source, callback) {
   // 处理 ref 或普通值
-  const getValue = () =&gt; isRef(source) ? source.value : source
+  const getValue = () => isRef(source) ? source.value : source
 
   // 如果是 ref，监听变化
   if (isRef(source)) {
-    watch(source, (newVal) =&gt; {
+    watch(source, (newVal) => {
       callback(newVal)
     })
   }
@@ -253,7 +256,7 @@ export function useValue(source, callback) {
 
 ### 2. Props 处理
 
-```text
+```javascript
 // useFormValue.js
 import { isRef, toRef } from 'vue'
 
@@ -272,7 +275,7 @@ export function useFormValue(props, key) {
 
 ### 3. 响应式工具函数
 
-```text
+```javascript
 import { ref, isRef, unref } from 'vue'
 
 function ensureRef(value) {
@@ -293,11 +296,11 @@ const ensuredNum = ensureRef(num) // 返回新 ref
 
 ### 4. 类型安全处理
 
-```text
+```javascript
 import { isRef, type Ref, type MaybeRef } from 'vue'
 
-function processValue&lt;T&gt;(value: MaybeRef&lt;T&gt;): T {
-  // MaybeRef 是 T | Ref&lt;T&gt;
+function processValue<T>(value: MaybeRef<T>): T {
+  // MaybeRef 是 T | Ref<T>
   if (isRef(value)) {
     return value.value
   }
@@ -314,7 +317,7 @@ const result2 = processValue(num)   // number
 
 ### 5. 条件性包装
 
-```text
+```javascript
 import { ref, isRef, computed } from 'vue'
 
 function makeReactive(value) {
@@ -335,7 +338,7 @@ function makeReactive(value) {
 
 ### 6. 解构时保持响应性
 
-```text
+```javascript
 import { reactive, toRef, isRef } from 'vue'
 
 function safeDestructure(obj) {
@@ -359,13 +362,13 @@ const { count, message } = safeDestructure(state)
 
 ### 7. 插槽内容处理
 
-```text
+```javascript
 import { isRef } from 'vue'
 
 function processSlotContent(slot) {
   const content = slot()
 
-  return content.map(vnode =&gt; {
+  return content.map(vnode => {
     // 检查 vnode 的 props 是否包含 ref
     if (vnode.props && isRef(vnode.props.ref)) {
       // 处理 ref
@@ -377,14 +380,14 @@ function processSlotContent(slot) {
 
 ### 8. 事件处理器处理
 
-```text
+```javascript
 import { isRef } from 'vue'
 
 function wrapEventHandler(handler) {
   // 如果 handler 是 ref，解包
   const fn = isRef(handler) ? handler.value : handler
 
-  return (...args) =&gt; {
+  return (...args) => {
     fn(...args)
   }
 }
@@ -392,7 +395,7 @@ function wrapEventHandler(handler) {
 
 ### 9. 动态属性访问
 
-```text
+```javascript
 import { isRef } from 'vue'
 
 function getPropertyValue(obj, key) {
@@ -409,10 +412,10 @@ function getPropertyValue(obj, key) {
 
 ### 10. 类型推断辅助
 
-```text
+```javascript
 import { isRef, type Ref } from 'vue'
 
-function isRefOf&lt;T&gt;(val: unknown): val is Ref&lt;T&gt; {
+function isRefOf<T>(val: unknown): val is Ref<T> {
   return isRef(val)
 }
 
@@ -420,12 +423,12 @@ function isRefOf&lt;T&gt;(val: unknown): val is Ref&lt;T&gt; {
 const count = ref(0)
 const num = 10
 
-if (isRefOf&lt;number&gt;(count)) {
+if (isRefOf<number>(count)) {
   count.value // TypeScript 知道是 number 类型
 }
 
-if (isRefOf&lt;number&gt;(num)) {
-  // 不会进入这里，因为 num 不是 Ref&lt;number&gt;
+if (isRefOf<number>(num)) {
+  // 不会进入这里，因为 num 不是 Ref<number>
 }
 ```
 

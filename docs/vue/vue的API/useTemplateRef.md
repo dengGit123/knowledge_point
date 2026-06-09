@@ -2,6 +2,12 @@
 
 Vue 3.5+ 新增的 API，用于获取模板引用的实用函数。
 
+## 作用
+
+用于在 `<script setup>` 中通过字符串键获取模板引用（template ref），替代传统的 `ref()` 声明方式，提供更清晰的语义化和类型推断支持。
+
+> 官方文档：[useTemplateRef](https://cn.vuejs.org/api/composition-api-helpers#usetemplateref)
+
 ## 语法
 
 ```javascript

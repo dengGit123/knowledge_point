@@ -1,5 +1,7 @@
 # watchEffect / watchPostEffect / watchSyncEffect
 
+> [Vue 官方文档 - watchEffect](https://cn.vuejs.org/api/reactivity-core#watcheffect)
+
 ## 作用
 这三个 API 都是用于自动追踪响应式依赖的副作用函数，区别在于回调执行的时机不同。
 
@@ -11,12 +13,12 @@
 
 ### 基本用法
 
-```text
+```javascript
 import { ref, watchEffect } from 'vue'
 
 const count = ref(0)
 
-watchEffect(() =&gt; {
+watchEffect(() => {
   console.log('count 的值是:', count.value)
 })
 
@@ -28,11 +30,11 @@ count.value++ // 输出: count 的值是: 2
 
 ### 自动追踪依赖
 
-```text
+```javascript
 const firstName = ref('Vue')
 const lastName = ref('JS')
 
-watchEffect(() =&gt; {
+watchEffect(() => {
   console.log(`全名: ${firstName.value} ${lastName.value}`)
 })
 
@@ -43,8 +45,8 @@ lastName.value = 'Native' // 触发重新执行
 
 ### 停止侦听器
 
-```text
-const stop = watchEffect(() =&gt; {
+```javascript
+const stop = watchEffect(() => {
   console.log('执行中...')
 })
 
@@ -54,30 +56,30 @@ stop()
 
 ### 副作用清理
 
-```text
+```javascript
 const id = ref(1)
 
-watchEffect((onCleanup) =&gt; {
+watchEffect((onCleanup) => {
   const controller = new AbortController()
 
   // 在重新执行或停止侦听时清理
-  onCleanup(() =&gt; {
+  onCleanup(() => {
     controller.abort()
   })
 
   fetch(`/api/data/${id.value}`, {
     signal: controller.signal
-  }).then(res =&gt; res.json())
-    .then(data =&gt; console.log(data))
+  }).then(res => res.json())
+    .then(data => console.log(data))
 })
 ```
 
 ### DOM 更新后执行（post）
 
-```text
+```javascript
 import { watchPostEffect } from 'vue'
 
-watchPostEffect(() =&gt; {
+watchPostEffect(() => {
   // 在 DOM 更新后执行
   console.log('DOM 已更新，可以访问更新后的 DOM')
   console.log(elementRef.value.offsetHeight)
@@ -86,12 +88,12 @@ watchPostEffect(() =&gt; {
 
 ### 同步执行（sync）
 
-```text
+```javascript
 import { watchSyncEffect } from 'vue'
 
 const count = ref(0)
 
-watchSyncEffect(() =&gt; {
+watchSyncEffect(() => {
   // 在响应式数据变化时同步执行
   console.log('同步执行:', count.value)
 })
@@ -101,61 +103,61 @@ count.value++ // 立即同步执行
 
 ### flush 选项详解
 
-```text
+```javascript
 import { watchEffect } from 'vue'
 
 const count = ref(0)
 
 // pre: 默认值，在组件更新前调用
-watchEffect(() =&gt; {
+watchEffect(() => {
   console.log('pre - 组件更新前')
 }, { flush: 'pre' })
 
 // sync: 响应式数据变化时立即同步调用
-watchEffect(() =&gt; {
+watchEffect(() => {
   console.log('sync - 同步执行')
 }, { flush: 'sync' })
 
 // post: 在组件更新后调用
-watchEffect(() =&gt; {
+watchEffect(() => {
   console.log('post - 组件更新后，可以访问 DOM')
 }, { flush: 'post' })
 ```
 
-### 在 `&lt;script setup&gt;` 中使用
+### 在 `<script setup>` 中使用
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, watchEffect } from 'vue'
 
 const count = ref(0)
 const doubled = ref(0)
 
-watchEffect(() =&gt; {
+watchEffect(() => {
   doubled.value = count.value * 2
 })
 
 function increment() {
   count.value++
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div&gt;
-    &lt;p&gt;count: {{ count }}&lt;/p&gt;
-    &lt;p&gt;doubled: {{ doubled }}&lt;/p&gt;
-    &lt;button @click="increment"&gt;增加&lt;/button&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div>
+    <p>count: {{ count }}</p>
+    <p>doubled: {{ doubled }}</p>
+    <button @click="increment">增加</button>
+  </div>
+</template>
 ```
 
 ### 调试 watchEffect
 
-```text
+```javascript
 const count = ref(0)
 
 watchEffect(
-  () =&gt; {
+  () => {
     console.log('count:', count.value)
   },
   {
@@ -175,34 +177,34 @@ watchEffect(
 
 ### 1. 立即执行
 
-```text
+```javascript
 const count = ref(0)
 
 // watchEffect 会立即执行
-watchEffect(() =&gt; {
+watchEffect(() => {
   console.log(count.value) // 立即输出 0
 })
 
 // watch 需要指定依赖，默认不立即执行
-watch(() =&gt; count.value, (val) =&gt; {
+watch(() => count.value, (val) => {
   console.log(val) // 只在变化时执行
 })
 ```
 
 ### 2. 依赖收集问题
 
-```text
+```javascript
 const count = ref(0)
 
 // ❌ 错误：条件语句中的依赖可能不会被正确收集
-watchEffect(() =&gt; {
+watchEffect(() => {
   if (false) {
     console.log(count.value) // 永远不会执行，依赖不收集
   }
 })
 
 // ✅ 正确
-watchEffect(() =&gt; {
+watchEffect(() => {
   if (someCondition.value) {
     console.log(count.value) // 条件为真时才会收集
   }
@@ -211,11 +213,11 @@ watchEffect(() =&gt; {
 
 ### 3. 异步操作的依赖收集
 
-```text
+```javascript
 const count = ref(0)
 
 // ⚠️ 异步操作中，只收集同步执行时的依赖
-watchEffect(async () =&gt; {
+watchEffect(async () => {
   console.log(count.value) // 收集依赖
 
   await someAsync()
@@ -225,10 +227,10 @@ watchEffect(async () =&gt; {
 })
 
 // ✅ 正确做法：确保所有访问都在同步阶段
-watchEffect(() =&gt; {
+watchEffect(() => {
   const val = count.value
 
-  Promise.resolve().then(() =&gt; {
+  Promise.resolve().then(() => {
     console.log(val)
   })
 })
@@ -236,15 +238,15 @@ watchEffect(() =&gt; {
 
 ### 4. 在 watchEffect 中修改数据
 
-```text
+```javascript
 const count = ref(0)
 
 // ⚠️ 小心无限循环
-watchEffect(() =&gt; {
+watchEffect(() => {
   count.value++ // 可能导致无限循环
 
   // ✅ 使用条件避免
-  if (count.value &lt; 10) {
+  if (count.value < 10) {
     count.value++
   }
 })
@@ -252,13 +254,13 @@ watchEffect(() =&gt; {
 
 ### 5. 副作用清理的时机
 
-```text
-watchEffect((onCleanup) =&gt; {
-  const timer = setInterval(() =&gt; {
+```javascript
+watchEffect((onCleanup) => {
+  const timer = setInterval(() => {
     console.log('tick')
   }, 1000)
 
-  onCleanup(() =&gt; {
+  onCleanup(() => {
     // 在以下情况调用：
     // 1. 副作用重新执行前
     // 2. 侦听器停止时
@@ -270,59 +272,59 @@ watchEffect((onCleanup) =&gt; {
 
 ### 6. watchEffect vs watch 的选择
 
-```text
+```javascript
 const count = ref(0)
-const doubled = computed(() =&gt; count.value * 2)
+const doubled = computed(() => count.value * 2)
 
 // watchEffect: 自动追踪依赖，不需要指定
-watchEffect(() =&gt; {
+watchEffect(() => {
   console.log('总和:', count.value + doubled.value)
 })
 
 // watch: 明确指定依赖，更可控
-watch([count, doubled], ([count, doubled]) =&gt; {
+watch([count, doubled], ([count, doubled]) => {
   console.log('总和:', count + doubled)
 })
 ```
 
 ### 7. DOM 访问的时机
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, watchEffect, watchPostEffect } from 'vue'
 
 const elementRef = ref(null)
 const content = ref('Hello')
 
 // ❌ 可能 DOM 还未更新
-watchEffect(() =&gt; {
+watchEffect(() => {
   console.log(elementRef.value?.offsetHeight) // 可能是 null
 })
 
 // ✅ DOM 更新后执行
-watchPostEffect(() =&gt; {
+watchPostEffect(() => {
   console.log(elementRef.value?.offsetHeight) // 正确的值
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div ref="elementRef"&gt;{{ content }}&lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div ref="elementRef">{{ content }}</div>
+</template>
 ```
 
 ### 8. 性能考虑
 
-```text
+```javascript
 const bigList = ref([])
 
 // ⚠️ 每次任何依赖变化都会执行
-watchEffect(() =&gt; {
+watchEffect(() => {
   const processed = bigList.value.filter(/* ... */).map(/* ... */)
   // 昂贵的操作...
 })
 
 // ✅ 使用 watch 明确控制
-watch(bigList, (newList) =&gt; {
+watch(bigList, (newList) => {
   // 只在 bigList 变化时执行
   const processed = newList.filter(/* ... */).map(/* ... */)
 })
@@ -332,8 +334,8 @@ watch(bigList, (newList) =&gt; {
 
 ### 1. 自动同步到 localStorage
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, watchEffect } from 'vue'
 
 const userSettings = ref({
@@ -342,19 +344,19 @@ const userSettings = ref({
 })
 
 // 自动保存到 localStorage
-watchEffect(() =&gt; {
+watchEffect(() => {
   localStorage.setItem('settings', JSON.stringify(userSettings.value))
 })
-`&lt;/script&gt;`
+</script>
 ```
 
 ### 2. 依赖追踪的日志记录
 
-```text
+```javascript
 const user = ref({ name: 'Vue' })
 const isLoggedIn = ref(false)
 
-watchEffect(() =&gt; {
+watchEffect(() => {
   if (isLoggedIn.value) {
     console.log(`用户 ${user.value.name} 已登录`)
   } else {
@@ -365,14 +367,14 @@ watchEffect(() =&gt; {
 
 ### 3. 自动调整滚动位置
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, watchPostEffect } from 'vue'
 
 const messages = ref([])
 const containerRef = ref(null)
 
-watchPostEffect(() =&gt; {
+watchPostEffect(() => {
   // DOM 更新后滚动到底部
   if (containerRef.value) {
     containerRef.value.scrollTop = containerRef.value.scrollHeight
@@ -382,27 +384,27 @@ watchPostEffect(() =&gt; {
 function addMessage(msg) {
   messages.value.push(msg)
 }
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div ref="containerRef" class="message-container"&gt;
-    &lt;div v-for="(msg, index) in messages" :key="index"&gt;
+<template>
+  <div ref="containerRef" class="message-container">
+    <div v-for="(msg, index) in messages" :key="index">
       {{ msg }}
-    &lt;/div&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+    </div>
+  </div>
+</template>
 ```
 
 ### 4. 动态修改文档标题
 
-```text
+```javascript
 import { ref, watchEffect } from 'vue'
 
 const pageTitle = ref('首页')
 const unreadCount = ref(0)
 
-watchEffect(() =&gt; {
-  if (unreadCount.value &gt; 0) {
+watchEffect(() => {
+  if (unreadCount.value > 0) {
     document.title = `(${unreadCount.value}) ${pageTitle.value}`
   } else {
     document.title = pageTitle.value
@@ -412,38 +414,38 @@ watchEffect(() =&gt; {
 
 ### 5. 自动聚焦输入框
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, watchPostEffect } from 'vue'
 
 const isOpen = ref(false)
 const inputRef = ref(null)
 
-watchPostEffect(() =&gt; {
+watchPostEffect(() => {
   if (isOpen.value && inputRef.value) {
     inputRef.value.focus()
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div v-if="isOpen"&gt;
-    &lt;input ref="inputRef" /&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div v-if="isOpen">
+    <input ref="inputRef" />
+  </div>
+</template>
 ```
 
 ### 6. Canvas 自动重绘
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, onMounted, watchPostEffect } from 'vue'
 
 const canvasRef = ref(null)
 const data = ref([])
 
-onMounted(() =&gt; {
-  watchPostEffect(() =&gt; {
+onMounted(() => {
+  watchPostEffect(() => {
     const canvas = canvasRef.value
     if (!canvas) return
 
@@ -451,63 +453,63 @@ onMounted(() =&gt; {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     // 根据 data 绘制
-    data.value.forEach((point, index) =&gt; {
+    data.value.forEach((point, index) => {
       ctx.beginPath()
       ctx.arc(point.x, point.y, 5, 0, Math.PI * 2)
       ctx.fill()
     })
   })
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;canvas ref="canvasRef" width="500" height="500"&gt;&lt;/canvas&gt;
-`&lt;/template&gt;`
+<template>
+  <canvas ref="canvasRef" width="500" height="500"></canvas>
+</template>
 ```
 
 ### 7. 响应式事件监听器
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, watchEffect } from 'vue'
 
 const targetElement = ref(null)
 const isActive = ref(true)
 
-watchEffect((onCleanup) =&gt; {
+watchEffect((onCleanup) => {
   const element = targetElement.value
   if (!element || !isActive.value) return
 
-  const handler = (e) =&gt; {
+  const handler = (e) => {
     console.log('事件触发:', e)
   }
 
   element.addEventListener('click', handler)
 
-  onCleanup(() =&gt; {
+  onCleanup(() => {
     element.removeEventListener('click', handler)
   })
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div ref="targetElement" v-if="isActive"&gt;
+<template>
+  <div ref="targetElement" v-if="isActive">
     点击我
-  &lt;/div&gt;
-`&lt;/template&gt;`
+  </div>
+</template>
 ```
 
 ### 8. 动态样式计算
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, watchPostEffect } from 'vue'
 
 const theme = ref('dark')
 const fontSize = ref(16)
 const rootRef = ref(null)
 
-watchPostEffect(() =&gt; {
+watchPostEffect(() => {
   if (rootRef.value) {
     Object.assign(rootRef.value.style, {
       backgroundColor: theme.value === 'dark' ? '#333' : '#fff',
@@ -516,40 +518,40 @@ watchPostEffect(() =&gt; {
     })
   }
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;div ref="rootRef"&gt;
-    &lt;p&gt;动态样式容器&lt;/p&gt;
-  &lt;/div&gt;
-`&lt;/template&gt;`
+<template>
+  <div ref="rootRef">
+    <p>动态样式容器</p>
+  </div>
+</template>
 ```
 
 ### 9. WebSocket 自动重连
 
-```text
+```javascript
 import { ref, watchEffect } from 'vue'
 
 const url = ref('ws://localhost:8080')
 const reconnectAttempts = ref(0)
 const maxAttempts = 5
 
-watchEffect((onCleanup) =&gt; {
+watchEffect((onCleanup) => {
   const socket = new WebSocket(url.value)
 
-  socket.onopen = () =&gt; {
+  socket.onopen = () => {
     console.log('WebSocket 已连接')
     reconnectAttempts.value = 0
   }
 
-  socket.onclose = () =&gt; {
-    if (reconnectAttempts.value &lt; maxAttempts) {
+  socket.onclose = () => {
+    if (reconnectAttempts.value < maxAttempts) {
       reconnectAttempts.value++
       console.log(`尝试重连 ${reconnectAttempts.value}/${maxAttempts}`)
     }
   }
 
-  onCleanup(() =&gt; {
+  onCleanup(() => {
     socket.close()
   })
 })
@@ -557,18 +559,18 @@ watchEffect((onCleanup) =&gt; {
 
 ### 10. 表单字段的自动验证
 
-```text
-`&lt;script setup&gt;`
+```vue
+<script setup>
 import { ref, watchEffect } from 'vue'
 
 const username = ref('')
 const email = ref('')
 const errors = ref({})
 
-watchEffect(() =&gt; {
+watchEffect(() => {
   const newErrors = {}
 
-  if (username.value.length &lt; 3) {
+  if (username.value.length < 3) {
     newErrors.username = '用户名至少3个字符'
   }
 
@@ -578,17 +580,17 @@ watchEffect(() =&gt; {
 
   errors.value = newErrors
 })
-`&lt;/script&gt;`
+</script>
 
-`&lt;template&gt;`
-  &lt;form&gt;
-    &lt;input v-model="username" /&gt;
-    &lt;span class="error"&gt;{{ errors.username }}&lt;/span&gt;
+<template>
+  <form>
+    <input v-model="username" />
+    <span class="error">{{ errors.username }}</span>
 
-    &lt;input v-model="email" /&gt;
-    &lt;span class="error"&gt;{{ errors.email }}&lt;/span&gt;
-  &lt;/form&gt;
-`&lt;/template&gt;`
+    <input v-model="email" />
+    <span class="error">{{ errors.email }}</span>
+  </form>
+</template>
 ```
 
 ## watchEffect vs watch 对比
