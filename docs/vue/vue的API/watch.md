@@ -1,6 +1,6 @@
 # watch
 
-> [Vue 官方文档 - watch](https://cn.vuejs.org/api/reactivity-core#watch)
+📖 [Vue 官方文档 - watch](https://cn.vuejs.org/api/reactivity-core#watch)
 
 ## 作用
 `watch()` 用于侦听响应式数据的变化，并在变化时执行副作用。与 computed 不同，watch 不返回值，而是执行回调函数。

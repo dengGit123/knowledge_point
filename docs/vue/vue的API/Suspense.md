@@ -4,7 +4,7 @@
 
 `Suspense` 是一个用于处理异步组件的内置组件，它可以在等待异步组件加载时显示后备内容（fallback），提升用户体验。
 
-> [官方文档：Suspense](https://cn.vuejs.org/api/built-in-components#suspense)
+📖 [官方文档：Suspense](https://cn.vuejs.org/api/built-in-components#suspense)
 
 ## 用法
 

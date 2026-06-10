@@ -3,7 +3,7 @@
 ## 作用
 `createApp()` 函数创建一个应用实例，这是使用 Vue 3 构建应用的第一步。每个 Vue 应用都通过创建一个应用实例开始。
 
-> 官方文档：[createApp](https://cn.vuejs.org/api/application#createapp)
+📖 [createApp](https://cn.vuejs.org/api/application#createapp)
 
 ## 用法
 

@@ -4,7 +4,7 @@
 
 `v-for` 是 Vue 的列表渲染指令，基于数组或对象来渲染列表或重复元素。它需要使用 `key` 来帮助 Vue 跟踪每个节点的身份。
 
-> [官方文档：v-for](https://cn.vuejs.org/api/built-in-directives#v-for)
+📖 [官方文档：v-for](https://cn.vuejs.org/api/built-in-directives#v-for)
 
 ## 用法
 

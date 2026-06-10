@@ -6,7 +6,7 @@
 
 VNode 应被视为**不可变的**，不应直接修改已有 VNode 的 props，而应通过 `cloneVNode()` 创建带有不同属性的新副本。
 
-> [Vue 官方文档 - cloneVNode](https://cn.vuejs.org/api/render-function#clonevnode)
+📖 [Vue 官方文档 - cloneVNode](https://cn.vuejs.org/api/render-function#clonevnode)
 
 ## 函数签名
 

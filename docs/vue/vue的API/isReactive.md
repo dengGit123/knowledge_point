@@ -4,7 +4,7 @@
 
 `isReactive()` 检查一个对象是否是由 `reactive()` 或 `shallowReactive()` 创建的响应式代理。
 
-> [Vue 官方文档 - isReactive](https://cn.vuejs.org/api/reactivity-utilities#isreactive)
+📖 [Vue 官方文档 - isReactive](https://cn.vuejs.org/api/reactivity-utilities#isreactive)
 
 ## 函数签名
 

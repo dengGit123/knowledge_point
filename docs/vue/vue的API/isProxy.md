@@ -6,7 +6,7 @@
 
 它是 `isReactive()` 和 `isReadonly()` 的超集：只要 `isReactive()` 或 `isReadonly()` 返回 `true`，`isProxy()` 也会返回 `true`。
 
-> [Vue 官方文档 - isProxy](https://cn.vuejs.org/api/reactivity-utilities#isproxy)
+📖 [Vue 官方文档 - isProxy](https://cn.vuejs.org/api/reactivity-utilities#isproxy)
 
 ## 函数签名
 

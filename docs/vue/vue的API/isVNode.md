@@ -4,7 +4,7 @@
 
 `isVNode()` 检查一个值是否为 Vue 的 VNode（虚拟 DOM 节点）对象。主要用于在渲染函数或工具函数中进行类型判断。
 
-> [Vue 官方文档 - 渲染函数 API](https://cn.vuejs.org/api/render-function)
+📖 [Vue 官方文档 - 渲染函数 API](https://cn.vuejs.org/api/render-function)
 
 ## 函数签名
 

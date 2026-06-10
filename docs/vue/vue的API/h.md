@@ -1,5 +1,7 @@
 # h - 渲染函数
 
+> 📖 [Vue 官方文档 - h()](https://cn.vuejs.org/api/render-function#h)
+
 ## 作用
 `h()` 是 Vue 3 的渲染函数，用于创建虚拟 DOM 节点（VNode）。它是 `hyperscript` 的缩写，主要用于编程式地创建模板结构。
 

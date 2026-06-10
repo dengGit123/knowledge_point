@@ -4,7 +4,7 @@
 
 `readonly()` 接收一个对象（响应式或普通）并返回一个只读的原始代理。这意味着任何对返回对象的修改尝试都会失败并发出警告。
 
-> [官方文档](https://cn.vuejs.org/api/reactivity-core#readonly)
+📖 [官方文档](https://cn.vuejs.org/api/reactivity-core#readonly)
 
 ## 用法
 

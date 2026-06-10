@@ -4,7 +4,7 @@
 
 `withDirectives()` 用于在渲染函数中将**一个或多个指令**应用到 VNode 上。这是在 `h()` 渲染函数中使用指令的唯一方式（模板中可以直接用 `v-xxx`）。
 
-> [Vue 官方文档 - withDirectives](https://cn.vuejs.org/api/render-function#withdirectives)
+📖 [Vue 官方文档 - withDirectives](https://cn.vuejs.org/api/render-function#withdirectives)
 
 ## 函数签名
 

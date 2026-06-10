@@ -1,6 +1,6 @@
 # reactive
 
-> [Vue 官方文档 - reactive](https://cn.vuejs.org/api/reactivity-core#reactive)
+📖 [Vue 官方文档 - reactive](https://cn.vuejs.org/api/reactivity-core#reactive)
 
 ## 作用
 `reactive()` 返回一个响应式的对象代理。它将对象转换为响应式状态，使对象的所有嵌套属性也都是响应式的。

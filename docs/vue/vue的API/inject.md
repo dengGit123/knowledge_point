@@ -4,7 +4,7 @@
 
 `inject()` 用于注入由祖先组件提供的数据或方法。它是 Vue 3 依赖注入系统的接收端，配合 `provide()` 使用，实现跨层级组件通信。
 
-> [官方文档 - inject](https://cn.vuejs.org/api/composition-api-context#inject)
+📖 [官方文档 - inject](https://cn.vuejs.org/api/composition-api-context#inject)
 
 ## 用法
 

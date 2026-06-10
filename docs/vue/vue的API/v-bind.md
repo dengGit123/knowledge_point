@@ -3,7 +3,7 @@
 ## 作用
 `v-bind` 用于动态绑定一个或多个属性到表达式。它可以绑定 HTML 属性、组件 props、样式、类等。简写形式为 `:`。
 
-> 官方文档: [v-bind](https://cn.vuejs.org/api/built-in-directives#v-bind)
+📖  [v-bind](https://cn.vuejs.org/api/built-in-directives#v-bind)
 
 ## 用法
 

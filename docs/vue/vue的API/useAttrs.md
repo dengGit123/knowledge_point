@@ -4,7 +4,7 @@
 
 `useAttrs()` 用于在 `<script setup>` 中访问组件的 attrs（属性）。attrs 包含了父组件传递但未在 props 或 emits 中声明的所有属性和事件监听器。
 
-> 官方文档：[useAttrs](https://cn.vuejs.org/api/composition-api-helpers#useattrs)
+📖 [useAttrs](https://cn.vuejs.org/api/composition-api-helpers#useattrs)
 
 ## 用法
 

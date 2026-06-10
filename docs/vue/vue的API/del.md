@@ -1,5 +1,7 @@
 # del
 
+> 📖 [Vue 官方文档 - del（已废弃）](https://v3-migration.vuejs.org/breaking-changes/#removed-api)
+
 删除对象属性的响应式 API，用于确保删除操作能被 Vue 的响应式系统追踪。
 
 ## 语法

@@ -4,7 +4,7 @@
 
 `v-pre` 跳过该元素及其所有子元素的编译过程，直接原样输出。也就是说，元素中的 Vue 模板语法（如 `{{ }}`、指令等）不会被解析，而是作为普通文本显示。
 
-> [Vue 官方文档 - v-pre](https://cn.vuejs.org/api/built-in-directives#v-pre)
+📖 [Vue 官方文档 - v-pre](https://cn.vuejs.org/api/built-in-directives#v-pre)
 
 ## 基本用法
 

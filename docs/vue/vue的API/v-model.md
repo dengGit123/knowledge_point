@@ -3,7 +3,7 @@
 ## 作用
 `v-model` 是 Vue 的双向数据绑定指令，用于在表单控件或组件上创建双向数据绑定。它本质上是 `v-bind` 和 `v-on` 的语法糖。
 
-> 官方文档: [v-model](https://cn.vuejs.org/api/built-in-directives#v-model)
+> 📖 [Vue 官方文档 - v-model](https://cn.vuejs.org/api/built-in-directives#v-model)
 
 ## 用法
 

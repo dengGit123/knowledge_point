@@ -1,5 +1,7 @@
 # mergeModels
 
+> 📖 [Vue 官方文档 - mergeModels](https://cn.vuejs.org/api/render-function#mergemodels)
+
 Vue 3.4+ 新增的 API，用于合并多个 v-model 绑定。
 
 ## 语法

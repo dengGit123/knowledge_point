@@ -4,7 +4,7 @@
 
 `onServerPrefetch()` 是一个生命周期钩子，用于在服务器端渲染期间，在组件实例在服务器上渲染之前调用。用于预取数据。
 
-> [官方文档：onServerPrefetch](https://cn.vuejs.org/api/composition-api-lifecycle#onserverprefetch)
+📖 [官方文档：onServerPrefetch](https://cn.vuejs.org/api/composition-api-lifecycle#onserverprefetch)
 
 ## 基本用法
 

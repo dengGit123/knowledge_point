@@ -1,5 +1,7 @@
 # onBeforeMount
 
+> 📖 [Vue 官方文档 - onBeforeMount](https://cn.vuejs.org/api/composition-api-lifecycle#onbeforemount)
+
 ## 作用
 
 `onBeforeMount()` 是 Vue 3 的生命周期钩子，在组件挂载到 DOM 之前调用。这是在组件的 DOM 结构创建之前执行的最后一个钩子。

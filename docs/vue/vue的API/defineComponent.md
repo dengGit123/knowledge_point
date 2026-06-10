@@ -3,7 +3,7 @@
 ## 作用
 `defineComponent()` 是 Vue 3 提供的一个类型辅助函数，用于定义具有类型推导功能的 Vue 组件。它主要在 TypeScript 中使用，帮助 IDE 和编译器正确推导组件选项的类型。
 
-> 官方文档：[defineComponent](https://cn.vuejs.org/api/general#definecomponent)
+📖 [defineComponent](https://cn.vuejs.org/api/general#definecomponent)
 
 ## 用法
 

@@ -6,7 +6,7 @@
 
 当数组中的每个值都与上一次渲染相同，则该子树的所有更新都会被跳过。这对于**性能优化**非常有用，特别是在渲染大型 `v-for` 列表时。
 
-> [Vue 官方文档 - v-memo](https://cn.vuejs.org/api/built-in-directives#v-memo)
+📖 [Vue 官方文档 - v-memo](https://cn.vuejs.org/api/built-in-directives#v-memo)
 
 ## 基本用法
 

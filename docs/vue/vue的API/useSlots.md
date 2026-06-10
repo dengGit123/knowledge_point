@@ -4,7 +4,7 @@
 
 `useSlots()` 用于在 `<script setup>` 中访问组件的插槽内容。它返回一个 slots 对象，其中键是插槽名称，值是渲染函数。
 
-> 官方文档：[useSlots](https://cn.vuejs.org/api/composition-api-helpers#useslots)
+📖 [useSlots](https://cn.vuejs.org/api/composition-api-helpers#useslots)
 
 ## 用法
 

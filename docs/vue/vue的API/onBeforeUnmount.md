@@ -2,7 +2,7 @@
 
 ## 作用
 
-> [Vue 官方文档 - onBeforeUnmount](https://cn.vuejs.org/api/composition-api-lifecycle#onbeforeunmount)
+📖 [Vue 官方文档 - onBeforeUnmount](https://cn.vuejs.org/api/composition-api-lifecycle#onbeforeunmount)
 
 `onBeforeUnmount()` 是 Vue 3 的生命周期钩子，在组件卸载之前调用。这是执行清理工作的理想位置，比如清除定时器、取消事件监听、断开网络连接等。
 

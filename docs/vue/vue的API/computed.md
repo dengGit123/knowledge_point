@@ -1,6 +1,6 @@
 # computed
 
-> [Vue 官方文档 - computed](https://cn.vuejs.org/api/reactivity-core#computed)
+📖 [Vue 官方文档 - computed](https://cn.vuejs.org/api/reactivity-core#computed)
 
 ## 作用
 `computed()` 用于创建计算属性，它会基于响应式依赖自动缓存结果。只有当依赖发生变化时才会重新计算，否则返回缓存值。

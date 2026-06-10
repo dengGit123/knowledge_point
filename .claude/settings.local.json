@@ -24,7 +24,8 @@
       "Bash(sed -n '534,540p' \"/Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/defineAsyncComponent.md\")",
       "Bash(grep -n '^```$' \"/Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/defineAsyncComponent.md\")",
       "Bash(awk '/^```xml/ {if\\(start\\) print start\"-\"NR; start=NR} /^```$/ && start {print start\"-\"NR\" \\(no lang\\)\"; start=0} /^```$/ && !start {start=NR}' \"/Users/dyc/Desktop/学习/knowledge-point/docs/vue/vue的API/defineAsyncComponent.md\")",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": [],

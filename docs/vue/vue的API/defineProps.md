@@ -4,7 +4,7 @@
 
 `defineProps()` 是 `<script setup>` 中用于声明 props 的编译器宏。它不需要显式导入，可以在 `<script setup>` 中直接使用。用于接收从父组件传递过来的数据。
 
-> [官方文档 - defineProps / defineEmits](https://cn.vuejs.org/api/sfc-script-setup#defineprops-defineemits)
+📖 [官方文档 - defineProps / defineEmits](https://cn.vuejs.org/api/sfc-script-setup#defineprops-defineemits)
 
 ## 用法
 

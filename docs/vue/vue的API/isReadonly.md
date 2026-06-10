@@ -4,7 +4,7 @@
 
 `isReadonly()` 检查一个对象是否是由 `readonly()` 或 `shallowReadonly()` 创建的只读代理。
 
-> [Vue 官方文档 - isReadonly](https://cn.vuejs.org/api/reactivity-utilities#isreadonly)
+📖 [Vue 官方文档 - isReadonly](https://cn.vuejs.org/api/reactivity-utilities#isreadonly)
 
 ## 函数签名
 

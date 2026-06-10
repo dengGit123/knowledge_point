@@ -2,7 +2,7 @@
 
 ## 作用
 
-> [Vue 官方文档 - onMounted](https://cn.vuejs.org/api/composition-api-lifecycle#onmounted)
+📖 [Vue 官方文档 - onMounted](https://cn.vuejs.org/api/composition-api-lifecycle#onmounted)
 
 `onMounted()` 是 Vue 3 的生命周期钩子，用于在组件挂载完成后注册回调函数。此时组件已完成了以下工作：
 - 创建响应式状态

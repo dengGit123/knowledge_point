@@ -4,7 +4,7 @@
 
 `defineAsyncComponent()` 用于定义异步组件，使其只在需要时才加载。这对于代码分割、减少初始加载体积和提升应用性能非常有用。
 
-> 官方文档：[defineAsyncComponent](https://cn.vuejs.org/api/general#defineasynccomponent)
+📖 [defineAsyncComponent](https://cn.vuejs.org/api/general#defineasynccomponent)
 
 ## 用法
 

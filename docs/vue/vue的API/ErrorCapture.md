@@ -1,5 +1,7 @@
 # onErrorCaptured
 
+> 📖 [Vue 官方文档 - onErrorCaptured](https://cn.vuejs.org/api/composition-api-lifecycle#onerrorcaptured)
+
 注册一个钩子，用于捕获来自后代组件的错误。
 
 ## 语法

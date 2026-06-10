@@ -3,7 +3,7 @@
 ## 作用
 `v-on` 用于绑定事件监听器。它可以监听 DOM 事件或自定义事件，并在触发时执行 JavaScript 表达式或函数。简写形式为 `@`。
 
-> 官方文档: [v-on](https://cn.vuejs.org/api/built-in-directives#v-on)
+📖  [v-on](https://cn.vuejs.org/api/built-in-directives#v-on)
 
 ## 用法
 

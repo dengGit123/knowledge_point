@@ -1,6 +1,6 @@
 # ref
 
-> [Vue 官方文档 - ref](https://cn.vuejs.org/api/reactivity-core#ref)
+📖 [Vue 官方文档 - ref](https://cn.vuejs.org/api/reactivity-core#ref)
 
 ## 作用
 `ref()` 是 Vue 3 组合式 API 中用于创建响应式数据的基本方法。它接受一个内部值并返回一个响应式的、可变的 ref 对象，该对象只有一个指向其内部值的属性 `.value`。

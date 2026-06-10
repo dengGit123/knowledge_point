@@ -1,5 +1,7 @@
 # createRenderer
 
+> 📖 [Vue 官方文档 - createRenderer](https://cn.vuejs.org/api/custom-renderer#createrenderer)
+
 创建自定义渲染器，用于将 Vue 渲染到非 DOM 环境。
 
 ## 语法

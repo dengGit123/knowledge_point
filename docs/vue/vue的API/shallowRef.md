@@ -4,7 +4,7 @@
 
 `shallowRef()` 创建一个 ref，但只有 `.value` 的访问是响应式的，而 `.value` 内部的深层对象不会被转换为响应式。这对于优化大型不可变数据结构的性能很有用。
 
-> [官方文档](https://cn.vuejs.org/api/reactivity-advanced#shallowref)
+📖 [官方文档](https://cn.vuejs.org/api/reactivity-advanced#shallowref)
 
 ## 用法
 

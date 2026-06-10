@@ -2,7 +2,7 @@
 
 ## 作用
 
-> [Vue 官方文档 - onUpdated](https://cn.vuejs.org/api/composition-api-lifecycle#onupdated)
+📖 [Vue 官方文档 - onUpdated](https://cn.vuejs.org/api/composition-api-lifecycle#onupdated)
 
 `onUpdated()` 是 Vue 3 的生命周期钩子，在组件因响应式状态变化而更新其 DOM 树后调用。可以在此钩子中执行依赖于 DOM 更新后的操作。
 

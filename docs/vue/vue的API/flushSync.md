@@ -1,5 +1,7 @@
 # flushSync
 
+> 📖 [Vue 官方文档 - flushSync](https://cn.vuejs.org/api/reactivity-advanced#flushsync)
+
 强制同步刷新所有待处理的响应式效果。
 
 ## 语法

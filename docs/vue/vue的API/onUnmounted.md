@@ -2,7 +2,7 @@
 
 ## 作用
 
-> [Vue 官方文档 - onUnmounted](https://cn.vuejs.org/api/composition-api-lifecycle#onunmounted)
+📖 [Vue 官方文档 - onUnmounted](https://cn.vuejs.org/api/composition-api-lifecycle#onunmounted)
 
 `onUnmounted()` 是 Vue 3 的生命周期钩子，在组件实例被卸载之后调用。这是执行清理工作的理想位置，例如移除事件监听器、取消定时器等。
 

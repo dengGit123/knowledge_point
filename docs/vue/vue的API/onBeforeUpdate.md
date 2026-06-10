@@ -2,7 +2,7 @@
 
 ## 作用
 
-> [Vue 官方文档 - onBeforeUpdate](https://cn.vuejs.org/api/composition-api-lifecycle#onbeforeupdate)
+📖 [Vue 官方文档 - onBeforeUpdate](https://cn.vuejs.org/api/composition-api-lifecycle#onbeforeupdate)
 
 `onBeforeUpdate()` 是 Vue 3 的生命周期钩子，在组件响应式状态变化而更新 DOM 之前调用。这个钩子非常适合在更新之前访问现有的 DOM 状态。
 

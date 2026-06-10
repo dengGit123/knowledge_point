@@ -1,5 +1,7 @@
 # createStaticVNode
 
+> 📖 [Vue 官方文档 - createStaticVNode](https://cn.vuejs.org/api/render-function#createstaticvnode)
+
 创建静态虚拟节点，用于优化不会变化的静态内容。
 
 ## 语法

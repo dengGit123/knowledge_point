@@ -4,7 +4,7 @@
 
 `provide()` 用于提供一个值，可以被后代组件注入。它是 Vue 3 依赖注入系统的一部分，用于跨层级组件通信，避免 props 逐层传递。
 
-> [官方文档 - provide](https://cn.vuejs.org/api/composition-api-context#provide)
+📖 [官方文档 - provide](https://cn.vuejs.org/api/composition-api-context#provide)
 
 ## 用法
 

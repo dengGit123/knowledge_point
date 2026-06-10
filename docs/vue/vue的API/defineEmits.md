@@ -4,7 +4,7 @@
 
 `defineEmits()` 是 `<script setup>` 中用于声明组件可以触发事件的编译器宏。它不需要显式导入，可以在 `<script setup>` 中直接使用。用于子组件向父组件通信。
 
-> [官方文档 - defineProps / defineEmits](https://cn.vuejs.org/api/sfc-script-setup#defineprops-defineemits)
+📖 [官方文档 - defineProps / defineEmits](https://cn.vuejs.org/api/sfc-script-setup#defineprops-defineemits)
 
 ## 用法
 

@@ -6,7 +6,7 @@
 
 > ⚠️ 这是一个**底层 API**，在应用代码中通常使用 `watchEffect()` 代替。`effect()` 主要用于库的作者或需要精细控制副作用的场景。
 
-> [Vue 官方文档 - 响应式 API：进阶](https://cn.vuejs.org/api/reactivity-advanced)
+📖 [Vue 官方文档 - 响应式 API：进阶](https://cn.vuejs.org/api/reactivity-advanced)
 
 ## 函数签名
 

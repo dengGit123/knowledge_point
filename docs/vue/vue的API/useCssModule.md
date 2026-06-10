@@ -2,7 +2,7 @@
 
 用于在 `<script setup>` 中访问 CSS Modules。
 
-> 官方文档：[useCssModule](https://cn.vuejs.org/api/sfc-css-features#usecssmodule)
+📖 [useCssModule](https://cn.vuejs.org/api/sfc-css-features#usecssmodule)
 
 ## 语法
 

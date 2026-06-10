@@ -4,7 +4,7 @@
 
 `nextTick()` 是一个实例方法，用于在下次 DOM 更新循环结束之后执行延迟回调。在修改数据之后立即使用这个方法，获取更新后的 DOM。
 
-> [官方文档 - nextTick](https://cn.vuejs.org/api/general#nexttick)
+📖 [官方文档 - nextTick](https://cn.vuejs.org/api/general#nexttick)
 
 ## 用法
 

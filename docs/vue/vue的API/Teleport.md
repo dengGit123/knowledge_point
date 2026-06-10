@@ -4,7 +4,7 @@
 
 `Teleport` 是一个内置组件，用于将模板内容"传送"到 DOM 的其他位置。它允许你控制组件内容在 DOM 中的渲染位置，而不影响组件层级结构。
 
-> [官方文档：Teleport](https://cn.vuejs.org/api/built-in-components#teleport)
+📖 [官方文档：Teleport](https://cn.vuejs.org/api/built-in-components#teleport)
 
 ## 用法
 
