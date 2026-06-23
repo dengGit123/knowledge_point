@@ -212,7 +212,7 @@ public class Demo {
 
 记忆口诀：**Predicate 判断真假，Consumer 只进不出，Function 有进有出，Supplier 不进只出**。
 
-### 4.2 Predicate<T> —— 断言
+### 4.2 `Predicate<T>` —— 断言
 
 `Predicate<T>` 接收一个参数，返回 `boolean`，常用于**过滤、条件判断**。
 
@@ -246,7 +246,7 @@ public class PredicateDemo {
 | `negate()` | 逻辑非（取反） |
 | `isEqual(Object)` | 静态方法，判断是否相等 |
 
-### 4.3 Consumer<T> —— 消费
+### 4.3 `Consumer<T>` —— 消费
 
 `Consumer<T>` 接收一个参数，无返回值，常用于**遍历、打印、副作用操作**。
 
@@ -275,7 +275,7 @@ public class ConsumerDemo {
 | `accept(T t)` | 核心方法，执行消费操作 |
 | `andThen(Consumer)` | 链式组合，先执行当前，再执行参数中的 |
 
-### 4.4 Function<T, R> —— 函数
+### 4.4 `Function<T, R>` —— 函数
 
 `Function<T, R>` 接收一个参数 T，返回结果 R，常用于**类型转换、数据映射**。
 
@@ -310,7 +310,7 @@ public class FunctionDemo {
 
 > 💡 **提示：** `compose` 和 `andThen` 容易混淆。记住：`andThen` 是"然后"，按书写顺序执行（先当前，后参数）；`compose` 是"组合"，先执行参数（被组合进来的先执行）。
 
-### 4.5 Supplier<T> —— 供给
+### 4.5 `Supplier<T>` —— 供给
 
 `Supplier<T>` 不接收参数，返回一个结果，常用于**工厂模式、懒加载、提供默认值**。
 
