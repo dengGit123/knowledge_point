@@ -28,7 +28,16 @@
       "WebSearch",
       "Bash(awk '{print $5, $9}')",
       "Bash(grep -c '^```java' /Users/dyc/Desktop/学习/knowledge_point/docs/java/NIO.md)",
-      "Bash(awk *)"
+      "Bash(awk *)",
+      "Bash(echo \"---EXIT:$?---\")",
+      "Bash(sed -n 1,2p '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/rendder函数\\(vue3\\).md')",
+      "Bash(grep -n '计数：${count.value}' '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/rendder函数\\(vue3\\).md')",
+      "Bash(grep -cF '${' '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/rendder函数\\(vue3\\).md')",
+      "Bash(grep -nF '${' '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/rendder函数\\(vue3\\).md')",
+      "Bash(sed -n 1p '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/render函数\\(vue2\\).md')",
+      "Bash(grep -cF '${' '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/render函数\\(vue2\\).md')",
+      "Bash(grep -c '```' '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/h函数\\(vue3\\).md')",
+      "Bash(grep -c '```' '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/render函数\\(vue3\\).md')"
     ],
     "deny": [],
     "ask": [],
