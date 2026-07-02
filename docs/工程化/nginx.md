@@ -30,6 +30,62 @@ Nginx（engine-x）是一款高性能的**开源 Web 服务器 / 反向代理服
 
 > **通俗理解**：Nginx 就像一栋办公楼的"前台接待"——外部请求先到前台，前台根据规则决定把请求转给哪个部门（后端服务器）、或者直接回答（静态资源）、或者挡回去（访问控制）。
 
+### 核心配置速览：必须 vs 按需（先看这个）
+
+> 面对上百条 Nginx 指令，先搞清「**哪些不配会出事**」「**哪些配了锦上添花**」。下表按重要程度分级，每条给出作用与**配置后的效果现象**。
+
+**🔴 必须配置（不配会有功能/安全问题）**
+
+| 指令 | 所在块 | 作用 | 不配的后果 / 配置后现象 |
+|------|--------|------|------------------------|
+| `listen` | server | 监听端口 | 不配 Nginx 不知道在哪接请求 |
+| `server_name` | server | 匹配域名 | 多站点不配则全部命中默认 server |
+| `root` / `alias` | server / location | 静态文件根目录 | 静态托管不配 → 404 |
+| `proxy_pass` | location | 反向代理目标 | 代理场景不配等于没代理 |
+| `try_files` | location | SPA 路由回退 | 不配 → Vue/React history 路由刷新 404 |
+| `ssl_certificate` / `ssl_certificate_key` | server | HTTPS 证书 | 开 HTTPS 不配 → 启动报错 |
+| `error_log` | 全局 / http | 错误日志 | 不配 → 出问题无迹可查 |
+
+**🟡 强烈建议（生产环境基本都配）**
+
+| 指令 | 作用 | 配置后效果现象 |
+|------|------|----------------|
+| `worker_processes auto` | worker 数 = CPU 核数 | `ps -ef \| grep nginx` 看到 N 个 worker，CPU 利用更充分 |
+| `sendfile on` | 零拷贝传文件 | 静态文件传输更快、CPU 占用低 |
+| `gzip on` | 响应压缩 | 响应体缩小 60%~80%，响应头出现 `Content-Encoding: gzip` |
+| `expires 1y` + `immutable` | 静态资源长缓存 | 二次访问状态码变为 `200 (disk cache)`，不再发请求 |
+| `server_tokens off` | 隐藏版本号 | 响应头 `Server` 不再显示具体版本（更安全） |
+| `client_max_body_size` | 请求体大小限制 | 默认 1m，上传大文件不调大 → `413 Request Entity Too Large` |
+| `keepalive_timeout` | 长连接超时 | 复用 TCP 连接，减少重复握手 |
+| `add_header HSTS` | 强制 HTTPS | 浏览器后续直接走 HTTPS，防降级攻击 |
+
+**🟢 按需配置（有对应需求才配）**
+
+| 指令 | 何时配 |
+|------|--------|
+| `upstream` | 多后端做负载均衡时 |
+| `ip_hash` / `least_conn` | 需要会话保持 / 最少连接策略时 |
+| `limit_req_zone` / `limit_conn` | 需要限流防刷时 |
+| `auth_basic` | 需要用户名密码认证时 |
+| `rewrite` / `return` | 需要 URL 重写 / 重定向时 |
+| CORS `add_header` | 需要处理跨域时 |
+| `valid_referers`（防盗链） | 不想被别人站点盗用图片时 |
+| `stub_status` | 需要监控连接数时 |
+
+**⚪ 有合理默认（一般不用动）**
+
+| 指令 | 默认值 | 说明 |
+|------|--------|------|
+| `worker_connections` | 1024 | 高并发场景调到 10240+ |
+| `default_type` | application/octet-stream | 通常够用 |
+| `tcp_nopush` / `tcp_nodelay` | off | 开启 sendfile 时建议打开 |
+| `ssl_protocols` | TLSv1.2/1.3 | 建议显式限定，禁用旧版本 |
+| `keepalive_timeout` | 75s | 一般够用 |
+
+> 💡 **记忆口诀**：🔴 必须配（让它能跑且不出事）→ 🟡 建议配（让它跑得快又安全）→ 🟢 按需配（满足特殊需求）→ ⚪ 不用动（默认就挺好）。
+
+> ⚠️ **注意**：`gzip_comp_level` 不是越大越好（推荐 5）；`gzip_types` 别加图片/视频（已压缩，无效还费 CPU）；`location` 匹配有优先级，正则可能覆盖你的意图。
+
 ---
 
 ## 二、安装与常用命令
@@ -186,6 +242,17 @@ error_log  /var/log/nginx/error.log  warn;
 pid        /var/run/nginx.pid;
 ```
 
+> **效果现象**：`worker_processes auto` 后，`ps -ef | grep nginx` 可见 master + N 个 worker（N = CPU 核数）；`worker_rlimit_nofile 65535` 后，`cat /proc/$(pgrep -f 'nginx: worker')/limits` 能查到提升后的句柄上限；`error_log warn` 使日志只记录警告及以上，磁盘占用比 `info` 明显降低。
+
+| 指令 | 必/选 | 不配或配错的现象 |
+|------|-------|------------------|
+| `worker_processes` | 🟡 建议 | 默认 1，多核机器只用单核 |
+| `error_log` | 🔴 必须 | 故障无日志可查 |
+| `pid` | ⚪ 默认 | 用默认值即可 |
+| `user` | 🔧 按需 | 权限不对 → 403 / 启动失败 |
+| `worker_rlimit_nofile` | 🟢 按需 | 高并发不调 → `Too many open files` |
+```
+
 ---
 
 ## 五、events 块指令详解
@@ -206,6 +273,15 @@ events {
 ```
 
 > **最大并发连接数** = `worker_processes × worker_connections`
+
+> **效果现象**：`use epoll` 让单个 worker 同时处理数千连接（Linux 推荐）；`worker_connections 10240` 配合 `worker_processes auto`，整机可承载「核数 × 10240」并发连接；`multi_accept on` 时一次冲击能接收所有新连接，减少突发下的连接丢失。
+
+| 指令 | 必/选 | 说明 |
+|------|-------|------|
+| `worker_connections` | 🟡 建议 | 默认 1024，高并发必须调大 |
+| `use` | 🟢 按需 | Nginx 通常自动选最优（Linux 自动 epoll），多数情况不用显式写 |
+| `multi_accept` | ⚪ 默认 | 高并发突发连接场景可开 |
+| `accept_mutex` | ⚪ 默认 | 用于解决惊群，现代 Nginx 默认已处理 |
 
 ---
 
@@ -246,6 +322,24 @@ http {
     client_header_timeout    12;
     send_timeout             10;
 }
+```
+
+> **效果现象**：
+> - `sendfile on` → 静态文件传输不经用户态，CPU 占用下降、吞吐上升
+> - `client_max_body_size 50m` → 上传 50MB 内文件正常；超过 → `413 Request Entity Too Large`
+> - `server_tokens off` → 响应头 `Server: nginx`（不再带版本号）
+> - `keepalive_timeout 65` → 同一客户端后续请求复用 TCP 连接（抓包看不到重复三次握手）
+
+| 指令 | 必/选 | 说明 |
+|------|-------|------|
+| `include mime.types` | 🔴 必须 | 否则浏览器按二进制流处理 CSS/JS，页面样式失效 |
+| `default_type` | ⚪ 默认 | 兜底 MIME 类型 |
+| `sendfile` | 🟡 建议 | 静态资源性能关键，建议 on |
+| `tcp_nopush` / `tcp_nodelay` | 🟢 按需 | 开 sendfile 时配合打开 |
+| `keepalive_timeout` | 🟡 建议 | 复用连接，减少握手 |
+| `client_max_body_size` | 🔴 按需但重要 | 有上传功能必须调大，否则 413 |
+| `server_tokens` | 🟡 建议 | 安全，建议 off |
+| `*_timeout`（body/header/send） | 🟢 按需 | 防慢客户端长期占用连接 |
 ```
 
 ### Gzip 压缩
@@ -291,6 +385,16 @@ http {
 | **4-6** | **中** | **中** | **大多数场景 ✅** |
 | 7-9 | 高 | 高 | 静态资源预压缩 |
 
+> **效果现象**：开启后 `curl -I -H "Accept-Encoding: gzip" <url>` 响应头出现 `content-encoding: gzip`，`content-length` 大幅减小；DevTools Network 里 JS/CSS 体积变小、加载变快。
+>
+> **必/选**：🟡 **强烈建议**（生产必开）
+> - `gzip on` 默认是 **off**，必须显式开启
+> - `gzip_types` **必须**列出要压缩的类型（默认只压 `text/html`）
+> - `gzip_comp_level` 推荐 **5**
+> - `gzip_min_length 1k` 过小文件不压（收益小于开销）
+>
+> ⚠️ **不要压** `image/jpeg` `image/png` `video/*` `application/zip` 等已压缩格式——无效还费 CPU。
+
 ---
 
 ## 七、server 块（虚拟主机）
@@ -334,6 +438,16 @@ server {
 | 后缀通配符 | `server_name example.*;` | 3 |
 | 正则表达式 | `server_name ~^www\d+\.example\.com$;` | 4 |
 | 默认（default） | `server_name _;` | 最低 |
+
+> **效果现象**：`listen 80` 后，浏览器 `http://域名` 命中该 server；多个 server 共用 80 端口时，Nginx 按 `server_name` 把请求分流到不同 server 块（虚拟主机）；不匹配任何 server_name 的请求会落到「默认 server」（标记 `default_server` 或第一个 server）。
+
+| 指令 | 必/选 | 说明 |
+|------|-------|------|
+| `listen` | 🔴 必须 | 不配 → Nginx 不知在哪接请求 |
+| `server_name` | 🟡 建议 | 单站点可省（默认 `_`）；多站点必须，否则全进默认 server |
+| `root` / `index` | 🔴 必须（静态托管） | 不配 → 找不到文件、404 |
+| `access_log` | 🟢 按需 | 默认记到全局 access.log，多站点建议分开记 |
+| `charset` | ⚪ 默认 | 中文站点建议显式 `utf-8` |
 
 ---
 
@@ -448,6 +562,16 @@ location / {
 }
 ```
 
+> **必/选**：
+> - `location /` 🟡 几乎必写（兜底路由）
+> - `try_files` 🔴 **SPA 必须配**，否则 history 路由刷新 404
+> - `root` / `alias` 🔴 二选一（静态资源必须有一个）
+> - `proxy_pass` 🔴 反向代理场景必须
+> - `rewrite` / `return` 🟢 按需
+>
+> ⚠️ **注意修饰符优先级**：`=` > `^~` > `~`/`~*` > 无。写错修饰符会让请求落到错误的 location——例如一个过宽的正则可能「吞掉」本该走静态资源或 API 代理的请求。
+```
+
 ---
 
 ## 九、反向代理
@@ -550,6 +674,20 @@ location /api/ {
 }
 ```
 
+> **效果现象**：配置后浏览器请求 `/api/users` 由 Nginx 转发到后端，地址栏 URL 不变；后端日志里 `remote_addr` 默认是 **Nginx 的 IP**（要拿真实客户端 IP，必须配 `X-Forwarded-For` 并在后端读取该头）。
+
+| 指令 | 必/选 | 说明 |
+|------|-------|------|
+| `proxy_pass` | 🔴 必须 | 不配等于没代理 |
+| `proxy_set_header Host` | 🟡 建议 | 传原始 Host，否则后端拿到的是后端地址 |
+| `proxy_set_header X-Real-IP` | 🟡 建议 | 传真实客户端 IP |
+| `proxy_set_header X-Forwarded-For` | 🟡 建议 | 传代理链路 IP |
+| `proxy_*_timeout` | 🟢 按需 | 默认 60s，慢接口要调大 |
+| `proxy_buffering` | ⚪ 默认 | 默认 on；流式响应（SSE）要关 |
+
+> ⚠️ **末尾斜杠是反向代理的头号坑**：带 `/` 会**替换** location 路径，不带 `/` 会**保留**。务必和后端接口路径对齐（后端接口是否带 `/api` 前缀决定你怎么写）。
+```
+
 ---
 
 ## 十、负载均衡
@@ -619,6 +757,18 @@ upstream backend {
 | IP Hash | `ip_hash` | 需要会话保持 |
 | 最少连接 | `least_conn` | 请求处理时间差异大 |
 | URL Hash | `hash $uri` | 需要缓存命中 |
+
+> **效果现象**：`upstream` 多台后端时，请求被分发到不同后端（后端日志可见来源都是 Nginx 的 IP）；某台配 `max_fails=3 fail_timeout=30s` 连续失败 3 次后，30 秒内 Nginx 不再向它分发请求（自动故障转移）。
+
+| 指令 | 必/选 | 说明 |
+|------|-------|------|
+| `upstream` + `server` | 🔴 必须 | 多后端负载均衡的前提 |
+| 策略（轮询/权重/ip_hash/least_conn） | 🟢 按需 | 不写默认轮询；按业务选 |
+| `backup` | 🟢 按需 | 备用机，主节点全挂才启用 |
+| `max_fails` / `fail_timeout` | 🟡 建议 | 故障转移，生产建议配 |
+| `ip_hash` | 🟢 按需 | 会话保持；副作用：节点变动时 hash 重分布、用户掉线 |
+
+> 💡 **会话保持的现代做法**：优先用 Token / Redis 共享 Session，而非依赖 `ip_hash`（后者在后端扩缩容时会导致大量用户会话失效）。
 
 ### 健康检查与故障转移
 
@@ -691,6 +841,21 @@ server {
 }
 ```
 
+> **效果现象**：配置后浏览器地址栏出现 🔒；`curl -vI https://域名` 可见 TLS 握手与证书信息；`ssl_session_cache` 让重复连接的握手开销显著降低；加上 HSTS 头后浏览器后续直接走 HTTPS（即使输入 http 也自动跳转）。
+
+| 指令 | 必/选 | 说明 |
+|------|-------|------|
+| `listen 443 ssl` | 🔴 必须 | 开启 SSL 监听 |
+| `ssl_certificate` / `ssl_certificate_key` | 🔴 必须 | 证书与私钥，没有无法启动 HTTPS |
+| `ssl_protocols` | 🟡 建议 | 显式限定 TLSv1.2/1.3，禁用不安全旧版本 |
+| `ssl_ciphers` | 🟢 按需 | 默认已合理，特殊合规要求才调 |
+| `ssl_session_cache` / `ssl_session_timeout` | 🟡 建议 | 缓存会话，加速重复握手 |
+| `ssl_stapling` | 🟢 按需 | OCSP 装订，提升证书验证速度 |
+| HSTS 头 | 🟡 建议 | 强制 HTTPS，防降级攻击 |
+
+> 💡 **证书来源**：免费用 Let's Encrypt（`certbot --nginx -d 域名` 自动申请 + 续期），或用云厂商免费 DV 证书。证书过期（Let's Encrypt 90 天）**必须续期**，否则站点报证书错误打不开。
+```
+
 ---
 
 ## 十二、静态资源与缓存
@@ -729,6 +894,18 @@ server {
         add_header  Pragma "no-cache";
     }
 }
+```
+
+> **效果现象**：图片/字体配 `expires 30d` + `immutable` 后，浏览器二次请求该资源状态码变为 `200 (disk cache)`、**完全不发网络请求**；HTML 配 `no-cache` 则每次都向服务器验证，保证用户拿到最新版本。
+
+| 指令 | 必/选 | 说明 |
+|------|-------|------|
+| `expires` | 🟡 建议 | 设强缓存时间 |
+| `add_header Cache-Control` | 🟡 建议 | `public, immutable` 用于带 hash 的不变资源 |
+| HTML `no-cache` | 🔴 SPA 必配 | 入口 HTML 必须每次取最新，否则用户卡在旧版本 |
+| 静态资源 `immutable` | 🟡 建议 | 带 hash 的文件可放心长缓存 |
+
+> 💡 **核心法则**：**带 hash 的静态资源（js/css/图片）长缓存 + immutable，index.html 永不缓存**——同时满足「加载快」和「更新生效」。
 ```
 
 ### SPA 前端项目完整配置
@@ -806,9 +983,9 @@ server {
     # 旧路径 → 新路径
     rewrite ^/old-page/(.*)$ /new-page/$1 permanent;
 
-    # 去除 www
-    if ($host ~* ^www\.(.*)$) {
-        rewrite ^(.*)$ http://$1$1 permanent;
+    # 去除 www（用命名捕获 ?<domain>，避免 $1 被 rewrite 自身正则覆盖）
+    if ($host ~* ^www\.(?<domain>.+)$) {
+        return 301 $scheme://$domain$request_uri;
     }
 
     # 去除末尾斜杠（SEO 优化）
@@ -916,6 +1093,20 @@ server {
     # 隐藏 Nginx 版本
     server_tokens off;
 }
+```
+
+| 配置 | 必/选 | 说明 |
+|------|-------|------|
+| `server_tokens off` | 🟡 建议 | 隐藏版本号，减少被针对性攻击的信息 |
+| `X-Content-Type-Options nosniff` | 🟡 建议 | 防 MIME 嗅探 |
+| `X-Frame-Options` | 🟡 建议 | 防点击劫持（要被第三方嵌入则需放开） |
+| HSTS | 🟡 建议（HTTPS 站） | 强制 HTTPS，防降级 |
+| CSP | 🟢 按需 | 最强的内容安全策略，但配置成本高 |
+| IP 白名单 / `auth_basic` | 🟢 按需 | 后台、管理接口建议加 |
+| 限流 `limit_req` | 🟢 按需 | 公开 API、登录接口建议加 |
+| 防盗链 `valid_referers` | 🟢 按需 | 图片/视频资源站建议加 |
+
+> 💡 **最低成本建议**：至少配齐 `server_tokens off` + 三个基础安全头（`nosniff` / `X-Frame-Options` / HSTS），几乎零成本、收益明显。
 ```
 
 ---
