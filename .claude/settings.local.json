@@ -37,7 +37,9 @@
       "Bash(sed -n 1p '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/render函数\\(vue2\\).md')",
       "Bash(grep -cF '${' '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/render函数\\(vue2\\).md')",
       "Bash(grep -c '```' '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/h函数\\(vue3\\).md')",
-      "Bash(grep -c '```' '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/render函数\\(vue3\\).md')"
+      "Bash(grep -c '```' '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/render函数\\(vue3\\).md')",
+      "Bash(cd \"/Users/dyc/Desktop/学习/knowledge_point/docs/java/集合\")",
+      "Bash(ls -la)"
     ],
     "deny": [],
     "ask": [],
