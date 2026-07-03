@@ -39,7 +39,13 @@
       "Bash(grep -c '```' '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/h函数\\(vue3\\).md')",
       "Bash(grep -c '```' '/Users/dyc/Desktop/学习/knowledge_point/docs/vue/render函数\\(vue3\\).md')",
       "Bash(cd \"/Users/dyc/Desktop/学习/knowledge_point/docs/java/集合\")",
-      "Bash(ls -la)"
+      "Bash(ls -la)",
+      "Bash(gh auth *)",
+      "Bash(gh run *)",
+      "Bash(grep -n '```' docs/java/操作数据库/元数据.md)",
+      "Bash(grep -c '```' docs/java/操作数据库/元数据.md)",
+      "Read(//Users/dyc/.claude/**)",
+      "Read(//Users/dyc/.claude/skills/**)"
     ],
     "deny": [],
     "ask": [],

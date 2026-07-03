@@ -249,7 +249,7 @@ rs.getString("username");   // ✅ 用别名，不是 "name"
 | 场景 | 用法 |
 | --- | --- |
 | 普通查询遍历 | while(next) + getXxx |
-| 转对象列表 | ResultSet → List<User> |
+| 转对象列表 | ResultSet → `List<User>` |
 | 分页查询 | SQL LIMIT + ResultSet 遍历 |
 | 统计 | getInt/getDouble 取聚合结果 |
 
