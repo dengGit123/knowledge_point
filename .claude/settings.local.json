@@ -45,7 +45,9 @@
       "Bash(grep -n '```' docs/java/操作数据库/元数据.md)",
       "Bash(grep -c '```' docs/java/操作数据库/元数据.md)",
       "Read(//Users/dyc/.claude/**)",
-      "Read(//Users/dyc/.claude/skills/**)"
+      "Read(//Users/dyc/.claude/skills/**)",
+      "Bash(cd /Users/dyc/Desktop/学习/knowledge_point/docs/java)",
+      "Bash(ls -la Spring全家桶)"
     ],
     "deny": [],
     "ask": [],
