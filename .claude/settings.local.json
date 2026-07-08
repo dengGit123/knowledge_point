@@ -47,7 +47,14 @@
       "Read(//Users/dyc/.claude/**)",
       "Read(//Users/dyc/.claude/skills/**)",
       "Bash(cd /Users/dyc/Desktop/学习/knowledge_point/docs/java)",
-      "Bash(ls -la Spring全家桶)"
+      "Bash(ls -la Spring全家桶)",
+      "Bash(grep -n '^```' \"docs/java/操作数据库/元数据.md\")",
+      "Bash(node /tmp/render_md.mjs)",
+      "Read(//usr/local/bin/**)",
+      "Bash(command -v nvm)",
+      "Bash(grep -rn --include='*.md' '\\\\${{' .)",
+      "Bash(npx vitepress *)",
+      "Bash(node_modules/.bin/vitepress --version)"
     ],
     "deny": [],
     "ask": [],

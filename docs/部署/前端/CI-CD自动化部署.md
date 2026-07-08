@@ -237,7 +237,7 @@ CI/CD 中要用到密码、密钥，**绝不能写在代码里**：
 
 | 方式 | 说明 |
 | --- | --- |
-| **GitHub Secrets** | 仓库设置里加密存储，`${{ secrets.XXX }}` 引用 |
+| **GitHub Secrets** | 仓库设置里加密存储，用 <code v-pre>${{ secrets.XXX }}</code> 引用 |
 | 环境变量 | 构建时注入（如 API 地址） |
 | .env 文件 | 本地用，加入 .gitignore |
 
