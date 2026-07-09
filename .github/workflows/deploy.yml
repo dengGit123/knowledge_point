@@ -40,7 +40,8 @@ jobs:
       - name: Build VitePress site
         run: npm run build
         env:
-          NODE_OPTIONS: --max-old-space-size=4096
+          # ubuntu-latest 物理内存约 7GB，留约 1GB 给系统/V8 非堆内存，6144 是安全上限
+          NODE_OPTIONS: --max-old-space-size=6144
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
