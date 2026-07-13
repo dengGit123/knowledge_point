@@ -54,7 +54,12 @@
       "Bash(command -v nvm)",
       "Bash(grep -rn --include='*.md' '\\\\${{' .)",
       "Bash(npx vitepress *)",
-      "Bash(node_modules/.bin/vitepress --version)"
+      "Bash(node_modules/.bin/vitepress --version)",
+      "Bash(grep -v '`')",
+      "Bash(grep -rnE '^[>|*-]+.*[^`]<[a-zA-Z]' . --include='*.md')",
+      "Bash(grep -rnE '^[^|`>*-].*[^`/]<[a-zA-Z]' . --include='*.md')",
+      "Bash(grep -vE '```|<project|<dependency|<groupId|<artifactId|<version|<scope|<packaging|<modules|<module|<parent|<relativePath|<plugin|<configuration|<executions|<execution|<goals|<goal|<build|<properties|<repositories|<repository|<distributionManagement|<snapshotRepository|<profiles|<profile|<activation|<dependencies|<exclusions|<exclusion|<settings|<mirrors|<mirror|<servers|<server|<modelVersion|<resources|<resource|<includes|<include|<excludes|<exclude|<finalName|<directory|<localRepository|<filtering|<optional|<type|<classifier|<releases|<snapshots|<pluginManagement|<dependencyManagement|<name>|<url>|<id>|<sourceDirectory|<project |<settings |xmlns|xsi:|<systemPath|<source|<target|<encoding|<javadoc|<transformer|<mainClass')",
+      "Bash(python3 -)"
     ],
     "deny": [],
     "ask": [],
