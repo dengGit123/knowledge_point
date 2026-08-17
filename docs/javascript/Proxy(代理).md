@@ -1,6 +1,6 @@
 ### 1. Proxy
 * new Proxy(target, handler) 创建一个代理对象，target为目标对象，handler是一个包含捕获器（trap）的对象
-* handler对象的属性有14种，和Relfect(反射)一一对应
+* handler对象的属性有13种，和Relfect(反射)一一对应
 ```js
 const target = { name: 'Alice', age: 25 };
 
@@ -54,9 +54,8 @@ const target = { name: 'Alice', age: 25 };
   * 可扩展性指的是对象是否可以添加新的属性
 * 13. preventExtensions(target) 
   * 当阻止代理对象扩展时触发，返回一个布尔值表示是否成功阻止。
-* 14. enumerate(target)
-  * 当枚举代理对象的属性时触发，返回一个迭代器对象。
-  * 枚举指的是获取对象所有可枚举属性的键值对
+
+> ⚠️ **注意：** 早期草案中还有第 14 个捕获器 `enumerate`（配合 `for...in`），但在 ES2015 正式发布前被移除，现在的 `for...in` 不经过 Proxy 拦截。
 
 ### 3. this指向
 * 在Proxy的get捕获器中，如果要保持正确的this绑定（即让方法中的`this`指向**代理对象本身**），应该使用Reflect.get(target, prop, receiver)而不是直接访问属性。
@@ -78,14 +77,30 @@ const obj = {
 
   console.log(proxy.getName()); // 'Alice'
 
-  // 如果不用 Reflect，this 会指向原对象
+  // 如果不用 Reflect，方法被调用时 this 会指向**原对象 target**而非代理
   const badProxy = new Proxy(obj, {
     get(target, prop) {
       return target[prop]; // this 指向 obj
     }
   });
 
-  console.log(badProxy.getName()); // 'Alice' (但如果 obj.name 改变，结果可能不同)
+  console.log(badProxy.getName()); // 'Alice'（本例碰巧一致）
+
+  // 两者真正产生差异的场景：属性在原型上且是 getter 时
+  // getter 里的 this 由"接收者"（receiver）决定，this 是谁就读谁的 data
+  const base = { get level() { return this.data; } };
+  const child = Object.create(base); // child 自身没有 data
+
+  const view1 = { data: '视图1的数据' };
+  const view2 = { data: '视图2的数据' };
+
+  Reflect.get(child, 'level', view1); // '视图1的数据'（getter 的 this 是 view1）
+  Reflect.get(child, 'level', view2); // '视图2的数据'（getter 的 this 是 view2）
+  child.level;                        // undefined（不传 receiver 时 this 是 child，而 child 没有 data）
+
+  // 在 Proxy 中的意义：通过代理访问 p.level 时，receiver 就是 p 本身。
+  // 把 receiver 传给 Reflect.get，原型上 getter 的 this 就指向代理而非原始对象，
+  // getter 里再读 this.xxx 时会继续经过代理的 get 拦截器（Vue 3 响应式依赖这个机制）
 
 ```
 ### 4. 注意

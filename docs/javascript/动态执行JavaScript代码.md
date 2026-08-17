@@ -111,10 +111,10 @@ new Function(arg1, arg2, ..., argN, functionBody)
 const add = new Function('a', 'b', 'return a + b');
 console.log(add(2, 3)); // 5
 
-// 等价于
-function add(a, b) {
-  return a + b;
-}
+// 等价于（仅示意，同一作用域里不要重复声明 add）
+// function add(a, b) {
+//   return a + b;
+// }
 ```
 
 ### 3.3 执行作用域
@@ -373,8 +373,9 @@ import { parse } from 'some-parser-lib';
 // 1. 使用 import() 按需加载
 const module = await import('./feature.js');
 
-// 2. 使用 new Function 创建可配置函数
-const formula = new Function('x', 'return ' + userFormula);
+// 2. 使用 new Function 创建可配置函数（前提：输入来自可信配置而非任意用户，
+//    且经过白名单/格式校验——new Function 只是作用域隔离，挡不住代码注入）
+const formula = new Function('x', 'return ' + validatedFormula);
 console.log(formula(5));
 
 // 3. 使用动态 script 标签加载第三方库

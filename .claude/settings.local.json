@@ -70,7 +70,16 @@
       "Bash(javac *.java)",
       "Bash(java FlatMapAdvanced)",
       "mcp__ide__getDiagnostics",
-      "Bash(open *)"
+      "Bash(open *)",
+      "Bash(node *)",
+      "Bash(curl -s --max-time 25 'https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/GeneratorFunction')",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s --max-time 25 'https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/GeneratorFunction/GeneratorFunction')",
+      "Bash(curl -s --max-time 25 'https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect')",
+      "Bash(curl -s --max-time 25 'https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/void' -o /dev/null -w '%{http_code}\\\\n')",
+      "Bash(curl -s --max-time 25 'https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy')",
+      "Bash(grep -n '```' 'Reflect\\(反射\\).md')",
+      "Bash(grep -n '```' '可选链-空值合并运算符.md')"
     ],
     "deny": [],
     "ask": [],

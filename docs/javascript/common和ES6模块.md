@@ -23,8 +23,8 @@ exports.foo = function() {};
 // 方式3: 使用 exports 对象的属性
 exports.bar = 'hello';
 
-// 导入
-const module = require('./module');
+// 导入（注意：不能用 module 作变量名，它是 Node 包装函数的形参，重复声明会报错）
+const myModule = require('./module');
 const { name, foo } = require('./module');
 ```
 
@@ -189,8 +189,8 @@ if (condition) {
   const foo = require('./foo');
 }
 
-// 动态路径
-const module = require(dynamicPath + '/module');
+// 动态路径（module 是 Node 保留形参名，换用其他变量名）
+const loadedModule = require(dynamicPath + '/module');
 
 // ============ ES6 模块 ============
 import fs from 'fs';  // Node 需要 package.json: "type": "module"
@@ -206,7 +206,7 @@ if (condition) {
   const { foo } = await import('./foo.js');
 }
 
-// 动态路径
+// 动态路径（ESM 里没有 module 形参，这样写是合法的）
 const module = await import(`${dynamicPath}/module.js`);
 ```
 
@@ -255,15 +255,18 @@ this.foo = 'bar';  // 报错：Cannot set property 'foo' of undefined
 
 ```javascript
 // ES6 模块中可以导入 CommonJS
-// ✅ 允许
+// ✅ 默认导入总是可用（指向 module.exports）
+import pkg from './common.cjs';
+// ✅ 具名导入也可用——前提是 CJS 的导出能被静态分析出来
+// （如 exports.foo = ... 或 module.exports = { foo } 这类写法），
+// 否则会在构建/运行时报错 "does not provide an export named 'foo'"
 import { foo } from './common.cjs';
-import pkg from './common.cjs'; // 只能使用默认导入
 
-// CommonJS 中不能直接导入 ES6 模块
-// ❌ 不允许
+// CommonJS 中导入 ES6 模块
+// ❌ 传统上不允许（Node 22.12 之前）
 const { foo } = require('./esm.mjs');
-
-// ✅ 需要使用动态 import()
+// Node 22.12+ 已支持 require() 加载不含顶层 await 的 ESM，
+// 老版本则需要使用动态 import()：
 (async () => {
   const { foo } = await import('./esm.mjs');
 })();
@@ -305,28 +308,46 @@ console.log('在 main 中，a.done = %j, b.done = %j', a.done, b.done);
 
 ### 6.2 ES6 模块循环依赖
 
+ESM 的 `import` 会被提升，且导入的是**动态绑定（live binding）**。但如果在模块体顶层直接读取对方还没执行到的 `let` 变量，会命中**暂时性死区（TDZ）直接抛 ReferenceError**。所以要演示"循环依赖下拿到中间状态"，安全的做法是通过**函数**延迟访问（函数声明会被提升且初始化）：
+
 ```javascript
 // a.js
-export let done = false;
-import { bDone } from './b.js';
-console.log('在 a.js 中，bDone = %j', bDone);
+import { getBDone } from './b.js';
+
+export function getDone() {
+  return done; // 被调用时才读取，此时早已初始化
+}
+
+export let done = false; // 模块体执行到这行才初始化
+
+console.log('在 a.js 中，bDone =', getBDone()); // b.js 此时已执行完毕
 done = true;
 
 // b.js
+import { getDone } from './a.js';
+
+export function getBDone() {
+  return bDone;
+}
+
 export let bDone = false;
-import { done } from './a.js';
-console.log('在 b.js 中，done = %j', done);
+
+// a.js 还没执行到 let done = false，直接读 done 会抛 ReferenceError（TDZ），
+// 但调用函数是安全的——函数体此时不会执行
+console.log('在 b.js 中，done =', typeof getDone === 'function' ? '（a 还没执行完，稍后再取）' : getDone());
 bDone = true;
 
 // main.js
-import { done, bDone } from './a.js';  // 或 './b.js'
-console.log('在 main 中，done = %j, bDone = %j', done, bDone);
+import { done, getDone } from './a.js';
+console.log('在 main 中，done =', done); // true — 拿到的是最终值（live binding）
 
 // 输出：
-// 在 b.js 中，done = false  ← a 的 done 还未赋值
+// 在 b.js 中，done = （a 还没执行完，稍后再取）
 // 在 a.js 中，bDone = true
-// 在 main 中，done = true, bDone = true
+// 在 main 中，done = true
 ```
+
+> ⚠️ **注意**：如果把 `console.log(done)` 直接写在 b.js 模块体顶层，会抛 `ReferenceError: Cannot access 'done' before initialization`——这就是 ESM 循环依赖中 `let`/`const` 的 TDZ 陷阱。CommonJS 遇到同样场景返回的是"导出对象当下的部分值"（见 6.1），两边的容错方式不同。
 
 ---
 
@@ -351,7 +372,7 @@ module.exports = { foo: 'bar' };
 delete require.cache[require.resolve('./module')];  // 清除缓存
 
 // 3. 路径解析
-// 顺序：核心模块 -> ./相对路径 -> ../绝对路径 -> node_modules
+// 顺序：核心模块（如 fs、path）→ 以 / 、./ 、../ 开头的路径 → 从当前目录逐级向上查找 node_modules
 ```
 
 ### 7.2 ES6 模块注意事项

@@ -367,7 +367,7 @@ const person = computed({
   lastName: '三'
 }, {
   fullName() {
-    return this.lastName + this.firstName
+    return this.firstName + this.lastName
   },
   nameLength() {
     return this.fullName.length
@@ -488,7 +488,8 @@ user.name = ''      // ❌ Error: Invalid value for name
 ### Vue 2 响应式系统
 
 ```javascript
-// Vue 2 的响应式核心（简化版）
+// Vue 2 的响应式核心（简化版，Dep/observe 的完整实现省略：
+// Dep 负责依赖收集与通知，observe 负责递归把嵌套对象变成响应式）
 function defineReactive(obj, key, val) {
   const dep = new Dep()
   
@@ -521,16 +522,16 @@ function defineReactive(obj, key, val) {
 }
 ```
 
-### React 不可变状态
+### 状态对象不可变（通用场景）
 
 ```javascript
-// 使用 defineProperty 冻结状态，防止直接修改
+// 使用 defineProperty 冻结状态对象，防止在外部被直接修改
 function freezeState(state) {
   Object.keys(state).forEach(key => {
     Object.defineProperty(state, key, {
       writable: false
     })
-    if (typeof state[key] === 'object') {
+    if (typeof state[key] === 'object' && state[key] !== null) {
       freezeState(state[key])
     }
   })
@@ -542,8 +543,9 @@ const initialState = freezeState({
   user: { name: '张三' }
 })
 
-// 直接修改会失败，必须通过 setState 更新
-initialState.count = 1  // 错误！
+// 直接修改会静默失败（严格模式下抛 TypeError），想更新只能整体替换为新对象
+initialState.count = 1
+console.log(initialState.count) // 0
 ```
 
 ---
@@ -584,21 +586,38 @@ console.log(arr) // [1, 2, 3, 4]
 // 要完全冻结数组，需要冻结原型方法或使用 Object.freeze
 ```
 
-### 3. 继承属性不受影响
+### 3. 继承属性与遮蔽（shading）的陷阱
+
+> ⚠️ **重要**：如果原型上的属性是 `writable: false`，给子对象赋值**不会**创建自有属性遮蔽它，而是**静默失败**（严格模式抛 TypeError）。
 
 ```javascript
 const parent = {}
 Object.defineProperty(parent, 'prop', {
   value: 'parent',
-  writable: false
+  writable: false   // 不可写（同时 enumerable/configurable 默认也是 false）
 })
 
 const child = Object.create(parent)
-child.prop = 'child'  // 创建了子对象的自有属性
+child.prop = 'child'  // 静默失败！原型上同名属性不可写，赋值不会创建子对象的自有属性（严格模式抛 TypeError）
 
-console.log(child.prop)           // "child"
-console.log(parent.prop)          // "parent"（不受影响）
-console.log(child.hasOwnProperty('prop')) // true
+console.log(child.prop)                    // "parent"（仍是原型上的值）
+console.log(parent.prop)                   // "parent"
+console.log(child.hasOwnProperty('prop'))  // false（没有创建自有属性）
+
+// 对比：原型上的属性可写（writable: true）时，赋值才会在子对象上创建自有属性（遮蔽）
+const parent2 = {}
+Object.defineProperty(parent2, 'prop', {
+  value: 'parent',
+  writable: true,
+  configurable: true
+})
+
+const child2 = Object.create(parent2)
+child2.prop = 'child'  // 在 child2 上创建自有属性，遮蔽原型属性
+
+console.log(child2.prop)                    // "child"
+console.log(parent2.prop)                   // "parent"（不受影响）
+console.log(child2.hasOwnProperty('prop'))  // true
 ```
 
 ### 4. 使用 `__proto__` 属性的陷阱

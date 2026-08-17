@@ -70,6 +70,8 @@ const tasks = [
 const results = await Promise.allSettled(tasks);
 
 // 分别处理成功和失败的结果
+// 注：额外的 r.value !== undefined 用来排除"成功但无返回值"的任务（如纯副作用函数）；
+// 如果你的任务可能合法地返回 undefined，请只按 status 过滤
 const successfulData = results
   .filter(r => r.status === "fulfilled" && r.value !== undefined)
   .map(r => r.value);
@@ -228,7 +230,7 @@ async function fetchDataWithAllSettled() {
 // ❌ 错误：这种场景应该用 Promise.all()，而不是 allSettled
 // 如果某个请求失败，其他请求就不应该继续
 async function uploadWithAllSettled() {
-  const files = [...]; // 多个文件
+  const files = [/* 多个文件 */]; // 多个文件
   const results = await Promise.allSettled(
     files.map(file => uploadFile(file))
   );
@@ -238,14 +240,15 @@ async function uploadWithAllSettled() {
 
 // ✅ 正确：使用 Promise.all() 实现快速失败
 async function uploadWithAll() {
-  const files = [...];
+  const files = [/* 多个文件 */];
   try {
     const results = await Promise.all(
       files.map(file => uploadFile(file))
     );
     return results;
   } catch (error) {
-    // 第一个错误发生时立即停止
+    // 第一个错误发生时立即以该错误 reject（注意：其他已发出的请求不会真被"取消"，
+    // 只是它们的结果被忽略；如果需要真正中止请求，用 AbortController）
     console.log("上传失败:", error);
     throw error;
   }

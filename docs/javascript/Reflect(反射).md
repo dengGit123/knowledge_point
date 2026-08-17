@@ -1,11 +1,11 @@
 ### 1. Reflect对象
-* 提供了一套统一的**操作对象**的静态方法(14个方法)，使得操作对象的行为更加统一和明确。
+* 提供了一套统一的**操作对象**的静态方法(13个静态方法)，使得操作对象的行为更加统一和明确。
 * 不可以使用`new`关键字来创建`Reflect`的实例，因为`Reflect`不是一个构造函数。
 
 ### 2. 操作对象的属性
-`[target]`: 目标对象，即要操作的对象的引用。
-`[propertyKey]`: 属性名，可以是字符串或Symbol。
-`[receiver]`: 可选参数， 默认为`target`。在某些情况下，例如通过代理对象访问属性时，可能需要指定接收者(receiver)来正确地获取或设置属性的值。
+`[target]`: 目标对象，即要操作的对象的引用。（方括号表示可选参数的语法约定，实际调用时不带方括号）
+`[propertyKey]`: 属性名，可以是字符串或 Symbol。
+`[receiver]`: 可选参数， 默认为 `target`。在某些情况下，例如通过代理对象访问属性时，可能需要指定接收者(receiver)来正确地获取或设置属性的值。
 
 * 1. 可以通过`Reflect.get(target, propertyKey[, receiver])`来获取对象的属性值。
 * 2. 可以通过`Reflect.set(target, propertyKey, value[, receiver])`来设置对象的属性值。
@@ -40,7 +40,9 @@
   // 替代 Object.getOwnPropertyDescriptor()
   const descriptor = Reflect.getOwnPropertyDescriptor(obj, 'name');
   console.log(descriptor); // { value: 'Bob', writable: true, enumerable: true, configurable: true }
+```
 
+```js
   const obj = {};
 
   // 替代 Object.defineProperty()
@@ -54,12 +56,18 @@
   console.log(success); // true (操作是否成功)
   console.log(obj.id); // 1
 
-  // 尝试定义只读属性的值
-  const failSuccess = Reflect.defineProperty(obj, 'id', {
-    value: 2,
-    writable: true
-  });
-  console.log(failSuccess); // false (操作失败)
+  // 尝试对 configurable: false 的属性重新 defineProperty
+  // 注意：此时会**直接抛出 TypeError**（而不是返回 false）。
+  // Reflect 的方法只对"对象本身不可修改"等场景返回 false；
+  // 违反已有属性的 configurable/writable 约束时走的是抛异常路径
+  try {
+    Reflect.defineProperty(obj, 'id', {
+      value: 2,
+      writable: true
+    });
+  } catch (e) {
+    console.log(e instanceof TypeError); // true
+  }
   console.log(obj.id); // 1 (原值未变)
 ```
 
@@ -98,7 +106,8 @@
   const obj = { name: 'Alice' };
 
   // 替代 Function.prototype.call 和 Function.prototype.apply
-  console.log(Reflect.apply(greet, obj)); // Hello, Alice!
+  // 第三个参数是必需的参数数组（可以为空数组）
+  console.log(Reflect.apply(greet, obj, [])); // Hello, Alice!
 
   class Person {
     constructor(name) {
@@ -111,10 +120,10 @@
   ```
 
   ### 5. 其他操作
-  * 14. 可以通过`Reflect.enumerate(target)`来遍历对象的属性。
+  * 早期草案中曾有 `Reflect.enumerate()`，但在 ES2015 正式发布前被移除，**该方法不存在**（调用会抛 TypeError）。遍历属性请用 `Reflect.ownKeys()`：
   ```js
   const obj = { a: 1, b: 2 };
-  for (const key of Reflect.enumerate(obj)) {
+  for (const key of Reflect.ownKeys(obj)) {
     console.log(key); // 'a', 'b'
   }
   ```
@@ -136,7 +145,7 @@
 
     get(target, prop, receiver) {
       if (prop === 'secret') {
-        return undefined; // 隐藏敏感属性
+        return undefined; // 读取时隐藏敏感属性（注意：这只拦截读取，不影响 in 操作符的结果）
       }
 
       return Reflect.get(target, prop, receiver);
@@ -159,7 +168,7 @@
 
   console.log(person.name); // 'Alice'
   console.log('age' in person); // true
-  console.log('secret' in person); // false
+  console.log('secret' in person); // true（has 拦截器只隐藏 _ 开头的属性，secret 不隐藏）
   console.log('_private' in person); // false
 
   person.age = -5; // Error: 年龄必须是0-150之间的数字

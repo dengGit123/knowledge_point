@@ -37,7 +37,7 @@ clearInterval(intervalId); // 清除 setInterval
 | 问题 | 说明 |
 |------|------|
 | this 指向 | 箭头函数保持外层 this，普通函数会丢失 |
-| 时间精度 | 实际延迟 ≥ 设定值（最小 4ms，event loop 导致） |
+| 时间精度 | 实际延迟 ≥ 设定值（受事件循环繁忙程度影响；嵌套 ≥5 次后被浏览器节流到最小 4ms） |
 | setInterval 堆积 | 如果函数执行时间 > 间隔，回调会堆积 |
 | 嵌套 setTimeout | 深度嵌套（>5次）会有最小 4ms 限制 |
 
@@ -46,17 +46,23 @@ clearInterval(intervalId); // 清除 setInterval
 ```javascript
 const obj = {
   name: 'Alice',
-  // 箭头函数 - 正确绑定 this
-  arrow: setTimeout(() => {
-    console.log(this.name); // 'Alice'
-  }, 1000),
+  sayHi() {
+    // 普通函数作为定时器回调 - this 丢失，指向 window（严格模式下是 undefined）
+    setTimeout(function() {
+      console.log(this.name); // ''（浏览器里 window.name 本身存在、值为空字符串；严格模式下这里会直接抛 TypeError）
+    }, 1000);
 
-  // 普通函数 - this 丢失
-  normal: setTimeout(function() {
-    console.log(this.name); // undefined
-  }, 1000)
+    // 箭头函数 - 继承外层 sayHi 的 this（即 obj）
+    setTimeout(() => {
+      console.log(this.name); // 'Alice'
+    }, 1000);
+  }
 };
+
+obj.sayHi();
 ```
+
+> ⚠️ **注意：** 箭头函数的 `this` 取决于**外层函数**。如果把箭头函数写在对象字面量顶层（不在普通函数里），它的 `this` 是所在作用域的 `this`（模块/脚本全局），并不指向对象本身。
 
 ### setInterval 堆积问题
 
@@ -87,23 +93,31 @@ timer = null; // 有什么用？
 3. **语义化标记** - 表示定时器已失效
 
 ```javascript
-// 实用模式：防止重复清除
+// 实用模式：清除的同时置 null，并返回新值让调用方更新自己的变量
+// （直接在函数里 timer = null 不影响外部变量——参数是按值传递的）
 function safeClear(timer) {
   if (timer) {
     clearTimeout(timer);
-    timer = null; // 标记已清除
   }
+  return null;
 }
 
-// React 组件卸载时的典型用法
-useEffect(() => {
-  let timer = setTimeout(fn, 1000);
+let timer = setTimeout(fn, 1000);
+timer = safeClear(timer); // 清除并把 timer 置为 null
 
-  return () => {
-    if (timer) clearTimeout(timer);
-    timer = null;
-  };
-}, []);
+// Vue 3 组件卸载时的典型用法
+import { onMounted, onUnmounted } from 'vue';
+
+let timer = null;
+
+onMounted(() => {
+  timer = setTimeout(fn, 1000);
+});
+
+onUnmounted(() => {
+  if (timer) clearTimeout(timer);
+  timer = null;
+});
 ```
 
 **注意**：设置为 `null` **不会自动清除定时器**，仍需手动调用 `clearTimeout/clearInterval`。
@@ -112,7 +126,7 @@ useEffect(() => {
 
 ### Q1: setTimeout 最小延迟是多少？
 
-浏览器环境：最小 4ms（嵌套超过 5 次后）
+浏览器环境：嵌套超过 5 层后，最小 4ms
 Node.js 环境：最小 1ms
 
 ### Q2: setTimeout(fn, 0) 何时执行？
@@ -134,3 +148,4 @@ function delay(ms) {
 
 const p = delay(1000);
 // p.cancel(); // 需要取消时调用
+```

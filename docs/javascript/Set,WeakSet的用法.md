@@ -68,8 +68,10 @@ set.size;         // 2
 ```js
 let obj = {data: 'big'};
 const set = new Set([obj]);
-obj = null;          // 原对象依然被 Set 引用，不会被回收
-// 需要手动 set.delete(obj) 或 set.clear()
+// 需要在 obj 还持有引用时删除；置 null 后再删就删不掉了
+set.delete(obj);     // true，先解除 Set 对它的强引用
+obj = null;          // 现在原对象没有任何强引用，可以被回收
+// 如果忘记 delete 就 obj = null，对象依然被 Set 引用，不会被回收（内存泄漏）
 ```
 ##### 3.无法直接修改元素：Set 中存储的是值的引用，要修改某个元素，通常需要先删除再添加新值
 
@@ -78,7 +80,7 @@ obj = null;          // 原对象依然被 Set 引用，不会被回收
 > 💡 **注意：** 添加的值只能是对象，尝试添加原始值会抛出 TypeError
 #### 1. 基本用法
 ```javascript
-// 创建（必须传入可迭代对象，元素只能是对象）
+// 创建（可不传参；若传参必须是可迭代对象，且元素只能是对象）
 const ws = new WeakSet();
 const obj1 = {name: 'Alice'};
 const obj2 = {name: 'Bob'};
@@ -97,7 +99,7 @@ ws.delete(obj2);   // true
 * **只接受对象：** 尝试添加原始值会抛出 TypeError；
 * **弱引用：** WeakSet 内部对对象的引用是弱的，不会阻止垃圾回收。如果对象在其他地方没有强引用，它会被回收，同时 WeakSet 中对应的条目自动消失（不可观察，但实际已移除）
 * **不可遍历：** 因为内部元素可能随时被回收，所以无法获取所有成员，没有 `size`、`forEach`、`keys` 等方法
-* **不可清空：** 没有 clear 方法（但可以通过重新赋值 ws = new WeakSet() 来间接清空）
+* **不可清空：** 没有 clear 方法（只能丢弃当前 WeakSet 的引用、用 `let ws = new WeakSet()` 新建一个来"间接清空"，注意声明要用 `let` 才能重新赋值）
 #### 3. 注意事项
 * 不能存储原始值：数字、字符串、布尔、Symbol、BigInt 都不行
 * 无法知道内部有多少对象：ws.size 为 undefined，也没有方法获取成员列表

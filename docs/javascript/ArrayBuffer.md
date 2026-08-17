@@ -102,7 +102,7 @@ const uint32 = new Uint32Array(buffer);
 uint8[0] = 255;        // 写入单字节
 uint8[1] = 128;
 
-console.log(uint32[0]); // 2147559167 (四个字节组成的32位整数)
+console.log(uint32[0]); // 33023（小端序下为 0x000080FF = 128*256 + 255）
 ```
 
 ### 3.2 DataView（数据视图）
@@ -121,7 +121,7 @@ view.setFloat32(4, 3.14159);    // 位置4：写入32位浮点数
 // 读取数据
 console.log(view.getInt8(0));        // 127
 console.log(view.getUint16(2));      // 65535
-console.log(view.getFloat32(4));     // 3.14159
+console.log(view.getFloat32(4));     // 3.1415901184082031（32位浮点精度有限，无法精确表示 3.14159）
 ```
 
 #### TypedArray vs DataView
@@ -177,7 +177,9 @@ const buffer = new ArrayBuffer(16);
 
 // 属性
 buffer.byteLength        // 16 - 缓冲区字节长度
-buffer.isView            // function - 判断是否是视图
+
+// 静态方法（注意：isView 是构造函数上的静态方法，不是实例方法）
+ArrayBuffer.isView(new Uint8Array(buffer))  // true - 判断是否是视图
 
 // 方法
 buffer.slice(4, 12)      // 返回新的 ArrayBuffer（包含 4-12 字节）

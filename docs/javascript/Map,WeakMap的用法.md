@@ -121,12 +121,12 @@ obj = null;   // 此时对象只有 WeakMap 的弱引用，很快会被垃圾回
 #### 3. 注意事项
 * **不可迭代：** 无法获取 `WeakMap` 中的键或值列表，也无法得知其大小。这保证了垃圾回收的实现自由。
 * **不可清空：** 没有 clear 方法，只能逐个 delete（但通常你无法枚举，所以难以清空所有）。若需要完全释放，只能让 WeakMap 实例本身被回收。
-* **值不是弱引用：** 如果值引用了键对象，可能形成循环引用，但此时键仍然可能被回收？需要小心
+* **值不是弱引用：** WeakMap 只对**键**保持弱引用，对值是强引用。但值只能通过键访问，所以当键没有其他强引用时，整个键值对都不可达，可以被正常回收——即使值里引用了键（形成"循环"）也一样
 ```js
 const wm = new WeakMap();
 let obj = {};
-wm.set(obj, obj);  // 值引用了键，但键是弱引用，仍然可以回收
-obj = null;        // 整个循环不可达，正常回收
+wm.set(obj, obj);  // 值引用了键自身，但键是弱引用，仍然可以回收
+obj = null;        // 整个条目不可达，正常回收
 ```
 #### 4. 典型应用场景
 * 1. 缓存 DOM 节点相关数据（避免内存泄漏）
@@ -161,7 +161,7 @@ let cache = new WeakMap();
 
 function process(obj) {
   if (cache.has(obj)) return cache.get(obj);
-  const result = /* 昂贵计算 */;
+  const result = expensiveCompute(obj);  // 昂贵计算
   cache.set(obj, result);
   return result;
 }

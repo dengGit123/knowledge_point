@@ -4,8 +4,8 @@
 * 链式调用
 
 ### 1. Promise的状态
-* 状态不可逆，一旦变为 `fullfilled`或`rejecte`后不可更改
-1. `pendding`: 进行中，初始状态
+* 状态不可逆，一旦变为 `fulfilled`或`rejected`后不可更改
+1. `pending`: 进行中，初始状态
 2. `fulfilled`: 异步操作**成功**，执行then方法的第一个参数**回调函数**
 3. `rejected`: 异步操作**失败**，执行catch方法的**回调函数**，或者then的第二个参数的**回调函数**
 
@@ -45,30 +45,30 @@ let p = new Promise((resolve,reject) => {
 
 })
 p.then(() => {
-  //1. 默认undefined,得到的是成功的Proise
-  //2. return 普通数据，得到的是成功的Proise
+  //1. 默认undefined,得到的是成功的Promise
+  //2. return 普通数据，得到的是成功的Promise
   //3. return new Promise()promise对象， 状态由promise对象的状态决定
   //4. 抛出异常： 得到的是失败的Promise
 },() => {
- //1. 默认undefined,得到的是成功的Proise
-  //2. return 普通数据，得到的是成功的Proise
+ //1. 默认undefined,得到的是成功的Promise
+  //2. return 普通数据，得到的是成功的Promise
   //3. return new Promise()promise对象， 状态由promise对象的状态决定
   //4. 抛出异常： 得到的是失败的Promise
 }).then(() => {
-   //1. 默认undefined,得到的是成功的Proise
-  //2. return 普通数据，得到的是成功的Proise
+   //1. 默认undefined,得到的是成功的Promise
+  //2. return 普通数据，得到的是成功的Promise
   //3. return new Promise()promise对象， 状态由promise对象的状态决定
   //4. 抛出异常： 得到的是失败的Promise
 }).catch(() => {
-   //1. 默认undefined,得到的是成功的Proise
-  //2. return 普通数据，得到的是成功的Proise
+   //1. 默认undefined,得到的是成功的Promise
+  //2. return 普通数据，得到的是成功的Promise
   //3. return new Promise()promise对象， 状态由promise对象的状态决定
   //4. 抛出异常： 得到的是失败的Promise
 })
-1. 回调函数没有返回结果： 得到的是成功的Proise
+```
+1. 回调函数没有返回结果： 得到的是成功的Promise
 2. 回调函数返回普通的数据： 得到的是成功的Promise
 3. 回调函数返回的是 Promise对象:  得到的状态 由这个Promise对象的状态决定
-```
 ### 4. `.catch`方法
 * 错误状态执行回调函数
 * 得到一个新的Promise,状态由返回结果决定
@@ -77,8 +77,8 @@ let p = new Promise((resolve,reject) =>{
   reject(值)
 })
 let newP =  p.catch(() => {
-   //1. 默认undefined,得到的是成功的Proise
-  //2. return 普通数据，得到的是成功的Proise
+   //1. 默认undefined,得到的是成功的Promise
+  //2. return 普通数据，得到的是成功的Promise
   //3. return new Promise()promise对象， 状态由promise对象的状态决定
   //4. 抛出异常： 得到的是失败的Promise
 })
@@ -91,7 +91,7 @@ let newP =  p.catch(() => {
 #### 2. `Promise.resolve(参数)`: 得到新的Promise,状态由参数决定
   * 参数是**普通数据**， 状态是成功的Promise
   * 参数是**Promise**, 状态由**参数的Promise的状态**决定
-#### 3. `Promise.all()`: 并行执行多个Promise，**全部成功**时返回成功的Promise,结果是一个数组；**任一失败则立即终止**‌，错误的Promise 结果是失败的结果
+#### 3. `Promise.all()`: 并行执行多个Promise，**全部成功**时返回成功的Promise,结果是一个数组；**任一失败则立即以该失败结果 reject**（其余 Promise 不会被取消，会照常执行完，只是结果被忽略）
 #### 4. `Promise.race()`: 返回**最快**改变状态的**promise**，不管是成功还是失败
 
 #### 5. `Promise.allSettled(iterable)`

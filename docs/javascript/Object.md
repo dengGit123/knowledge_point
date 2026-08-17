@@ -203,7 +203,7 @@ copy.info.age = 99
 console.log(original.info.age)   // 99 ⚠️ 原对象也被改了
 ```
 
-> ⚠️ **注意：** `Object.assign` 不会拷贝**继承属性**和**不可枚举属性**，也不会拷贝 Symbol 属性以外的存取描述符（getter 会触发，结果是值而非访问器）。
+> ⚠️ **注意：** `Object.assign` 不会拷贝**继承属性**和**不可枚举属性**；Symbol 键的可枚举自有属性**会**被拷贝；getter/setter 不会被拷贝为访问器——会触发 getter，拷贝其返回值。
 
 > 📖 详见 [Object.assign 方法](./Object.assign方法.md)
 
@@ -265,7 +265,7 @@ obj[Symbol('s')] = 'symbol value'
 obj.visible = 1
 
 Object.keys(obj)                       // ['visible']（只含可枚举）
-Object.getOwnPropertyNames(obj)        // ['visible', 'hidden']（含不可枚举的字符串键）
+Object.getOwnPropertyNames(obj)        // ['hidden', 'visible']（含不可枚举的字符串键，按创建顺序：hidden 先创建）
 Object.getOwnPropertySymbols(obj)      // [Symbol(s)]（所有 Symbol 键）
 ```
 
@@ -435,7 +435,7 @@ obj.bye()   // 'bye'
 
 > ⚠️ **注意：** 修改对象原型（尤其对已存在的对象）会严重影响引擎优化性能，应尽量避免。新对象用 `Object.create(proto)` 创建更合适。
 
-> 💡 **提示：** 也可以用 `obj.__proto__` 读写原型，但它是非标准（虽被广泛实现）的访问器，推荐用上面两个静态方法。
+> 💡 **提示：** 也可以用 `obj.__proto__` 读写原型，它自 ES2015 起已被标准化（作为 `Object.prototype` 上的访问器属性），但属于历史遗留写法，推荐用上面两个静态方法。
 
 ### 2. Object.create() 实现继承
 

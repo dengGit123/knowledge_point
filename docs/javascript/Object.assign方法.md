@@ -331,8 +331,9 @@ function deepMerge(target, ...sources) {
       const sourceVal = source[key]
 
       if (isObject(targetVal) && isObject(sourceVal)) {
-        // 递归合并嵌套对象
-        deepMerge(targetVal, sourceVal)
+        // 递归前先在 target 上建一个新对象，
+        // 避免直接改写 target 已引用的嵌套对象（那会污染源对象）
+        target[key] = deepMerge({}, targetVal, sourceVal)
       } else {
         // 直接赋值（覆盖或新增）
         target[key] = sourceVal
@@ -563,7 +564,7 @@ console.log(state.user)    // { name: '张三', age: 25 }（原对象未被修�
 | `Object.assign()` | 浅拷贝 | ✅ 修改 target | ✅ | 调用后拷贝返回值 | 对象合并、属性拷贝 |
 | `{ ...spread }` | 浅拷贝 | ❌ 新对象 | ✅ | 调用后拷贝返回值 | 创建新对象（函数式） |
 | `JSON.parse(JSON.stringify())` | 深拷贝 | ❌ 新对象 | ❌ | ❌ | 简单深克隆 |
-| `structuredClone()` | 深拷贝 | ❌ 新对象 | ✅ | ❌ | 现代深克隆 |
+| `structuredClone()` | 深拷贝 | ❌ 新对象 | ❌（遇到 Symbol 抛错） | ❌ | 现代深克隆 |
 | `Object.create()` | 不拷贝 | — | — | — | 创建指定原型的对象 |
 
 ---

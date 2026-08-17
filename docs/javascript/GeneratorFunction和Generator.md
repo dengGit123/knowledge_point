@@ -1,5 +1,5 @@
 ### 1. GeneratorFunction (生成器函数)
-* 是一种特殊类型的函数，它返回一个``Generator``对象,能够控制函数的执行流程，可以暂停和恢复代码的执行。
+* 是一种特殊类型的函数，它返回一个 `Generator` 对象，能够控制函数的执行流程，可以暂停和恢复代码的执行。
 ```js
 // 基本语法: function* 关键字,*前后可以有空格
  // 声明式
@@ -15,14 +15,14 @@
     yield 'world';
   };
 
-  // GeneratorFunction 构造函数
-  const GeneratorConstructor = new Function(
-    'return function*() { yield 1; yield 2; }'
-  )();
+  // GeneratorFunction 构造函数（不是全局对象，需这样获取）
+  const GeneratorFunction = Object.getPrototypeOf(function*(){}).constructor;
+  const genFn = new GeneratorFunction('a', 'yield a * 2');
+  genFn(5).next(); // { value: 10, done: false }
 ```
 
 ### 2. Generator对象
-* 由``GeneratorFunction``返回的对象，它是一个迭代器对象。
+* 由 `GeneratorFunction` 返回的对象，它是一个迭代器对象。
 * 提供了暂停和恢复执行的能力，通过`next()`方法可以逐个访问`Generator`函数中的值。
 ```js
 function* exampleGenerator() {
@@ -44,7 +44,7 @@ function* exampleGenerator() {
   console.log(gen.next());    // { value: undefined, done: true }
 ```
 
-### 3. Genertor的主要方法
+### 3. Generator的主要方法
 * 1. `next([value])`: 继续执行Generator函数，直到遇到下一个yield表达式。
   * value参数会作为给上一个yield表达式的返回值。
   * 返回一个对象，包含两个属性：value（当前yield的值）和done（是否完成）。
@@ -58,9 +58,9 @@ function* counter() {
   }
 
   const gen = counter();
-  console.log(gen.next());     // { value: 0, done: false }
-  console.log(gen.next(2));    // { value: 2, done: false } , 2 作为上一个yield的返回值，所以count变为2+1=3
-  console.log(gen.next(5));    // { value: 7, done: false }
+  console.log(gen.next());     // { value: 0, done: false }（首次 next 传参无效，此时还没有 yield 等待接收值）
+  console.log(gen.next(2));    // { value: 2, done: false } , 2 作为上一个yield的返回值，count变为0+2=2，yield返回更新后的count
+  console.log(gen.next(5));    // { value: 7, done: false } , 5 作为yield返回值，count变为2+5=7
 ```
 * 2. `return(value)`: 立即结束Generator函数的执行，并返回一个对象。
 ```js
@@ -78,7 +78,6 @@ function* range(start, end) {
 ```
 * 3. `throw(error)`: 向Generator函数抛出一个错误。
 ```js
-
   function* errorGenerator() {
     try {
       yield 1;
@@ -91,8 +90,10 @@ function* range(start, end) {
 
   const gen = errorGenerator();
   console.log(gen.next());        // { value: 1, done: false }
-  console.log(gen.throw(new Error('测试错误'))); // 捕获异常: 测试错误
-  console.log(gen.next());        // { value: 3, done: false }
+  // 抛出的错误被生成器内部的 try...catch 捕获，接着执行到 catch 里的 yield 3 暂停，
+  // 因此 throw() 本身就返回 { value: 3, done: false }（不是下一个 next() 才返回）
+  console.log(gen.throw(new Error('测试错误'))); // 捕获异常: 测试错误，返回 { value: 3, done: false }
+  console.log(gen.next());        // { value: undefined, done: true }
 ```
 ### 4. 使用场景
 *  1. 惰性计算和序列生成
@@ -177,6 +178,4 @@ function* range(start, end) {
   runAsyncGenerator(asyncTaskManager)
     .then(result => console.log('最终结果:', result))
     .catch(error => console.error('错误:', error));
-
-
 ```

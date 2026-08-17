@@ -329,7 +329,7 @@ function shouldThrow() {
 
 ---
 
-### 五、错误对象（Error）
+### 六、错误对象（Error）
 
 JavaScript 中的错误是一个**对象**，包含以下常用属性：
 
@@ -373,7 +373,7 @@ try {
 
 ---
 
-### 六、同步代码中的 try...catch
+### 七、同步代码中的 try...catch
 
 对于**同步代码**，`try...catch` 可以直接捕获代码中抛出的异常：
 
@@ -418,7 +418,7 @@ try {
 
 ---
 
-### 七、异步代码中的 try...catch
+### 八、异步代码中的 try...catch
 
 > ⚠️ **核心问题：** `try...catch` **无法直接捕获异步代码中抛出的异常**，因为异步回调会在事件循环的后续阶段执行，此时外层的 `try...catch` 已经执行完毕。
 
@@ -522,8 +522,8 @@ async function getUser(id) {
 
 ```js
 async function fetchUser() {
-  const res = await fetch('/api/user');
-  return res.json(); // 如果 fetch 失败，这里会自动抛出
+  const res = await fetch('/api/user'); // 网络失败时在这行抛出（fetch 只拒绝网络错误）
+  return res.json();
 }
 
 // 调用者负责捕获
@@ -532,7 +532,7 @@ fetchUser().catch((err) => console.error('失败:', err));
 
 ---
 
-### 八、异步错误处理方式对比
+### 九、异步错误处理方式对比
 
 | 方式 | 适用场景 | 优点 | 缺点 |
 | --- | --- | --- | --- |
@@ -543,7 +543,7 @@ fetchUser().catch((err) => console.error('失败:', err));
 
 ---
 
-### 九、嵌套 try...catch
+### 十、嵌套 try...catch
 
 `try...catch` 支持嵌套，内层 `catch` 处理不了的异常会**向外层传播**：
 
@@ -562,7 +562,7 @@ try {
 
 ---
 
-### 十、实际应用场景
+### 十一、实际应用场景
 
 #### 1. 安全的 JSON 解析工具函数
 
@@ -575,7 +575,11 @@ function safeParse(json, defaultValue = null) {
   }
 }
 
-const data = safeParse(localStorage.getItem('user'), {});
+// ⚠️ 注意：localStorage.getItem 无值时返回 null，而 JSON.parse(null)
+// 不抛错（null 被转成字符串 "null" 解析），返回的是 null 而不是默认值。
+// 想拿到默认值 {}，要先判空：
+const raw = localStorage.getItem('user');
+const data = raw === null ? {} : safeParse(raw, {});
 ```
 
 #### 2. 请求重试机制
@@ -630,7 +634,7 @@ async function processFile(path) {
 
 ---
 
-### 十一、注意事项与常见陷阱
+### 十二、注意事项与常见陷阱
 
 #### 1. 不要吞掉异常
 
@@ -663,19 +667,21 @@ try {
   console.error(err);
 }
 
-// ✅ 推荐：按逻辑分段处理
-let data;
-try {
-  data = JSON.parse(raw);
-} catch {
-  console.error('数据格式错误');
-  return;
-}
-try {
-  const result = processData(data);
-  saveToDB(result);
-} catch (err) {
-  console.error('处理失败:', err);
+// ✅ 推荐：按逻辑分段处理（return 需在函数内，这里包一层函数）
+function handleRaw(raw) {
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    console.error('数据格式错误');
+    return;
+  }
+  try {
+    const result = processData(data);
+    saveToDB(result);
+  } catch (err) {
+    console.error('处理失败:', err);
+  }
 }
 ```
 
@@ -757,7 +763,7 @@ try {
 
 ---
 
-### 十二、总结
+### 十三、总结
 
 | 要点 | 说明 |
 | --- | --- |
