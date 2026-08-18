@@ -11,6 +11,7 @@
   host?: string | boolean
   port?: number
   strictPort?: boolean
+  https?: HttpsServerOptions
   open?: boolean | string
   proxy?: Record<string, string | ProxyOptions>
   cors?: boolean | CorsOptions
@@ -93,12 +94,13 @@ proxy: {
 
 **类型**：`boolean | CorsOptions`
 
-**默认值**：`false`
+**默认值**：与 `server.cors` 一致（Vite 5 默认 `true`，即允许跨域请求）
 
 配置 CORS。
 
 ```javascript
 cors: true
+cors: false  // 禁用
 cors: {
   origin: 'http://example.com'
 }
@@ -129,9 +131,10 @@ export default {
     host: 'localhost',
     port: 4173,
     strictPort: false,
+    https: false,
     open: false,
     proxy: {},
-    cors: false,
+    cors: true,     // 与 server.cors 行为一致
     headers: {}
   }
 }
@@ -412,6 +415,8 @@ export default {
   }
 }
 ```
+
+> ⚠️ **注意**：Vite 6 起 `https` 不再接受 `true`（自签名证书），必须显式提供 `key`/`cert`（可配合 `@vitejs/plugin-basic-ssl` 插件生成）。
 
 ### 多环境预览
 

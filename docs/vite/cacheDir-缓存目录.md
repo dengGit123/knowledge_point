@@ -239,17 +239,15 @@ export default defineConfig(({ mode }) => {
 
 ### 6. 临时禁用缓存
 
-```javascript
-// vite.config.js
-export default {
-  cacheDir: false  // Vite 5.x 不支持，需要删除目录
-}
-```
+> ⚠️ `cacheDir` 不接受 `false`，类型是 `string`。预构建缓存**无法通过配置禁用**。
 
-**替代方案**：使用环境变量或脚本删除缓存
+**替代方案**：强制重新预构建或删除缓存目录
 
 ```bash
-# 删除缓存后运行
+# 方式一：--force 强制重新预构建（忽略缓存）
+vite --force
+
+# 方式二：删除缓存后运行
 rm -rf node_modules/.vite && vite
 ```
 

@@ -46,7 +46,7 @@ transition: width 0.5s ease 0.2s;
 /*            │    │    │    └─ 等0.2秒再开始
 /*            │    │    └────── 速度曲线
 /*            │    └─────────── 0.5秒完成
-/*            └──────────────── 过渡的属性
+/*            └──────────────── 过渡的属性 */
 ```
 
 ### 1.2 最常用写法
@@ -129,17 +129,19 @@ block → none       ❌ 不行（没有中间状态）
 
 **1. visibility 的特殊行为**
 
+`visibility` 是离散值（visible/hidden），但规范允许它过渡——按**计时插值**处理：隐藏方向在过渡**结束时**才切换为 hidden，显示方向在过渡**开始时**就切换为 visible。
+
 ```css
-/* visibility 可以过渡，但只有最后瞬间才切换 */
+/* 隐藏时：等待 0.3s 后瞬间变为 hidden */
 .box {
   visibility: visible;
   transition: visibility 0.3s;
 }
 .box:hover {
-  visibility: hidden;  /* 等待 0.3s 后瞬间隐藏 */
+  visibility: hidden;  /* 0.3s 后瞬间隐藏，期间一直可见 */
 }
 
-/* 推荐：配合 opacity 实现平滑过渡 */
+/* 推荐：配合 opacity 实现平滑的淡出 */
 .box {
   opacity: 1;
   visibility: visible;
@@ -147,7 +149,7 @@ block → none       ❌ 不行（没有中间状态）
 }
 .box.fade-out {
   opacity: 0;
-  visibility: hidden;  /* opacity 动画完成后隐藏 */
+  visibility: hidden;  /* 淡出动画播完后才隐藏，且不再响应事件 */
 }
 ```
 
@@ -854,9 +856,7 @@ sidebar.addEventListener('transitionend', function(e) {
 
 ```css
 .box {
-  -webkit-transition: width 0.3s ease;  /* Safari 6-8 */
-  -moz-transition: width 0.3s ease;     /* Firefox 4-15 */
-  -o-transition: width 0.3s ease;       /* Opera 10.5-12 */
+  -webkit-transition: width 0.3s ease;  /* 旧版 Safari（6.1 之前） */
   transition: width 0.3s ease;
 }
 ```

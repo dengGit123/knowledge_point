@@ -4,13 +4,13 @@
 
 `assetsInclude` 指定额外的静态资源文件类型，这些文件会被作为资源导入并返回 URL。
 
-**类型**：`string[] | (string => boolean)`
+**类型**：`string | RegExp | (string | RegExp)[]`
 
-**默认值**：`[]`（内置列表已包含常见类型）
+**默认值**：`undefined`（内置列表已包含常见类型）
 
 ## 可选值与使用方式
 
-### 1. 字符串数组
+### 1. 字符串 / 字符串数组（picomatch 模式）
 
 ```javascript
 // glob 模式匹配
@@ -18,21 +18,18 @@ export default {
   assetsInclude: ['**/*.gltf', '**/*.glb', '**/*.hdr']
 }
 
-// 精确扩展名
+// 单个字符串也可以
 export default {
-  assetsInclude: ['.abc', '.special']
+  assetsInclude: '**/*.gltf'
 }
 ```
 
-### 2. 函数形式
+### 2. 正则 / 正则数组
 
 ```javascript
-// 自定义判断逻辑
+// 正则匹配
 export default {
-  assetsInclude: (filePath) => {
-    return filePath.endsWith('.myasset') ||
-           filePath.includes('/assets/models/')
-  }
+  assetsInclude: [/\.(gltf|glb|hdr)$/]
 }
 ```
 
@@ -43,8 +40,7 @@ export default {
   assetsInclude: [
     '**/*.gltf',
     '**/*.glb',
-    // 函数也可以
-    (file) => file.endsWith('.custom')
+    /\.(hdr|exr)$/
   ]
 }
 ```
@@ -97,22 +93,16 @@ import myAssetUrl from './data/file.myasset'
 console.log(myAssetUrl) // /assets/file-abc123.myasset
 ```
 
-### 函数判断
+### 正则匹配特定目录
 
 ```javascript
 // vite.config.js
 export default {
-  assetsInclude: (filePath) => {
-    // 匹配特定目录下的所有文件
-    if (filePath.includes('/assets/special/')) {
-      return true
-    }
-    // 匹配特定扩展名
-    if (filePath.endsWith('.bin')) {
-      return true
-    }
-    return false
-  }
+  // 用正则匹配特定目录或扩展名（不支持函数形式）
+  assetsInclude: [
+    /\/assets\/special\//,   // 匹配特定目录下的所有文件
+    /\.bin$/                 // 匹配 .bin 扩展名
+  ]
 }
 ```
 
@@ -165,7 +155,9 @@ export default {
 ```javascript
 // vite.config.js
 export default {
-  assetsInclude: ['**/*.vrm', '**/*.json']  // .json 通常需要单独配置
+  // ⚠️ .json 不要加进来！JSON 有专门的导入处理（见 json 配置），
+  // 想要 URL 时用显式后缀：import url from './data.json?url'
+  assetsInclude: ['**/*.vrm', '**/*.csv', '**/*.yaml']
 }
 ```
 
@@ -247,9 +239,9 @@ assetsInclude: ['*.gltf']             // 缺少 **/
 ### 4. JSON 文件特殊处理
 
 ```javascript
-// JSON 文件默认有特殊处理（具名导出）
-// 如果想作为 URL 导入，需要显式指定
-import jsonFile from './data.json?url?url'
+// JSON 文件默认有专门处理（转换为 JS 对象，支持具名导出）
+// 如果想作为 URL 导入，显式加 ?url 后缀即可，无需配置 assetsInclude
+import jsonFileUrl from './data.json?url'
 ```
 
 ## 与其他属性的关系
@@ -323,10 +315,8 @@ export default defineConfig({
 export default defineConfig({
   assetsInclude: [
     '**/*.custom',
-    (filePath) => {
-      // 自定义逻辑：特定目录下的所有文件
-      return filePath.startsWith('/src/assets/special/')
-    }
+    // 正则匹配特定目录（不支持函数形式）
+    /\/src\/assets\/special\//
   ]
 })
 ```

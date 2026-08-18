@@ -8,11 +8,13 @@
 
 ```typescript
 {
-  modules?: CssModuleOptions
+  transformer?: 'postcss' | 'lightningcss'   // 实验性
+  modules?: CssModuleOptions | false
   preprocessorOptions?: { scss?: SassOptions; less?: LessOptions; styl?: StylusOptions }
+  preprocessorMaxWorkers?: number | true
   devSourcemap?: boolean
   postcss?: string | PostcssConfigOptions
-  lightningcss?: false | LightningCssOptions
+  lightningcss?: LightningCssOptions
 }
 ```
 
@@ -20,6 +22,7 @@
 
 ```javascript
 {
+  transformer: 'postcss',
   modules: {
     scopeBehaviour: 'local',
     globalModulePaths: [],
@@ -28,9 +31,10 @@
     localsConvention: undefined
   },
   preprocessorOptions: {},
+  preprocessorMaxWorkers: undefined,
   devSourcemap: false,
-  postcss: undefined,
-  lightningcss: false
+  postcss: undefined,   // 自动查找 postcss.config.js 等配置文件
+  lightningcss: undefined
 }
 ```
 
@@ -58,11 +62,11 @@ modules: {
   scopeBehaviour: 'global',     // 全局模式
 
   // 全局模块路径（这些文件中的类名不生成哈希）
+  // 类型：RegExp[]（只接受正则）
   globalModulePaths: [],
   globalModulePaths: [/node_modules/],
   globalModulePaths: [
-    /node_modules\/bootstrap/,
-    path.resolve(__dirname, 'src/styles/global.css')
+    /node_modules[\\/]bootstrap/
   ],
 
   // 生成类名的模式
@@ -337,53 +341,42 @@ postcss: {
 
 ### lightningcss
 
-**类型**：`false | LightningCssOptions`
+**类型**：`LightningCSSOptions`
 
-**默认值**：`false`
+**默认值**：`undefined`
 
-使用 Lightning CSS 处理（替代某些 PostCSS 功能）。
+Lightning CSS 的选项配置。**注意**：要启用 Lightning CSS，需要设置 `css.transformer: 'lightningcss'`，此选项只在那时生效（实验性功能，与 CSS 预处理器互不兼容）。
 
 ```javascript
-// 禁用（默认）
-lightningcss: false
+// 启用 Lightning CSS（关键：设置 transformer）
+css: {
+  transformer: 'lightningcss',  // 默认 'postcss'
+  lightningcss: {
+    // 目标浏览器
+    targets: {
+      safari: (15 << 16) | (2 << 8),  // lightningcss 用移位格式表示版本
+      chrome: 100 << 16,
+      firefox: 90 << 16
+    },
 
-// 启用基本配置
-lightningcss: true
+    // 或使用 browserslist 格式（lightningcss 内置支持）
+    targets: browserslistToTargets(browserslist('>= 0.25%, not dead')),
 
-// 对象形式 - 完整配置
-lightningcss: {
-  // 目标浏览器
-  targets: {
-    safari: (15, 2),
-    ios_saf: (15, 2),
-    chrome: 100,
-    firefox: 90
-  },
+    // 其他选项
+    drafts: {
+      customMedia: true
+    },
 
-  // 或使用 browserslist 格式
-  targets: {
-    browsers: ['>= 0.25%', 'not dead']
-  },
-
-  // 或使用字符串
-  targets: '>= 0.25%, not dead',
-
-  // 缩小/压缩
-  minify: true,
-  minify: false,
-
-  // 其他选项
-  drafts: {
-    customMediaQueries: true
-  },
-
-  // CSS 模块
-  cssModules: true,
-
-  // 其他
-  analyzeDependencies: false
+    // CSS Modules 配置
+    cssModules: { ... }
+  }
 }
 ```
+
+> ⚠️ **注意**：
+> - `css.transformer: 'lightningcss'` 是**实验性**功能，需要安装 `lightningcss` 作为依赖
+> - 启用后 **CSS 预处理器（SCSS/Less 等）不可用**（互不兼容）
+> - CSS 压缩改用 `build.cssMinify: 'lightningcss'`
 
 ## 可选值与使用方式
 
@@ -501,13 +494,17 @@ export default {
 ```javascript
 export default {
   css: {
+    // 关键：设置 transformer 才会启用 Lightning CSS
+    transformer: 'lightningcss',
     lightningcss: {
-      targets: '>= 0.25%, not dead',
-      minify: true,
+      targets: browserslistToTargets(browserslist('>= 0.25%, not dead')),
       drafts: {
-        customMediaQueries: true
+        customMedia: true
       }
     }
+  },
+  build: {
+    cssMinify: 'lightningcss'  // CSS 压缩同步切换
   }
 }
 ```
@@ -782,10 +779,14 @@ api: ['modern-compiler', 'legacy']
 ### 5. Lightning CSS 兼容性
 
 ```javascript
-// Lightning CSS 与某些 PostCSS 插件可能不兼容
-// 启用后，PostCSS 插件不会执行
+// 启用 css.transformer: 'lightningcss' 后：
+// - PostCSS 不会再处理 CSS（PostCSS 插件不会执行）
+// - CSS 预处理器（SCSS/Less 等）不可用
+// - 需要安装 lightningcss 依赖
 
-lightningcss: true  // PostCSS 插件不会生效
+css: {
+  transformer: 'lightningcss'  // ✅ 正确的启用方式
+}
 ```
 
 ### 6. 全局模块路径
@@ -897,21 +898,23 @@ export default defineConfig({
 ```javascript
 // vite.config.js
 import { defineConfig } from 'vite'
+import browserslist from 'browserslist'
+import { browserslistToTargets } from 'lightningcss'
 
 export default defineConfig({
   css: {
-    // 使用 Lightning CSS 替代 PostCSS
+    // 关键：切换 transformer 启用 Lightning CSS（实验性）
+    transformer: 'lightningcss',
     lightningcss: {
-      targets: '>= 0.25%, not dead',
-      minify: true,
+      targets: browserslistToTargets(browserslist('>= 0.25%, not dead')),
       drafts: {
-        customMediaQueries: true,
+        customMedia: true,
         nesting: true
       }
-    },
-
-    // 如果使用 Lightning CSS，禁用 PostCSS
-    postcss: undefined
+    }
+  },
+  build: {
+    cssMinify: 'lightningcss'
   }
 })
 ```

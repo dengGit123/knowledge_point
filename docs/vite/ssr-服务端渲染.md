@@ -8,10 +8,14 @@
 
 ```typescript
 {
-  noExternal?: string[] | true | RegExp | ((id: string) => boolean)
-  external?: string[]
+  noExternal?: string | RegExp | (string | RegExp)[] | true
+  external?: string[] | true
   target?: 'node' | 'webworker'
-  ssrLoadModule?: (url: string) => Promise<any>
+  optimizeDeps?: {}   // SSR 场景的依赖优化配置（实验性）
+  resolve?: {
+    conditions?: string[]
+    externalConditions?: string[]
+  }
 }
 ```
 
@@ -19,10 +23,9 @@
 
 ```javascript
 {
-  noExternal: [],
-  external: [],
-  target: 'node',
-  ssrLoadModule: undefined
+  noExternal: undefined,
+  external: undefined,
+  target: 'node'
 }
 ```
 
@@ -30,11 +33,11 @@
 
 ### noExternal
 
-**类型**：`string[] | true | RegExp | ((id: string) => boolean)`
+**类型**：`string | RegExp | (string | RegExp)[] | true`
 
-**默认值**：`[]`
+**默认值**：`undefined`
 
-强制将依赖进行 SSR 打包（即使它们是 ESM 格式）。
+强制将依赖进行 SSR 打包（即不外部化，打进产物）。
 
 ```javascript
 // 字符串数组
@@ -44,17 +47,14 @@ noExternal: ['vue', 'vue-router'],
 noExternal: true,
 
 // 正则匹配
-noExternal: /^@scope\/.*/,
-
-// 函数判断
-noExternal: (id) => id.includes('custom')
+noExternal: /^@scope\/.*/
 ```
 
 ### external
 
-**类型**：`string[]`
+**类型**：`string[] | true`
 
-**默认值**：`[]`
+**默认值**：`undefined`（自动外部化——linked 依赖/Node 内置模块默认外部化）
 
 强制将依赖标记为外部依赖（不打包）。
 
@@ -78,19 +78,25 @@ target: 'node',
 target: 'webworker'
 ```
 
-### ssrLoadModule
+### 关于 ssrLoadModule
 
-**类型**：`(url: string) => Promise<any>`
-
-**默认值**：`undefined`
-
-自定义 SSR 模块加载函数。
+> ⚠️ **注意**：`ssrLoadModule` **不是** `ssr` 配置项，而是开发服务器（`ViteDevServer`）实例上的**方法**，用于在 Node 环境中按需加载 SSR 模块：
 
 ```javascript
-ssrLoadModule: (url) => {
-  // 自定义加载逻辑
-  return import(url)
-}
+// server.js（自定义 SSR 服务器）
+import { createServer } from 'vite'
+
+// 创建 Vite 开发服务器
+const vite = await createServer({
+  server: { middlewareMode: true },
+  appType: 'custom'
+})
+
+// 用 ssrLoadModule 加载源码模块（享受即时编译，无需预构建）
+const { render } = await vite.ssrLoadModule('/src/entry-server.js')
+
+// 生产模式下改用 build 产物
+// const { render } = await import('./dist/server/entry-server.js')
 ```
 
 ## 可选值与使用方式
@@ -101,8 +107,6 @@ ssrLoadModule: (url) => {
 // vite.config.js
 export default {
   ssr: {
-    noExternal: [],
-    external: [],
     target: 'node'
   }
 }
@@ -150,16 +154,7 @@ export default {
 
 ### 自定义模块加载
 
-```javascript
-export default {
-  ssr: {
-    ssrLoadModule: (url) => {
-      console.log('Loading module:', url)
-      return import(url)
-    }
-  }
-}
-```
+如需自定义 SSR 模块加载，请在服务器侧直接调用 `vite.ssrLoadModule()` 方法（见上文说明），或使用 `createViteRuntime` 等高级 API，而不是通过 `ssr` 配置项。
 
 ## 生效后的结果示例
 
@@ -207,13 +202,8 @@ dist/
 // vite.config.js
 export default {
   ssr: {
-    // 匹配 @my-scope 下所有包
-    noExternal: /^@my-scope\/.*/,
-
-    // 或使用函数
-    noExternal: (id) => {
-      return id.startsWith('@my-org/') || id.includes('custom')
-    }
+    // 匹配 @my-scope 下所有包（支持正则）
+    noExternal: /^@my-scope\/.*/
   }
 }
 ```
@@ -299,15 +289,14 @@ ssr: {
 ### 3. 目标环境差异
 
 ```javascript
-// Node.js 环境
+// Node.js 环境（默认）——Node 内置模块（fs、path 等）自动被外部化，无需手动配置
 ssr: {
-  target: 'node',
-  external: ['fs', 'path', 'url']  // Node.js 内置模块
+  target: 'node'
 }
 
-// Web Worker 环境
+// Web Worker 环境（如 Cloudflare Workers）——依赖会被打包进产物而非外部化
 ssr: {
-  target: 'webworker'  // 不能外部化 Node 模块
+  target: 'webworker'
 }
 ```
 
@@ -346,19 +335,17 @@ export default defineConfig({
   },
 
   build: {
-    // 生成 SSR 构建产物
-    ssr: true,
-    // 生成 CSS 清单
+    // 生成 CSS 资源清单（供 hydration 时加载客户端资源）
     ssrManifest: true
   }
 })
 ```
 
 ```bash
-# 构建命令
+# 构建客户端产物
 vite build
 
-# SSR 入口
+# 构建 SSR 产物（--ssr 指定服务端入口）
 vite build --ssr src/entry-server.js
 ```
 
@@ -423,27 +410,32 @@ export default defineConfig(({ mode }) => {
 })
 ```
 
-### 自定义 SSR 加载器
+### 自定义 SSR 加载器（带缓存）
+
+在服务器代码中使用 `vite.ssrLoadModule()` 并自行封装缓存：
 
 ```javascript
-// vite.config.js
-export default defineConfig({
-  ssr: {
-    ssrLoadModule: async (url) => {
-      // 添加缓存
-      const cache = new Map()
+// server.js
+import { createServer as createViteServer } from 'vite'
 
-      if (cache.has(url)) {
-        return cache.get(url)
-      }
-
-      const module = await import(url)
-      cache.set(url, module)
-
-      return module
-    }
-  }
+const vite = await createViteServer({
+  server: { middlewareMode: true },
+  appType: 'custom'
 })
+
+// 带缓存的模块加载
+const cache = new Map()
+
+async function loadSsrModule(url) {
+  if (cache.has(url)) {
+    return cache.get(url)
+  }
+  const module = await vite.ssrLoadModule(url)
+  cache.set(url, module)
+  return module
+}
+
+const { render } = await loadSsrModule('/src/entry-server.js')
 ```
 
 ## 常见问题
@@ -485,7 +477,8 @@ ssr: {
 ```javascript
 export default {
   build: {
-    ssrManifest: true  // 生成 CSS 清单
+    // 生成资源清单（记录客户端构建的 JS/CSS 产物映射，供 SSR 框架注入 <link>/<script>）
+    ssrManifest: true
   }
 }
 ```

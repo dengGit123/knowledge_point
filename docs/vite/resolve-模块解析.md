@@ -22,8 +22,8 @@
 ```javascript
 {
   alias: {},
-  extensions: ['.mjs', '.js', '.mts', '.cjs', '.cts', '.jsx', '.tsx', '.json'],
-  mainFields: ['module', 'jsnext:main', 'jsnext', 'browser', 'main'],
+  extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
+  mainFields: ['browser', 'module', 'jsnext:main', 'jsnext'],
   conditions: [],
   dedupe: [],
   preserveSymlinks: false
@@ -101,16 +101,16 @@ alias: [
 
 **类型**：`string[]`
 
-**默认值**：`['.mjs', '.js', '.mts', '.cjs', '.cts', '.jsx', '.tsx', '.json']`
+**默认值**：`['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']`
 
 导入模块时自动尝试的扩展名列表。
 
 ```javascript
 // 默认配置（通常不需要修改）
-extensions: ['.mjs', '.js', '.mts', '.cjs', '.cts', '.jsx', '.tsx', '.json']
+extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']
 
-// 添加自定义扩展名
-extensions: ['.js', '.ts', '.jsx', '.tsx', '.json', '.vue']
+// 添加自定义扩展名（如 .vue）
+extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json', '.vue']
 
 // 常用扩展名放在前面提高解析速度
 extensions: ['.vue', '.js', '.ts', '.json']
@@ -119,29 +119,30 @@ extensions: ['.vue', '.js', '.ts', '.json']
 extensions: ['.js', '.ts', '.json']
 ```
 
+> ⚠️ **注意**：默认列表中**不含 `.vue` / `.cts` / `.cjs`**。Vue 项目需要按上面的方式把 `.vue` 加进去（不过 `@vitejs/plugin-vue` 会自动处理 `.vue` 文件，通常无需手动添加）。
+
 ### mainFields
 
 **类型**：`string[]`
 
-**默认值**：`['module', 'jsnext:main', 'jsnext', 'browser', 'main']`
+**默认值**：`['browser', 'module', 'jsnext:main', 'jsnext']`
 
 从 package.json 中读取的字段优先级。
 
+> ⚠️ **注意**：默认值中**不含 `main`**（Vite 3 起移除）。如果依赖包只提供 CommonJS 的 `main` 入口且解析失败，需要手动补上：`mainFields: ['browser', 'module', 'jsnext:main', 'jsnext', 'main']`
+
 ```javascript
 // 默认配置
-mainFields: ['module', 'jsnext:main', 'jsnext', 'browser', 'main']
+mainFields: ['browser', 'module', 'jsnext:main', 'jsnext']
+
+// 兼容只提供 main 入口的包
+mainFields: ['browser', 'module', 'jsnext:main', 'jsnext', 'main']
 
 // 仅使用 ES Module
 mainFields: ['module', 'browser']
 
-// 仅使用 CommonJS
-mainFields: ['main', 'browser']
-
-// 自定义优先级
-mainFields: ['browser', 'module', 'main']
-
-// Node.js 环境
-mainFields: ['module', 'main']
+// Node.js 环境（SSR）
+mainFields: ['module', 'jsnext:main', 'jsnext', 'main']
 ```
 
 **package.json 示例**：
@@ -240,8 +241,8 @@ preserveSymlinks: true
 export default {
   resolve: {
     alias: {},
-    extensions: ['.mjs', '.js', '.mts', '.cjs', '.cts', '.jsx', '.tsx', '.json'],
-    mainFields: ['module', 'jsnext:main', 'jsnext', 'browser', 'main'],
+    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
+    mainFields: ['browser', 'module', 'jsnext:main', 'jsnext'],
     conditions: [],
     dedupe: [],
     preserveSymlinks: false
@@ -486,10 +487,10 @@ export default defineConfig({
 // vite.config.js
 export default {
   resolve: {
-    // 优先使用 ES Module
-    mainFields: ['module', 'browser', 'main'],
+    // 优先使用 ES Module（在默认值基础上补充 main 做兜底）
+    mainFields: ['browser', 'module', 'jsnext:main', 'jsnext', 'main'],
     // 支持多种扩展名
-    extensions: ['.mjs', '.js', '.json', '.wasm'],
+    extensions: ['.mjs', '.js', '.mts', '.ts', '.json'],
     // 导出条件
     conditions: ['module', 'browser']
   }

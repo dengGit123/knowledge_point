@@ -340,7 +340,7 @@ rollupOptions: {
   // 外部依赖
   external: ['vue', 'vue-router'],
   // 或函数
-  external: (id) => id.startsWith(' @my-scope/'),
+  external: (id) => id.startsWith('@my-scope/'),
 
   // 插件
   plugins: [],
@@ -405,7 +405,7 @@ chunkFileNames: 'static/js/chunks/[name]-[hash:8].js'
 
 **类型**：`string`
 
-**默认值：`"[name].js"`（开发环境）` / `"[name]-[hash].js"`（生产环境，非库模式）
+**默认值**：`"[name]-[hash].js"`
 
 入口文件的文件名模板。
 
@@ -428,7 +428,7 @@ entryFileNames: 'entry-[name]-[hash].js'
 
 **类型**：`string | (assetInfo: AssetInfo) => string`
 
-**默认值：`"[name]-[hash][extname]"`
+**默认值**：`"[name]-[hash][extname]"`
 
 静态资源（CSS、图片、字体等）的文件名模板。
 
@@ -787,7 +787,7 @@ dist/
 
 **类型**：`'es' | 'module' | 'cjs' | 'commonjs' | 'umd' | 'iife' | 'system' | 'amd'`
 
-**默认值：`'es'`
+**默认值**：`'es'``
 
 输出模块格式。
 
@@ -806,7 +806,7 @@ format: 'amd'          // AMD
 
 **类型**：`'default' | 'named' | 'auto' | 'default-only'`
 
-**默认值：`'auto'`
+**默认值**：`'auto'``
 
 控制导出方式。
 
@@ -823,7 +823,7 @@ exports: 'default-only' // 仅使用 default 导出
 
 **类型**：`{ [packageName: string ]: string }`
 
-**默认值：`undefined`
+**默认值**：`undefined``
 
 UMD/IIFE 格式时，指定依赖包的全局变量名。
 
@@ -847,7 +847,7 @@ globals: {
 
 **类型**：`boolean`
 
-**默认值：`true`（生产环境）
+**默认值**：`true`（生产环境）
 
 是否压缩输出代码（格式化）。
 
@@ -860,7 +860,7 @@ compact: false  // 保留格式（便于调试）
 
 **类型**：`boolean`
 
-**默认值：`true`
+**默认值**：`true``
 
 是否处理 interop（不同模块系统间的互操作）。
 
@@ -873,7 +873,7 @@ interop: false  // 禁用
 
 **类型**：`boolean`
 
-**默认值：`false`
+**默认值**：`false``
 
 是否保留模块结构（不合并模块）。
 
@@ -910,7 +910,7 @@ preserveModulesRoot: 'src'
 
 **类型**：`boolean`
 
-**默认值：`undefined`
+**默认值**：`undefined``
 
 是否内联动态导入。
 

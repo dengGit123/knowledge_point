@@ -13,9 +13,11 @@
   needsInterop?: string[]
   esbuildOptions?: EsbuildOptions
   force?: boolean
-  disabled?: boolean | 'build'
+  /** @deprecated 已弃用 */
+  disabled?: boolean | 'build' | 'dev'
   noDiscovery?: boolean
-  entries?: string[]
+  holdUntilCrawlEnd?: boolean
+  entries?: string | string[]
 }
 ```
 
@@ -28,9 +30,10 @@
   needsInterop: [],
   esbuildOptions: {},
   force: false,
-  disabled: false,
+  disabled: 'build',      // 已弃用，勿再使用
   noDiscovery: false,
-  entries: []
+  holdUntilCrawlEnd: true,
+  entries: undefined      // 默认自动从 index.html 扫描
 }
 ```
 
@@ -51,8 +54,11 @@ include: ['vue', 'vue-router', 'axios']
 // Monorepo 中的本地包
 include: ['@my-app/shared', '@my-app/utils']
 
-// 使用 glob 模式
-include: ['@my-app/*']
+// ❌ 不支持 glob 模式，必须是可解析的导入路径
+// include: ['@my-app/*']  // 错误！
+
+// 深层导入也可以
+include: ['my-lib/components/Button.vue']
 
 // ESM 格式的依赖
 include: ['some-esm-library']
@@ -152,23 +158,25 @@ force: false  // 使用缓存（默认）
 force: true   // 强制重新构建
 ```
 
-### disabled
+### disabled（已弃用）
 
-**类型**：`boolean | 'build'`
+**类型**：`boolean | 'build' | 'dev'`
 
-**默认值**：`false`
+**默认值**：`'build'`
 
-禁用依赖预构建。
+> ⚠️ **已弃用**：Vite 5.1 起移除了构建期间的依赖优化，该选项已冗余，未来版本将删除。如需禁用依赖自动发现，改用 `optimizeDeps.noDiscovery: true` 并将 `include` 留空。
 
 ```javascript
-// 完全禁用
-disabled: true
+// ❌ 旧写法（已弃用）
+optimizeDeps: {
+  disabled: true
+}
 
-// 仅在构建时禁用（用于 SSR）
-disabled: 'build'
-
-// 根据环境
-disabled: process.env.NODE_ENV === 'production'
+// ✅ 新写法
+optimizeDeps: {
+  noDiscovery: true,
+  include: []
+}
 ```
 
 ### noDiscovery
@@ -216,9 +224,8 @@ export default {
     needsInterop: [],
     esbuildOptions: {},
     force: false,
-    disabled: false,
     noDiscovery: false,
-    entries: []
+    holdUntilCrawlEnd: true
   }
 }
 ```
@@ -257,8 +264,8 @@ export default {
 ```javascript
 export default {
   optimizeDeps: {
-    // SSR 构建时禁用预构建
-    disabled: 'build'
+    // SSR 场景：构建期依赖优化已在 Vite 5.1 移除，无需配置 disabled
+    // 如需控制 SSR 的依赖预构建，使用 ssr.optimizeDeps
   }
 }
 ```
@@ -381,8 +388,8 @@ export default {
 // vite.config.js
 export default {
   optimizeDeps: {
-    // 仅开发环境预构建
-    disabled: 'build'
+    // 依赖预构建只在开发服务器（vite dev）中运行
+    // 构建期（vite build）由 Rollup 处理依赖，无需（也无法）配置禁用
   }
 }
 ```
@@ -486,14 +493,15 @@ optimizeDeps: {
 }
 ```
 
-### 5. disabled: 'build' 场景
+### 5. 禁用自动发现（替代旧 disabled 的场景）
 
 ```javascript
-// disabled: 'build' 主要用于 SSR 应用
-// 开发环境仍会预构建，构建时跳过
+// 旧版用 disabled: 'dev' 禁用预构建，现已弃用
+// 现代替代方案：禁用自动发现，仅预构建 include 中的依赖
 
 optimizeDeps: {
-  disabled: 'build'
+  noDiscovery: true,
+  include: []   // 留空则不做任何预构建
 }
 ```
 
@@ -634,9 +642,6 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   optimizeDeps: {
-    // SSR 构建时禁用预构建
-    disabled: 'build',
-
     // 开发环境强制预构建某些依赖
     include: ['@ssr/async-component']
   }

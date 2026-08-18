@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(curl *)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(npm run *)",
@@ -72,14 +73,22 @@
       "mcp__ide__getDiagnostics",
       "Bash(open *)",
       "Bash(node *)",
-      "Bash(curl -s --max-time 25 'https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/GeneratorFunction')",
       "Bash(python3 -c ' *)",
-      "Bash(curl -s --max-time 25 'https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/GeneratorFunction/GeneratorFunction')",
-      "Bash(curl -s --max-time 25 'https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect')",
-      "Bash(curl -s --max-time 25 'https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/void' -o /dev/null -w '%{http_code}\\\\n')",
-      "Bash(curl -s --max-time 25 'https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy')",
       "Bash(grep -n '```' 'Reflect\\(反射\\).md')",
-      "Bash(grep -n '```' '可选链-空值合并运算符.md')"
+      "Bash(grep -n '```' '可选链-空值合并运算符.md')",
+      "Read(//tmp/**)",
+      "WebFetch(domain:vitejs.dev)",
+      "Bash(grep *)",
+      "Bash(sed -n '218,230p' 'optimizeDeps-依赖预构建.md')",
+      "Bash(sed -n '385,395p' 'optimizeDeps-依赖预构建.md')",
+      "Bash(sed -n '490,510p' 'optimizeDeps-依赖预构建.md')",
+      "Bash(sed -n '638,650p' 'optimizeDeps-依赖预构建.md')",
+      "Bash(sed -n '150,175p' 'ssr-服务端渲染.md')",
+      "Bash(sed -n '210,230p' 'ssr-服务端渲染.md')",
+      "Bash(sed -n '425,455p' 'ssr-服务端渲染.md')",
+      "Bash(sed -n '488,512p' 'css-样式处理.md')",
+      "Bash(sed -n '775,790p' 'css-样式处理.md')",
+      "Bash(sed -n '884,912p' 'css-样式处理.md')"
     ],
     "deny": [],
     "ask": [],

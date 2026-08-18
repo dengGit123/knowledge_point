@@ -381,8 +381,8 @@ img {
 ```css
 img {
   filter: hue-rotate(0deg);      /* 原始色相 */
-  filter: hue-rotate(90deg);     /* 旋转 90 度 */
-  filter: hue-rotate(180deg);    /* 旋转 180 度（反色） */
+  filter: hue-rotate(90deg);     /* 色相环旋转 90 度 */
+  filter: hue-rotate(180deg);    /* 旋转 180 度（互补色，注意不等于 invert 反色） */
   filter: hue-rotate(270deg);    /* 旋转 270 度 */
   filter: hue-rotate(360deg);    /* 旋转 360 度（回到原色） */
 }
@@ -407,9 +407,10 @@ img {
 ```
 原图              hue-rotate(90deg)     hue-rotate(180deg)
 ┌─────────┐       ┌─────────┐       ┌─────────┐
-│   红    │   →   │   蓝    │   →   │   青    │
+│   红    │   →   │   黄绿  │   →   │   青    │
 │  ████   │       │  ▓▓▓▓   │       │  ░░░░   │
 └─────────┘       └─────────┘       └─────────┘
+（红色约在色相环 0°，旋转 90° 后变为黄绿色，旋转 180° 后变为青色/互补色）
 ```
 
 ### 8.4 应用场景
@@ -579,8 +580,8 @@ button:disabled {
 /* 语法与 box-shadow 类似，但有区别 */
 filter: drop-shadow(10px 10px 10px rgba(0, 0, 0, 0.5));
 
-/* 完整语法 */
-filter: drop-shadow(offset-x | offset-y | blur-radius | spread-radius | color);
+/* 完整语法：offset-x offset-y blur-radius color（没有 spread-radius！）*/
+filter: drop-shadow(offset-x | offset-y | blur-radius | color);
 
 /* 简写语法 */
 filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.5));
@@ -999,18 +1000,8 @@ img:hover {
 
 | 滤镜函数 | Chrome | Firefox | Safari | Edge |
 |----------|--------|---------|--------|------|
-| `blur()` | 18+ | 35+ | 9+ | 13+ |
-| `brightness()` | 18+ | 35+ | 9+ | 13+ |
-| `contrast()` | 18+ | 35+ | 9+ | 13+ |
-| `grayscale()` | 18+ | 35+ | 9+ | 13+ |
-| `sepia()` | 18+ | 35+ | 9+ | 13+ |
-| `saturate()` | 18+ | 35+ | 9+ | 13+ |
-| `hue-rotate()` | 18+ | 35+ | 9+ | 13+ |
-| `invert()` | 18+ | 35+ | 9+ | 13+ |
-| `opacity()` | 18+ | 35+ | 9+ | 13+ |
-| `drop-shadow()` | 18+ | 35+ | 9+ | 13+ |
-| `url()` | 18+ | 35+ | 9+ | 13+ |
-| `backdrop-filter` | 76+ | 103+ | 9+ | 79+ |
+| `blur()` 等滤镜函数 | 18+ | 35+ | 9.1+ | 13+ |
+| `backdrop-filter` | 76+ | 103+ | 18+（9+ 需 `-webkit-` 前缀） | 79+ |
 
 ### 前缀处理
 

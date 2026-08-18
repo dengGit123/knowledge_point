@@ -8,10 +8,9 @@
 
 ```typescript
 {
-  format?: 'es' | 'iife' | 'module'
-  plugins?: Plugin[]
+  format?: 'es' | 'iife'
+  plugins?: () => PluginOption[]
   rollupOptions?: RollupOptions
-  enabled?: boolean
 }
 ```
 
@@ -20,9 +19,8 @@
 ```javascript
 {
   format: 'iife',
-  plugins: [],
-  rollupOptions: {},
-  enabled: true
+  plugins: () => [],
+  rollupOptions: {}
 }
 ```
 
@@ -30,7 +28,7 @@
 
 ### format
 
-**类型**：`'es' | 'iife' | 'module'`
+**类型**：`'es' | 'iife'`
 
 **默认值**：`'iife'`
 
@@ -39,26 +37,25 @@ Worker 输出格式。
 ```javascript
 format: 'iife',      // 立即执行函数（默认）
 format: 'es',        // ES Module
-format: 'module'     // 同 'es'
 ```
 
 ### plugins
 
-**类型**：`Plugin[]`
+**类型**：`() => PluginOption[]`
 
-**默认值**：`[]`
+**默认值**：`() => []`
 
-Worker 专用插件。
+Worker 专用插件。注意是**函数形式**：每次 Worker 打包时会调用该函数获取插件实例（因此需要返回全新实例）。
 
 ```javascript
-plugins: [
-  // 仅在 Worker 构建时使用的插件
+plugins: () => [
+  // 仅在 Worker 构建时使用的插件（每次调用都应返回新实例）
 ]
 ```
 
 ### rollupOptions
 
-**类型**：`RollupOptions`
+**类型**：`RollupOptions`（不允许覆盖 `plugins` / `input` / `onwarn` / `preserveEntrySignatures`）
 
 **默认值**：`{}`
 
@@ -72,19 +69,6 @@ rollupOptions: {
 }
 ```
 
-### enabled
-
-**类型**：`boolean`
-
-**默认值**：`true`
-
-是否启用 Worker 打包。
-
-```javascript
-enabled: true   // 启用（默认）
-enabled: false  // 禁用
-```
-
 ## 可选值与使用方式
 
 ### 默认配置
@@ -94,9 +78,8 @@ enabled: false  // 禁用
 export default {
   worker: {
     format: 'iife',
-    plugins: [],
-    rollupOptions: {},
-    enabled: true
+    plugins: () => [],
+    rollupOptions: {}
   }
 }
 ```
@@ -134,21 +117,12 @@ import workerPlugin from './worker-plugin'
 
 export default defineConfig({
   worker: {
-    plugins: [
+    // 注意：是函数形式，每次调用返回新实例
+    plugins: () => [
       workerPlugin()  // 仅在 Worker 构建时运行
     ]
   }
 })
-```
-
-### 禁用 Worker 打包
-
-```javascript
-export default {
-  worker: {
-    enabled: false  // 禁用 Worker 打包
-  }
-}
 ```
 
 ## 生效后的结果示例
@@ -452,7 +426,7 @@ function workerTransformPlugin() {
 
 export default defineConfig({
   worker: {
-    plugins: [
+    plugins: () => [
       workerTransformPlugin()
     ]
   }
@@ -545,11 +519,23 @@ import Worker from './worker.js?worker'
 
 **解决**：
 
+在 `tsconfig.json` 的 `lib` 中加入 `"WebWorker"`，或为 Worker 文件添加引用：
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "lib": ["ES2020", "DOM", "WebWorker"]
+  }
+}
+```
+
 ```typescript
-// src/workers/worker.d.ts
+// src/workers/compute.ts 顶部添加（单独声明文件方式）
 /// <reference lib="webworker" />
 
-export default function export() {}
+// 若使用 import Worker from './xxx?worker' 导入构造器，
+// Vite 客户端类型（vite/client）已内置 ?worker 的类型声明
 ```
 
 ### 问题 3：Worker 文件路径错误

@@ -25,7 +25,7 @@
 * space-between: 两端对齐，子项之间的间隔都相等
 * space-around: 每个子项两侧的间隔相等，所以子项之间的间隔比子项与边框的间隔大一倍
 * space-evenly: 所有子项与子项之间间隔相等，包括子项与边框的间隔
-* 注意：该子项将等分剩余空间，如果剩余空间为负值，则子项会等比压缩。
+* 注意：这些对齐方式分配的是**剩余空间**；如果空间不足（剩余空间为负值），子项会按 flex-shrink 收缩。
 
 5. `align-items:` 交叉轴上的对齐方式
 * flex-start: 交叉轴的起点对齐
@@ -292,38 +292,40 @@
 
 **误区2：忘记设置`overflow`属性**
 
-`min-height:0`只是**允许**子项收缩，但如果没有`overflow`属性，超出的内容仍然会**撑开**容器：
+`min-height:0`能让子项收缩到固定高度，但溢出的内容默认`overflow: visible`，会**溢出到子项盒子之外**显示（视觉上"溢出"到相邻区域），看起来像布局错乱：
 
 ```css
 .flex-item {
   flex: 1;
   min-height: 0;  /* 允许收缩 */
-  /* ❌ 缺少overflow，内容仍会撑开容器 */
+  /* ⚠️ 缺少 overflow，超出的内容会溢出到盒子外面显示 */
 }
 ```
 
-**正确做法**：
+**正确做法**（按需选择）：
 
 ```css
 .flex-item {
   flex: 1;
   min-height: 0;  /* 允许收缩 */
   overflow-y: auto;  /* ✅ 超出部分滚动 */
-  /* 或 overflow: hidden; 超出部分隐藏 */
+  /* 或 overflow: hidden; 超出部分裁剪隐藏 */
 }
 ```
 
 **误区3：子元素设置了`min-height`或固定`height`**
 
-即使父容器设置了`min-height:0`，如果子元素本身设置了`min-height`或固定`height`，仍然会影响布局：
+子元素的实际高度是父容器分配的高度与内容高度共同作用的结果。父容器设置`min-height:0`后，若子元素固定高度小于分配空间则相安无事；若子元素设置了很大的`min-height`或固定`height`，作为**普通块级内容**它仍会把父容器内容区撑高（除非父容器有`overflow`裁剪）：
 
 ```css
 .inner-content {
-  min-height: 600px;  /* ❌ 这个会强制父容器至少600px */
+  min-height: 600px;  /* ⚠️ 会把父容器内容区至少撑到 600px */
   /* 或 */
-  height: 600px;  /* ❌ 固定高度也会撑开父容器 */
+  height: 600px;      /* ⚠️ 同样会把父容器内容区撑到 600px */
 }
 ```
+
+此时需给 flex 子项加 `overflow: hidden/auto` 裁剪，或改用 `max-height` 约束。
 
 **误区4：父容器没有明确的高度**
 
@@ -349,7 +351,7 @@
 | 父容器是否有明确高度 | ✅ | `height: 500px` / `height: 100%` / `height: 100vh` |
 | 每一层`flex:1`子项是否有`min-height:0` | ✅ | 嵌套多少层就要设置多少层 |
 | 最内层容器是否有`overflow` | ✅ | `overflow-y: auto` 或 `overflow: hidden` |
-| 子元素是否有`min-height`或固定`height` | ❌ | 如果有，考虑移除或改为`max-height` |
+| 子元素是否有很大的`min-height`或固定`height` | ❌ | 有的话考虑移除、改小，或配合`overflow`裁剪 |
 
 **终极解决方案**：
 

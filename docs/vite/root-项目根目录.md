@@ -297,15 +297,15 @@ export default {
 ### 2. 相对路径的基准
 
 ```javascript
-// vite.config.js 位于 project/config/
+// vite.config.js 位于 project/
 export default {
-  root: './src',  // 相对于配置文件目录
+  root: './src',  // 相对于 vite.config.js 所在目录解析
 
-  // 以下路径都是相对于 root（即 project/src/）
+  // 其余路径配置都相对于 root（即 project/src/）
   publicDir: './public',     // 实际指向 project/src/public
   cacheDir: './.vite',       // 实际指向 project/src/.vite
 
-  // 如果想指向项目根目录，需要使用绝对路径
+  // 如果想指向项目根目录之外，建议使用绝对路径
   build: {
     outDir: path.resolve(__dirname, '../dist')  // project/dist
   }
@@ -314,12 +314,12 @@ export default {
 
 ### 3. 配置文件查找
 
-配置文件本身的查找从 `process.cwd()` 开始向上搜索，不受 `root` 配置影响：
+配置文件默认在项目根目录（即运行 `vite` 命令的目录，`process.cwd()`）下查找，**不会向上递归查找父目录**：
 
 ```javascript
 // 在 any-directory/ 下运行 vite
-// Vite 会向上查找 vite.config.js
-// 找到后，config.root 才生效
+// Vite 只会在 any-directory/ 下查找 vite.config.js
+// 找不到就使用默认配置（不会去父目录找）
 
 // 配置示例
 export default {
@@ -367,7 +367,7 @@ const config: UserConfig = {
 | `cacheDir` | 默认值为 `<root>/node_modules/.vite`，受 `root` 影响 |
 | `envDir` | 默认值为 `<root>`，环境变量文件查找位置 |
 | `base` | `base` 是 URL 路径前缀，`root` 是文件系统路径，两者独立 |
-| `configFile` | 配置文件查找不受 `root` 影响，从 `process.cwd()` 向上搜索 |
+| `configFile` | 配置文件默认在 `root` 目录下查找，不向上递归 |
 | `build.outDir` | 相对路径时相对于 `root` |
 | `server.fs.allow` | 文件系统访问控制基于 `root` |
 

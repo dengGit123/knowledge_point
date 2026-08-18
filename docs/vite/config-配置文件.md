@@ -12,30 +12,25 @@
 
 ### 支持的配置文件名
 
-Vite 会按照以下优先级自动查找配置文件：
+Vite 会自动查找 `vite.config.js`、`vite.config.mjs`、`vite.config.ts`、`vite.config.cjs`、`vite.config.mts`、`vite.config.cts`，找到第一个即使用：
 
-| 优先级 | 文件名 | 说明 |
-|--------|--------|------|
-| 1 | `vite.config.js` | 标准 JavaScript 配置 |
-| 2 | `vite.config.mjs` | ES Module 格式 |
-| 3 | `vite.config.ts` | TypeScript 配置 |
-| 4 | `vite.config.mts` | TypeScript ES Module |
-| 5 | `vite.config.cjs` | CommonJS 格式 |
-| 6 | `vite.config.cts` | TypeScript CommonJS |
+| 文件名 | 说明 |
+|--------|------|
+| `vite.config.js` | 会根据 `package.json` 的 `type` 字段当作 ESM 或 CJS 加载 |
+| `vite.config.mjs` | 明确以 ES Module 格式加载 |
+| `vite.config.ts` | TypeScript，自动用 esbuild 转译 |
+| `vite.config.mts` | TypeScript ES Module |
+| `vite.config.cjs` | CommonJS 格式 |
+| `vite.config.cts` | TypeScript CommonJS |
 
-### 查找顺序
+### 查找位置
 
-从当前工作目录（`process.cwd()`）开始，向上递归查找：
+配置文件在 **项目根目录**（`root` 配置项，默认 `process.cwd()`）下查找，**不会向上递归查找父目录**：
 
 ```javascript
-// 运行 vite 命令时
-// 当前目录：/home/user/project/app/
-
-// 查找顺序：
-// 1. /home/user/project/app/vite.config.js
-// 2. /home/user/project/vite.config.js
-// 3. /home/user/vite.config.js
-// ... 直到找到或到达根目录
+// 在 /home/user/project/app/ 下运行 vite
+// 只会查找：/home/user/project/app/vite.config.{js,mjs,ts,cjs,mts,cts}
+// 不会去 /home/user/project/ 或更上层找
 ```
 
 ## 可选值与使用方式
@@ -381,8 +376,8 @@ export default {
 
 ```javascript
 // configFile 的查找
-// - 从 process.cwd() 开始向上搜索
-// - 不受 root 配置影响
+// - 默认在项目根目录（root，默认 process.cwd()）下查找
+// - 不会向上递归查找父目录
 
 // root 的作用
 // - 指定项目根目录
@@ -398,7 +393,7 @@ export default {
 
 | 属性 | 关系说明 |
 |------|----------|
-| `root` | `configFile` 查找不受 `root` 影响，从 `process.cwd()` 向上搜索 |
+| `root` | 配置文件默认在 `root` 目录（默认 `process.cwd()`）下查找，不向上递归 |
 | `mode` | 配置文件可以通过函数参数获取当前 `mode` |
 | `envDir` | 环境变量目录查找基于 `root`，不受 `configFile` 位置影响 |
 

@@ -11,7 +11,7 @@
   host?: string | boolean
   port?: number
   strictPort?: boolean
-  https?: boolean | HttpsServerOptions
+  https?: HttpsServerOptions
   open?: boolean | string | string[] | OpenAppOptions
   proxy?: Record<string, string | ProxyOptions>
   cors?: boolean | CorsOptions
@@ -30,29 +30,29 @@
   host: 'localhost',
   port: 5173,
   strictPort: false,
-  https: false,
+  https: undefined,
   open: false,
   proxy: {},
-  cors: true,
+  cors: true,          // 允许来自任何源的请求
   headers: {},
   hmr: {
-    protocol: null,
-    host: null,
-    port: null,
-    clientPort: null,
-    path: '/vite/hmr',
-    overlay: true
+    protocol: undefined,
+    host: undefined,
+    port: 24678,        // HMR WebSocket 默认端口
+    clientPort: undefined,
+    path: undefined,    // 默认基于 base
+    overlay: true       // 错误遮罩层
   },
   watch: {
-    ignored: null,
+    ignored: undefined,
     usePolling: false,
     interval: 100
   },
   fs: {
     strict: true,
-    allow: [],
-    deny: ['.env', '.env.*', '*.{crt,pem,key}'],
-    cwd: process.cwd()
+    allow: undefined,   // 默认自动向上查找 workspace 根目录作为允许范围
+    deny: ['.env', '.env.*', '*.crt', '*.pem'],
+    cachedChecks: undefined
   },
   origin: undefined
 }
@@ -97,9 +97,8 @@ server
 │   ├── port
 │   ├── clientPort
 │   ├── path
+│   ├── timeout
 │   └── overlay
-│       ├── errors
-│       └── warnings
 ├── watch
 │   ├── ignored
 │   ├── usePolling
@@ -107,8 +106,7 @@ server
 ├── fs
 │   ├── strict
 │   ├── allow
-│   ├── deny
-│   └── cwd
+│   └── deny
 └── origin
 ```
 
@@ -121,7 +119,6 @@ export default {
     host: true,
     port: 3000,
     strictPort: false,
-    https: false,
     open: true,
     proxy: {},
     cors: true,
@@ -195,15 +192,16 @@ strictPort: true   // 端口占用时直接退出，报错
 
 ### https
 
-**类型**：`boolean | HTTPSOptions`
+**类型**：`HttpsServerOptions`
 
-**默认值**：`false`
+**默认值**：`undefined`（不启用）
 
-启用 HTTPS。
+启用 TLS + HTTP/2（配置了 proxy 时降级为仅 TLS）。
 
 ```javascript
-// 布尔形式 - 使用自签名证书
-https: true
+// ⚠️ Vite 6 起 https: true（自签名证书）已移除
+// 需要自签名证书时安装 @vitejs/plugin-basic-ssl 插件：
+// plugins: [basicSsl()]
 
 // 对象形式 - 自定义证书
 https: {
@@ -211,15 +209,13 @@ https: {
   cert: fs.readFileSync('path/to/cert.pem')
 }
 
-// 完整选项
+// 完整选项（传给 Node.js https.createServer 的选项）
 https: {
   key: fs.readFileSync('key.pem'),
   cert: fs.readFileSync('cert.pem'),
   ca: fs.readFileSync('ca.pem'),         // CA 证书
   pfx: fs.readFileSync('cert.pfx'),      // PFX 文件
-  passphrase: 'secret',                  // 证书密码
-  // 或使用 passphrase 函数
-  passphrase: () => 'secret'
+  passphrase: 'secret'                   // 证书密码
 }
 ```
 
@@ -434,31 +430,28 @@ hmr: {
 
   // WebSocket 主机
   host: 'localhost',  // 或具体 IP
-  host: null,         // 自动检测
+  host: undefined,    // 默认自动检测
 
-  // WebSocket 端口
-  port: 24678,        // HMR WebSocket 端口
+  // WebSocket 端口（默认 24678）
+  port: 24678,
 
-  // 客户端端口
-  clientPort: 24678,  // 客户端连接的端口
+  // 客户端端口（HMR WebSocket 与服务器不同端口时指定）
+  clientPort: 443,
 
   // WebSocket 路径
-  path: '/vite/hmr',  // 默认基于 base
+  path: 'hmr',        // 默认基于 base
 
-  // 覆盖层配置
+  // 覆盖层配置（boolean，或对象形式细粒度控制——较新版本 Vite 支持）
   overlay: true,
+  overlay: false,     // 关闭错误遮罩层
   overlay: {
     errors: true,     // 显示错误
     warnings: false,  // 显示警告
-    // 或使用函数
-    runtimeErrors: (error) => {
+    runtimeErrors: (error) => {  // 较新版本支持函数过滤运行时错误
       if (error.message.includes('ignore')) return false
       return true
     }
-  },
-
-  // HMR 上下文（高级）
-  // (context) => void
+  }
 }
 ```
 
@@ -498,28 +491,23 @@ watch: {
 
 ### fs
 
-**类型**：`{ strict?: boolean; allow?: string[]; deny?: string[]; cwd?: string }`
+**类型**：`{ strict?: boolean; allow?: string[]; deny?: string[] }`
 
 文件系统访问控制。
 
 ```javascript
 // 基本配置
 fs: {
-  // 严格模式 - 限制在项目根目录内
+  // 严格模式 - 限制在允许的目录内（默认 true）
   strict: true,
-  strict: false,  // 允许访问任意文件
+  strict: false,  // 关闭后仅警告，仍限制访问
 
-  // 允许访问的目录
+  // 允许访问的目录（默认自动向上查找 workspace 根目录）
   allow: ['..'],               // 允许访问父目录
   allow: ['/path/to/dir'],     // 允许特定目录
-  allow: ['src', 'public'],    // 多个目录
 
-  // 禁止访问的文件/目录
-  deny: ['.env', '.env.*'],    // 禁止特定文件
-  deny: ['**/secret/**'],      // 禁止特定目录
-
-  // 工作目录
-  cwd: process.cwd()           // 默认为项目根目录
+  // 禁止访问的文件（默认值）
+  deny: ['.env', '.env.*', '*.crt', '*.pem']
 }
 
 // 安全配置示例
@@ -568,7 +556,7 @@ origin: process.env.VITE_DEV_ORIGIN
 
 - 修改 `server` 配置需要重启开发服务器
 - `proxy` 配置使用 `http-proxy` 中间件，选项与 `http-proxy` 一致
-- `fs.strict` 开启后，只能访问项目根目录下的文件
+- `fs.strict` 开启后（默认），只能访问 `fs.allow` 允许目录内的文件（默认允许范围会自动搜索到 workspace 根目录）
 - `https` 选项需要提供有效的证书文件
 
 ## 与其他属性的关系

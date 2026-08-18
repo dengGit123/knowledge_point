@@ -180,8 +180,10 @@ public/
 # robots.txt
 User-agent: *
 Allow: /
+```
 
-# sitemap.xml
+```xml
+<!-- sitemap.xml -->
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
@@ -331,12 +333,10 @@ import smallSvg from './assets/icon.svg?inline'
 ### 6. 优先级规则
 
 ```javascript
-// 同名文件优先级
-// 1. 源代码中 import 的资源优先
-// 2. publicDir 中的同名文件会被忽略
-
-// src/assets/logo.png (通过 import 导入)
-// public/logo.png (会被忽略)
+// 同名文件说明
+// import 导入的资源（经打包处理、带 hash）和 publicDir 中的文件（原样复制、无 hash）
+// 是两个不同的产物，文件名不同（logo-abc123.png vs logo.png），互不冲突
+// 但引用时容易混淆：想用打包资源就用 import，想用原样文件就放 public
 ```
 
 ## 与其他属性的关系

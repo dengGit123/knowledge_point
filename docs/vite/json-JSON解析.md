@@ -62,21 +62,24 @@ import { name } from './data.json'
 
 **默认值**：`false`
 
-是否将 JSON 转换为 `export default JSON.stringify(...)` 形式。
+是否将 JSON 转换为 `JSON.stringify(...)` 字符串形式而非 JS 对象字面量。
+
+> 💡 **官方建议**：大型 JSON 文件建议开启此选项。解析一个巨大的 JS 对象字面量比 `JSON.parse()` 一个字符串慢得多。
 
 ```javascript
 // stringify: true
-// data.json → 转换为字符串
+// data.json → 导出为 JSON 字符串
 
-import data from './data.json'
-const parsed = JSON.parse(data)
+import data from './data.json'   // data 是字符串
+const parsed = JSON.parse(data)  // 运行时解析（比解析对象字面量更快）
 
 // stringify: false（默认）
-// data.json → 直接作为对象
+// data.json → 导出为 JS 对象字面量
 
-import data from './data.json'
-// data 是对象
+import data from './data.json'   // data 直接是对象
 ```
+
+> ⚠️ **注意**：开启 `stringify` 后 JSON 只能默认导入（整体字符串），**具名导出不可用**。
 
 ## 可选值与使用方式
 
@@ -248,12 +251,14 @@ export default config
 
 ### 3. 大型 JSON 优化
 
+官方文档提示：大型 JSON 的具名导出可能严重影响性能。推荐组合：
+
 ```javascript
 // vite.config.js
 export default {
   json: {
     namedExports: false,  // 大型 JSON 禁用具名导出
-    stringify: true        // 序列化减少体积
+    stringify: true       // 转为字符串，运行时 JSON.parse 更快
   }
 }
 ```
@@ -387,7 +392,7 @@ export default config
 export default {
   json: {
     namedExports: false,  // 禁用具名导出
-    stringify: false      // 保持对象形式
+    stringify: true       // 转为字符串，运行时 JSON.parse（大型 JSON 更快）
   }
 }
 ```
@@ -399,7 +404,9 @@ export default {
 }
 
 // src/main.js
-import dataset from './data/large-dataset.json'
+// stringify: true 时导入的是字符串，需要 JSON.parse
+import datasetJson from './data/large-dataset.json'
+const dataset = JSON.parse(datasetJson)
 processData(dataset.data)
 ```
 
@@ -494,9 +501,9 @@ export default {
 declare module '*.json' {
   const value: Record<string, any>
   export default value
-  // 或具名导出
-  export const [key: string]: any
 }
+// 注意：TS 的 resolveJsonModule 会为具体的 .json 文件
+// 自动推断键的类型，通常无需手写声明
 ```
 
 ## 官方文档
