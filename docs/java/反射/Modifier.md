@@ -41,7 +41,7 @@ public class Demo {
 
         // 4. 实例字段对照
         Field name = Demo.class.getDeclaredField("name");
-        System.out.println(Modifier.toString(name.getModifiers())); // private（无修饰符时为空串）
+        System.out.println(Modifier.toString(name.getModifiers())); // private
 
         // 5. 方法和类同理
         Method m = Demo.class.getMethod("helper");

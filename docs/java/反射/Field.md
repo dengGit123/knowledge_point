@@ -105,7 +105,7 @@ ageField.setInt(user, 99);                // 等价于 user.age = 99（类型化
 ageField.set(user, Integer.valueOf(88));
 ```
 
-`set` 的类型匹配规则（官方 javadoc）：基本类型字段会尝试**拆箱转换**，拆箱失败抛 `IllegalArgumentException`；之后仅允许**恒等或加宽转换**（如 `int` 字段可接受 `Integer`/`Byte`/`Short`，不接受 `Long`——`long` 到 `int` 是收窄）。
+`set` 的类型匹配规则（官方 javadoc）：基本类型字段会尝试**拆箱转换**，拆箱失败抛 `IllegalArgumentException`；拆箱后仅允许**恒等或加宽转换**（如 `int` 字段可接受 `Byte`/`Short`/`Integer`，不接受 `Long`——`long` 到 `int` 是收窄）。
 
 ### 2. 修改 final 字段的限制（重要）
 

@@ -169,15 +169,16 @@ Class<? extends List> listCls = raw.asSubclass(List.class);
 一个能直接看出差别的例子：
 
 ```java
+// 假设类 com.example.InitDemo 有如下静态代码块
 public class InitDemo {
     static {
         System.out.println("静态代码块执行了！");
     }
 
     public static void main(String[] args) throws ClassNotFoundException {
-        Class<?> c = InitDemo.class;               // 什么都不打印 —— 未初始化
+        Class<?> c = InitDemo.class;                        // 什么都不打印 —— 未初始化
         System.out.println("---- 分隔线 ----");
-        Class<?> c2 = Class.forName("InitDemo");   // 打印「静态代码块执行了！」—— 触发初始化
+        Class<?> c2 = Class.forName("com.example.InitDemo"); // 打印「静态代码块执行了！」—— 触发初始化
     }
 }
 ```
