@@ -88,7 +88,9 @@
       "Bash(sed -n '425,455p' 'ssr-服务端渲染.md')",
       "Bash(sed -n '488,512p' 'css-样式处理.md')",
       "Bash(sed -n '775,790p' 'css-样式处理.md')",
-      "Bash(sed -n '884,912p' 'css-样式处理.md')"
+      "Bash(sed -n '884,912p' 'css-样式处理.md')",
+      "Bash(sed -n '95,135p' Method.md)",
+      "Bash(sed -n '108,125p' 反射与数组.md)"
     ],
     "deny": [],
     "ask": [],
