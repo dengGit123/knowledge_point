@@ -82,7 +82,7 @@ f.setAccessible(true);
 System.out.println(f.canAccess(user));    // true
 ```
 
-使用约束（官方 javadoc）：实例方法/字段要传**声明类的实例**；静态成员和构造器必须传 `null`（传了非 `null` 抛 `IllegalArgumentException`）。
+使用约束（官方 javadoc）：实例方法/字段要传**声明类的实例**；静态成员必须传 `null`（传非 `null` 抛 `IllegalArgumentException`），构造器只能传 `null`。另外传 `null` 时若成员不是静态的，同样抛 `IllegalArgumentException`。
 
 ### 3. 三个 API 的对比
 

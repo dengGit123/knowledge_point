@@ -73,9 +73,9 @@ public class Demo {
 `newInstance` 传参遵循两条规则（摘自官方 javadoc）：
 
 - **自动拆箱匹配基本类型**：实参会自动「拆包（unwrapping）」去匹配基本类型形参——形参是 `int`，传 `Integer.valueOf(20)` 即可
-- **允许加宽、禁止收窄**：`Constructor` 允许加宽转换（widening），如形参 `double` 传 `Integer`？不行——注意这里说的是方法调用转换：**允许 `int` 实参传给 `double` 形参这类加宽，抛 `IllegalArgumentException` 的情况是收窄转换**（如形参 `int` 传 `Double`）
+- **允许「拆箱 + 加宽」，禁止收窄**：反射调用的类型转换遵循 JLS §15.12.2.4，允许**两种转换组合使用**——形参 `double` 时传 `Integer` 是可以的（拆箱为 `int`，再加宽为 `double`）；但**收窄**转换（narrowing）一律不允许，如形参 `int` 时传 `Double`（拆箱为 `double` 后要收窄成 `int`，直接抛 `IllegalArgumentException`）
 
-> ⚠️ **注意：** 装箱类型之间**没有**隐式转换。形参是 `Integer` 时传 `Object` 类型的值没问题，但形参是 `int` 时传 `Double` 会抛 `IllegalArgumentException`——`Double` 拆箱成 `double` 后无法加宽/转换成 `int`。传参前确认类型，或手动转好再传。
+> ⚠️ **注意：** 装箱类型之间**没有**隐式转换：形参 `Integer` 时传 `Double` 会失败，形参 `int` 时传 `Double` 也会失败（拆箱后收窄不被允许）。传参前确认类型一致，或手动转好再传。
 
 ### 3. `Class.newInstance()` 已废弃
 
@@ -131,7 +131,7 @@ public class FactoryDemo {
 
 ## 五、newInstance 的异常
 
-`Constructor.newInstance` 声明抛出五个异常（另有 `getDeclaredConstructor` 的 `NoSuchMethodException`），各自含义必须分清：
+`Constructor.newInstance` 声明抛出四个受检异常（另有 `getDeclaredConstructor` 的 `NoSuchMethodException` 和一个直接外抛的 `Error`），各自含义必须分清：
 
 | 异常 | 触发场景 |
 | ---- | ---- |
@@ -140,19 +140,22 @@ public class FactoryDemo {
 | `InstantiationException` | 声明类是**抽象类**，无法实例化（官方 javadoc：`if the class that declares the underlying constructor represents an abstract class`） |
 | `InvocationTargetException` | **构造器内部抛了异常**，被包装后抛出，真实异常用 `getCause()` 获取 |
 | `IllegalArgumentException` | 实参个数不对、拆箱失败、类型收窄、**目标构造器属于枚举类**等参数不匹配问题 |
+| `ExceptionInInitializerError`（`Error`，不包装直接外抛） | 该方法**触发**的类初始化失败——静态代码块里抛了异常（官方 javadoc：`if the initialization provoked by this method fails`） |
 
 ```java
 // InvocationTargetException 的正确解包姿势
 try {
     Constructor<User> c = User.class.getDeclaredConstructor(String.class);
-    User u = c.newInstance(null); // 假设构造器内部对 null 做了校验并抛出 IllegalArgumentException
+    // 注意强转 (Object)：newInstance 是可变参数方法，直接传 null 会被当成「空实参数组」
+    // 导致 IllegalArgumentException（Argument type mismatch / 参数个数不符）
+    User u = c.newInstance((Object) null); // 假设构造器内部对 null 做了校验并抛出异常
 } catch (InvocationTargetException e) {
     Throwable real = e.getCause(); // ✅ 拿到构造器里真正抛出的异常
     System.out.println("真实异常: " + real);
 }
 ```
 
-> ⚠️ **注意：** 直接 `e.getMessage()` 看不到真实原因，日志里若只打印 `InvocationTargetException` 而不追 `getCause()`，会丢失根因。这是反射排障的第一大坑。
+> ⚠️ **注意：** 直接 `e.getMessage()` 看不到真实原因，日志里若只打印 `InvocationTargetException` 而不追 `getCause()`，会丢失根因。这是反射排障的第一大坑。另一个隐藏坑：给单个 `null` 实参时必须写 `newInstance((Object) null)`——裸写 `newInstance(null)` 会被当成 `initargs` 数组本身而非「包含一个 null 的数组」。
 
 ## 六、注意事项
 
@@ -175,6 +178,6 @@ try {
 
 - `Constructor` 代表类的一个具体构造器，通过 `Class.getConstructor(s)` / `getDeclaredConstructor(s)` 获取，调用 `newInstance(实参...)` 动态创建对象。
 - 官方推荐 `cls.getDeclaredConstructor().newInstance()` 取代已废弃的 `cls.newInstance()`：前者支持任意构造器，且把构造器内部异常包装成 `InvocationTargetException`，不破坏编译期异常检查。
-- 参数匹配：基本类型自动拆箱，允许加宽禁止收窄；实参个数与类型必须对得上，否则 `IllegalArgumentException`。
-- 五大异常要分清：`NoSuchMethodException`（找不到）、`IllegalAccessException`（不可访问）、`InstantiationException`（抽象类无法实例化）、`InvocationTargetException`（构造器内部异常，用 `getCause()` 还原）、`IllegalArgumentException`（参数不匹配，含对枚举类构造器调用）。
+- 参数匹配：基本类型自动拆箱，允许「拆箱 + 加宽」组合、禁止收窄；实参个数与类型必须对得上，否则 `IllegalArgumentException`。传单个 `null` 实参记得强转 `newInstance((Object) null)`。
+- 异常要分清：`NoSuchMethodException`（找不到）、`IllegalAccessException`（不可访问）、`InstantiationException`（抽象类无法实例化）、`InvocationTargetException`（构造器内部异常，用 `getCause()` 还原）、`IllegalArgumentException`（参数不匹配，含对枚举类构造器调用）、`ExceptionInInitializerError`（静态初始化失败，`Error` 直接外抛）。
 - 反射创建对象绕不过 private 构造器（配合 `setAccessible`），单例设计需主动防御，或改用枚举。

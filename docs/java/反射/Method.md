@@ -42,7 +42,8 @@ Method m4 = cls.getDeclaredMethod("staticHelper");
 
 ```java
 public Object invoke(Object obj, Object... args)
-        throws IllegalAccessException, InvocationTargetException
+        throws IllegalAccessException, IllegalArgumentException,
+               InvocationTargetException
 ```
 
 - `obj`：方法所属的**实例对象**；**静态方法传 `null`**（会被忽略）
@@ -144,6 +145,7 @@ log.invoke(loggerObj, "name=%s, age=%d", (Object) varargsValue); // ✅ format +
 | `IllegalArgumentException` | 实参与形参不匹配：个数不同、拆箱失败、类型无法转换 | 检查参数列表 |
 | `NullPointerException` | 实例方法传了 `null` 对象 | 传入真实实例 |
 | `InvocationTargetException` | **被调方法内部抛出了异常**，被包装后重新抛出 | `getCause()` 还原真实异常 |
+| `ExceptionInInitializerError`（`Error`，不包装直接外抛） | 该方法**触发**的类初始化失败——静态代码块里抛了异常 | 修复静态初始化代码 |
 
 `InvocationTargetException` 值得单独强调：
 
@@ -198,7 +200,7 @@ System.out.println(m.getDeclaringClass());  // class User
 ## 六、注意事项
 
 1. **性能**：`getMethod` 查找 + `invoke` 检查比直接调用慢；热点路径要缓存 `Method` 对象，并 `setAccessible(true)` 跳过访问检查（能明显提速），详见 [反射性能优化.md](./反射性能优化.md)。
-2. **`invoke` 对实例方法做动态查找**，具有多态性；想绕过重写调用父类版本，应拿**父类**的 `Method` 并传父类引用……实际上仍会被子类重写拦截，正确姿势是 `getDeclaredMethod` 从父类拿方法后对父类实例调用。
+2. **`invoke` 对实例方法做动态查找**，具有多态性——调的永远是目标对象**运行时类型**的重写版本，反射**无法绕过重写**去调用父类版本（即使 `Method` 是从父类拿的、传入的是父类引用也一样）。确实需要「绕过分发」时，只能用 `MethodHandles.Lookup.findSpecial`（对应字节码 `invokespecial` 语义），普通反射做不到。
 3. **`invoke` 会触发类初始化**：调用静态方法时，若声明类尚未初始化，会先初始化（执行静态代码块）。
 4. **`void` 方法返回 `null`**：不要假设 `invoke` 一定返回有效对象，先判 `getReturnType() == void.class` 或直接判空。
 5. **`InvocationTargetException` 必须解包**：`getCause()` 拿真实异常，否则丢根因。
