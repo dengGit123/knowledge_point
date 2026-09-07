@@ -90,7 +90,11 @@
       "Bash(sed -n '775,790p' 'css-样式处理.md')",
       "Bash(sed -n '884,912p' 'css-样式处理.md')",
       "Bash(sed -n '95,135p' Method.md)",
-      "Bash(sed -n '108,125p' 反射与数组.md)"
+      "Bash(sed -n '108,125p' 反射与数组.md)",
+      "WebFetch(domain:sass-lang.com)",
+      "WebFetch(domain:cn.vitejs.dev)",
+      "Bash(command -v textutil python3)",
+      "Bash(python3 -c \"print\\('py ok'\\)\")"
     ],
     "deny": [],
     "ask": [],
