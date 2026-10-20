@@ -1,10 +1,12 @@
 # .worktreeinclude 使用说明
 
+> 📚 **官方文档**：[Common Workflows - Git worktrees](https://code.claude.com/docs/en/common-workflows#using-git-worktrees-in-parallel-sessions)
+
 ## 什么是 .worktreeinclude
 
 `.worktreeinclude` 文件用于指定在创建新的 **git worktree** 时需要复制的文件列表，这些文件通常已加入 `.gitignore`。
 
-> **通俗理解**：就像给项目准备"搬家清单"。当你创建一个新的 worktree（分支工作区）时，git 只会追踪版本控制的文件，但有些本地配置文件（如 .env.local、IDE 设置）也需要复制过去，这个文件就是告诉 Claude 哪些文件需要"搬家"。
+> **通俗理解**：就像给项目准备"搬家清单"。当你创建一个新的 worktree（分支工作区）时，git 只会检出版本控制的文件，但有些本地配置文件（如 `.env.local`、IDE 设置）也需要复制过去，这个文件就是告诉 Claude 哪些文件需要"搬家"。
 
 ## 文件位置
 
@@ -24,8 +26,10 @@ git worktree add ../feature-branch feature/新功能
 
 # 目录结构
 project-main/      # main 分支
-project-feature/  # feature/新功能 分支
+project-feature/   # feature/新功能 分支
 ```
+
+这个特性常与 Claude Code 的并行会话配合：每个 worktree 里开一个 Claude Code 会话，多条任务互不干扰地同时进行。
 
 ## 为什么需要 .worktreeinclude
 
@@ -43,15 +47,6 @@ project-feature/  # feature/新功能 分支
 - 确保每个 worktree 有正确的配置
 - 自动化 worktree 设置过程
 
-## 作用
-
-| 作用 | 说明 |
-|------|------|
-| 定义复制文件 | 列出需要复制到新 worktree 的文件 |
-| 确保配置完整 | 每个 worktree 都有必要的配置 |
-| 避免手动操作 | 自动复制指定的文件 |
-| 支持本地开发 | 保留本地配置和环境设置 |
-
 ## 文件格式
 
 ### 基本格式
@@ -61,7 +56,6 @@ project-feature/  # feature/新功能 分支
 ```
 # Claude 配置
 .claude/settings.local.json
-.claude/.mcp.json.local
 
 # 环境配置
 .env.local
@@ -88,31 +82,48 @@ project-feature/  # feature/新功能 分支
 ```
 1. 执行 git worktree add
    ↓
-2. Git 复制版本控制的文件
+2. Git 检出版本控制的文件
    ↓
 3. Claude 读取 .worktreeinclude
    ↓
 4. 复制列出的文件到新 worktree
    ↓
-5. 应用配置和环境
+5. 应用配置和环境，开始工作
 ```
 
 ### 示例流程
 
 ```bash
-# 1. 创建新 worktree
+# 1. 确认清单内容
+cat .claude/.worktreeinclude
+
+# 2. 创建新 worktree
 git worktree add ../my-feature origin/feature/my-feature
 
-# 2. 进入新目录
+# 3. 进入新目录
 cd ../my-feature
 
-# 3. Claude 自动复制 .worktreeinclude 中的文件
+# 4. 清单中的文件已复制
 # - .env.local ✓
 # - .claude/settings.local.json ✓
 # - .vscode/settings.json ✓
 
-# 4. 开始工作，配置已就绪
+# 5. 安装依赖后开始工作
+npm install
 npm run dev
+```
+
+### 清理 Worktree
+
+```bash
+# 1. 退出 worktree
+cd ../main-project
+
+# 2. 删除 worktree
+git worktree remove ../my-feature
+
+# 3. 清理失效的 worktree 记录
+git worktree prune
 ```
 
 ## 使用场景
@@ -124,12 +135,10 @@ npm run dev
 ```
 # Claude 本地配置
 .claude/settings.local.json
-.claude/.mcp.json.local
 
 # 环境变量
 .env.local
 .env.development
-.env.test
 
 # 应用配置
 config.local.json
@@ -144,15 +153,10 @@ config/development.yaml
 # VS Code
 .vscode/settings.json
 .vscode/tasks.json
-.vscode/launch.json
 
 # JetBrains IDEs
 .idea/workspace.xml
 .idea/inspectionProfiles/
-
-# Vim/Neovim
-.local.vimrc
-.project.vim
 
 # Emacs
 .dir-locals.el
@@ -163,19 +167,14 @@ config/development.yaml
 需要独立存在的缓存目录：
 
 ```
-# Next.js
-.next/cache/
-
 # Vite
 node_modules/.vite/
 
 # Webpack
-.node_modules/.cache/
+node_modules/.cache/
 
 # 通用
 .cache/
-dist/
-build/
 ```
 
 ### 4. 数据和日志
@@ -190,15 +189,11 @@ data/*.sqlite
 # 日志
 logs/
 *.log
-
-# 临时文件
-*.tmp
-*.temp
 ```
 
 ## 完整示例
 
-### 前端项目 (Vue/React)
+### 前端项目
 
 ```
 # Claude 配置
@@ -209,8 +204,6 @@ logs/
 .env.development
 
 # 构建缓存
-.next/cache/
-dist/
 node_modules/.cache/
 
 # IDE 配置
@@ -218,63 +211,7 @@ node_modules/.cache/
 .vscode/extensions.json
 ```
 
-### 后端项目 (Node.js/Python)
-
-```
-# Claude 配置
-.claude/settings.local.json
-.claude/.mcp.json.local
-
-# 环境配置
-.env.local
-.env.development
-config/development.yaml
-
-# 数据文件
-data/*.db
-data/*.sqlite
-
-# 日志
-logs/
-
-# IDE 配置
-.idea/workspace.xml
-```
-
 ### 全栈项目
-
-```
-# ============================
-# Claude 配置（共享）
-# ============================
-.claude/settings.local.json
-
-# ============================
-# 前端配置
-# ============================
-frontend/.env.local
-frontend/.env.development
-frontend/.next/cache/
-frontend/node_modules/.cache/
-frontend/.vscode/settings.json
-
-# ============================
-# 后端配置
-# ============================
-backend/.env.local
-backend/.env.development
-backend/data/
-backend/logs/
-backend/.idea/
-
-# ============================
-# 共享配置
-# ============================
-.env.local
-docker-compose.override.yml
-```
-
-### Monorepo 项目
 
 ```
 # ============================
@@ -284,22 +221,23 @@ docker-compose.override.yml
 .env.local
 
 # ============================
-# 前端应用
+# 前端配置
 # ============================
-apps/web/.env.local
-apps/web/.next/cache/
+frontend/.env.local
+frontend/node_modules/.cache/
+frontend/.vscode/settings.json
 
 # ============================
-# 后端服务
+# 后端配置
 # ============================
-apps/api/.env.local
-apps/api/data/
+backend/.env.local
+backend/data/
+backend/logs/
 
 # ============================
-# 包配置
+# 共享配置
 # ============================
-packages/ui/.cache/
-packages/config/.local/
+docker-compose.override.yml
 ```
 
 ## 最佳实践
@@ -315,8 +253,8 @@ packages/config/.local/
 
 ❌ 不好的做法
 node_modules/          # 太大，应该重新安装
-dist/                   # 构建产物，应该重新构建
-*.log                   # 临时文件，不需要复制
+dist/                  # 构建产物，应该重新构建
+*.log                  # 临时文件，不需要复制
 ```
 
 ### 2. 使用注释分组
@@ -343,24 +281,11 @@ dist/                   # 构建产物，应该重新构建
 
 ### 3. 定期清理
 
-删除不再需要的条目，保持文件简洁：
+删除不再需要的条目，保持文件简洁。
 
-```
-# 旧项目使用，已删除
-old-framework.config
+### 4. 文件本身应提交到代码库
 
-# 不再需要这个缓存
-.cache/
-```
-
-### 4. 文件本身应加入 gitignore
-
-`.worktreeinclude` 文件本身通常应该提交到代码库：
-
-```bash
-# .gitignore
-# .worktreeinclude 不需要忽略，应该提交
-```
+`.worktreeinclude` 列表本身不含敏感内容，提交后团队成员都能使用相同的 worktree 配置。
 
 ### 5. 敏感文件额外保护
 
@@ -376,13 +301,6 @@ backups/*.sql
 
 ## 与 .gitignore 的关系
 
-### 共同点
-
-`.worktreeinclude` 中的文件通常也在 `.gitignore` 中，因为：
-- 它们是本地配置
-- 可能包含敏感信息
-- 因人而异，不适合提交
-
 ### 对应关系
 
 ```bash
@@ -397,53 +315,18 @@ backups/*.sql
 .vscode/settings.json
 ```
 
+两个列表通常高度重合——`.worktreeinclude` 中的文件，多数正是被 `.gitignore` 忽略的文件。
+
 > **通俗理解**：
 > - `.gitignore` 说："不要把这些文件放进仓库"
 > - `.worktreeinclude` 说："但创建 worktree 时要把它们复制过去"
-
-## 工作流程
-
-### 创建新 Worktree
-
-```bash
-# 1. 确保有 .worktreeinclude 文件
-cat .claude/.worktreeinclude
-
-# 2. 创建新 worktree
-git worktree add ../feature-new-user feature/add-user
-
-# 3. 进入新目录
-cd ../feature-new-user
-
-# 4. 验证文件已复制
-ls -la .env.local .claude/settings.local.json
-
-# 5. 安装依赖（如有需要）
-npm install
-
-# 6. 开始开发
-npm run dev
-```
-
-### 清理 Worktree
-
-```bash
-# 1. 退出 worktree
-cd ../main-project
-
-# 2. 删除 worktree
-git worktree remove ../feature-new-user
-
-# 3. 清理未跟踪的 worktree
-git worktree prune
-```
 
 ## 注意事项
 
 1. **文件路径是相对于项目根目录**：使用正确的相对路径
 2. **不存在的文件会被忽略**：列出的文件如果不存在不会报错
 3. **使用通配符要小心**：避免匹配过多文件
-4. **敏感文件需要额外保护**：确保不会意外提交敏感信息
+4. **敏感文件需要额外保护**：确保不会意外提交或泄露敏感信息
 5. **定期更新文件**：项目结构变化时同步更新
 
 ## 常见问题
@@ -461,6 +344,7 @@ git worktree prune
 ### Q：可以复制整个目录吗？
 
 **A**：可以。在路径后加 `/` 表示目录：
+
 ```
 .vscode/
 .idea/
@@ -479,7 +363,3 @@ git worktree prune
 1. 创建测试 worktree
 2. 检查需要的文件是否存在
 3. 验证应用能否正常运行
-
-### Q：.worktreeinclude 支持排除模式吗？
-
-**A**：通常不支持。如果需要排除，应该在配置文件中处理，或者使用更精确的路径模式。

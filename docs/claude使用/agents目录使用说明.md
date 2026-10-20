@@ -1,5 +1,7 @@
 # agents/ 目录使用说明
 
+> 📚 **官方文档**：[Claude Code Subagents](https://code.claude.com/docs/en/sub-agents)
+
 ## 什么是 agents/
 
 `agents/` 目录用于存放**子代理（Subagents）**配置。每个子代理就像一个专业的"小助手"，专注于处理特定领域的任务。
@@ -9,9 +11,11 @@
 ## 文件位置
 
 ```
-项目/.claude/agents/*.md
-全局/.claude/agents/*.md
+项目/.claude/agents/*.md      # 项目级（团队共享，优先使用）
+~/.claude/agents/*.md         # 用户级（个人全局）
 ```
+
+同名时项目级配置优先。
 
 ## 为什么需要子代理
 
@@ -25,23 +29,24 @@
 ### 解决方案
 
 通过子代理，你可以：
-1. **专业化**：每个代理专注于一个领域
+1. **专业化**：每个代理专注于一个领域，有自己独立的系统提示
 2. **标准化**：同一类任务始终使用相同的处理方式
 3. **工具限制**：可以限制代理使用的工具（如只读不改）
+4. **上下文隔离**：子代理在独立上下文中工作，不污染主会话
 
 ## 文件格式
 
 ### 基本结构
 
-```markdown
+````markdown
 ---
-description: 代理的简短描述
-model: claude-opus-4-7
-tools: [Read, Edit, Bash]
-timeout: 300000
+name: code-reviewer
+description: 代码审查专家。在用户请求审查代码、检查代码质量时主动使用
+tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
 
-# 代理名称
+# 代码审查专家
 
 ## 你的职责
 <!-- 代理的职责描述 -->
@@ -51,41 +56,43 @@ timeout: 300000
 
 ## 输出格式
 <!-- 结果应该怎样呈现 -->
-```
+````
 
 ### Frontmatter 字段说明
 
-| 字段 | 类型 | 说明 | 示例 |
-|------|------|------|------|
-| description | string | 代理的简短描述 | "代码审查专家" |
-| model | string | 可选，指定使用的模型 | "claude-opus-4-7" |
-| tools | string[] | 可选，允许使用的工具 | `[Read, Edit, Bash]` |
-| disable | string[] | 可选，禁用的工具 | `[Write]` |
-| timeout | number | 可选，超时时间（毫秒） | `300000`（5分钟） |
+| 字段 | 类型 | 必需 | 说明 | 示例 |
+|------|------|------|------|------|
+| name | string | ✅ | 代理唯一标识（小写连字符命名） | `code-reviewer` |
+| description | string | ✅ | 代理的描述。Claude 依据它判断何时自动调用该代理 | "代码审查专家，审查代码质量时使用" |
+| tools | string | ❌ | 允许使用的工具，逗号分隔。**省略时继承主会话的所有工具** | `Read, Grep, Glob, Bash` |
+| model | string | ❌ | 指定使用的模型：`sonnet` / `opus` / `haiku` / `inherit`（继承主会话）。省略时使用默认配置 | `sonnet` |
 
-### 可用工具列表
+> **提示**：description 写得越具体（什么时候该用、擅长什么），自动调用就越准确。
+
+### 常用工具列表
 
 | 工具 | 说明 |
 |------|------|
 | Read | 读取文件内容 |
 | Write | 创建新文件或完全覆写文件 |
 | Edit | 编辑文件的特定部分 |
+| Glob | 按文件名模式查找文件 |
+| Grep | 按内容搜索文件 |
 | Bash | 执行命令行命令 |
-| Agent | 调用其他代理 |
+| WebFetch | 获取网页内容 |
 | WebSearch | 网络搜索 |
-| AskUserQuestion | 向用户提问 |
 
 ## 如何使用子代理
 
-### 1. 通过对话触发
+### 1. 自动委派
 
-当你提出的需求与某个代理的职责匹配时，会自动调用该代理：
+当你提出的需求与某个代理的 description 匹配时，Claude 会自动把任务委派给该代理：
 
 ```
-# 这会触发代码审查代理
+# 这可能触发代码审查代理
 帮我审查一下这段代码
 
-# 这会触发文档专家代理
+# 这可能触发文档专家代理
 帮我写一个 API 文档
 ```
 
@@ -101,14 +108,14 @@ timeout: 300000
 
 ### 1. 代码审查代理
 
-专注于发现代码问题和提供改进建议。
+专注于发现代码问题和提供改进建议（只读，不直接改代码）。
 
-```markdown
+````markdown
 ---
-description: 专业的代码审查专家
-model: claude-opus-4-7
-tools: [Read, Edit, Bash]
-disable: [Write]
+name: code-reviewer
+description: 专业的代码审查专家。审查代码质量、查找潜在问题时使用
+tools: Read, Grep, Glob, Bash
+model: opus
 ---
 
 # 代码审查专家
@@ -122,7 +129,7 @@ disable: [Write]
 ### 1. 正确性
 - 逻辑错误和边界条件
 - 错误处理是否完善
-- 并安全和线程安全
+- 并发和线程安全
 
 ### 2. 安全性
 - SQL 注入、XSS 等常见漏洞
@@ -152,17 +159,18 @@ disable: [Write]
 ### ❌ 必须修复
 - SQL 查询存在注入风险，需要参数化
 - 缺少对 `user.id` 为空的处理
-```
+````
 
 ### 2. 测试专家代理
 
 专注于设计测试策略和编写测试代码。
 
-```markdown
+````markdown
 ---
-description: 测试策略和实现专家
-model: claude-opus-4-7
-tools: [Read, Write, Edit, Bash]
+name: test-expert
+description: 测试策略和实现专家。编写单元测试、设计测试方案时使用
+tools: Read, Write, Edit, Bash
+model: sonnet
 ---
 
 # 测试专家
@@ -218,17 +226,18 @@ describe('用户服务', () => {
   })
 })
 ```
-```
+````
 
 ### 3. 文档专家代理
 
 专注于编写清晰易懂的技术文档。
 
-```markdown
+````markdown
 ---
-description: 技术文档编写专家
-model: claude-sonnet-4-6
-tools: [Read, Write]
+name: doc-writer
+description: 技术文档编写专家。编写 README、API 文档、使用指南时使用
+tools: Read, Write, Glob, Grep
+model: haiku
 ---
 
 # 文档专家
@@ -262,18 +271,18 @@ tools: [Read, Write]
 - 代码块指定语言
 - 适当的表格和列表
 - 必要的链接跳转
-```
+````
 
 ### 4. 安全专家代理
 
-专注于发现代码中的安全问题。
+专注于发现代码中的安全问题（只读）。
 
-```markdown
+````markdown
 ---
-description: 安全审计专家
-model: claude-opus-4-7
-tools: [Read, Bash]
-disable: [Write, Edit]
+name: security-auditor
+description: 安全审计专家。检查代码安全漏洞、进行安全评估时使用
+tools: Read, Grep, Glob, Bash
+model: opus
 ---
 
 # 安全专家
@@ -288,7 +297,6 @@ disable: [Write, Edit]
 - 注入攻击（SQL、NoSQL、命令注入）
 - 身份验证和会话管理
 - 敏感数据泄露
-- XML 外部实体注入
 - 访问控制问题
 
 ### 2. 依赖安全
@@ -317,17 +325,18 @@ disable: [Write, Edit]
 
 ### 🟢 良好实践
 - 使用了环境变量存储密钥
-```
+````
 
 ### 5. 性能优化代理
 
-专注于分析和改进代码性能。
+专注于分析和改进代码性能（只读，输出建议）。
 
-```markdown
+````markdown
 ---
-description: 性能分析和优化专家
-model: claude-opus-4-7
-tools: [Read, Bash]
+name: performance-analyst
+description: 性能分析和优化专家。分析性能瓶颈、提供优化建议时使用
+tools: Read, Grep, Glob, Bash
+model: opus
 ---
 
 # 性能优化专家
@@ -356,23 +365,6 @@ tools: [Read, Bash]
 - 不必要的计算
 - 重复操作
 
-## 分析方法
-
-### 性能测量
-- 使用性能工具收集数据
-- 识别性能瓶颈
-- 建立性能基线
-
-### 问题诊断
-- 分析热点代码
-- 找出低效操作
-- 确定优化方向
-
-### 优化方案
-- 提供优化建议
-- 评估优化效果
-- 权衡成本收益
-
 ## 输出格式
 
 ### 性能分析
@@ -393,19 +385,17 @@ tools: [Read, Bash]
 1. 优先实施高收益低成本的项目
 2. 逐步实施需要架构调整的项目
 3. 持续监控性能指标
-```
+````
 
 ## 目录结构示例
 
 ```
 .claude/agents/
-├── code-reviewer.md      # 代码审查专家
-├── test-expert.md        # 测试专家
-├── doc-writer.md         # 文档专家
-├── security-auditor.md   # 安全专家
-├── performance.md         # 性能优化专家
-├── refactoring.md         # 重构专家
-└── debugger.md           # 调试专家
+├── code-reviewer.md       # 代码审查专家
+├── test-expert.md         # 测试专家
+├── doc-writer.md          # 文档专家
+├── security-auditor.md    # 安全专家
+└── performance-analyst.md # 性能优化专家
 ```
 
 ## 高级配置
@@ -416,28 +406,20 @@ tools: [Read, Bash]
 
 ```markdown
 ---
-tools: [Read]
-disable: [Write, Edit]
----
-```
-
-### 设置超时
-
-对于可能耗时较长的任务：
-
-```markdown
----
-timeout: 600000  # 10 分钟
+tools: Read, Grep, Glob
 ---
 ```
 
 ### 指定模型
 
-为简单任务使用更快的模型：
+- 复杂任务使用 `opus`
+- 一般任务使用 `sonnet`
+- 简单任务使用 `haiku`
+- 跟随主会话模型使用 `inherit`
 
 ```markdown
 ---
-model: claude-haiku-4-5
+model: haiku
 ---
 ```
 
@@ -461,14 +443,14 @@ model: claude-haiku-4-5
 
 每个代理只专注于一个领域：
 
-```markdown
+```
 # ✅ 好的设计
-- code-reviewer.md   # 只做代码审查
-- security.md        # 只做安全检查
-- performance.md      # 只做性能分析
+code-reviewer.md       # 只做代码审查
+security-auditor.md    # 只做安全检查
+performance-analyst.md # 只做性能分析
 
 # ❌ 不好的设计
-- full-stack.md      # 什么都能做，太复杂
+full-stack.md          # 什么都能做，太复杂
 ```
 
 ### 2. 清晰的职责定义
@@ -489,28 +471,23 @@ model: claude-haiku-4-5
 
 ```markdown
 # 只读代理（安全审查）
-tools: [Read]
-disable: [Write, Edit]
+tools: Read, Grep, Glob
 
 # 完整代理（重构）
-tools: [Read, Write, Edit, Bash]
+tools: Read, Write, Edit, Bash
 ```
 
 ### 4. 合适的模型选择
 
-- 复杂任务使用 `claude-opus-4-7`
-- 一般任务使用 `claude-sonnet-4-6`
-- 简单任务使用 `claude-haiku-4-5`
+- 复杂任务使用 `opus`
+- 一般任务使用 `sonnet`
+- 简单任务使用 `haiku`
 
 ### 5. 版本控制
 
-代理定义应该提交到代码库，让团队共享：
+项目级代理定义应该提交到代码库，让团队共享：
 
 ```bash
-# .gitignore
-# 不忽略代理文件
-
-# 提交代理
 git add .claude/agents/
 git commit -m "docs: 添加代码审查代理"
 ```
@@ -521,7 +498,7 @@ git commit -m "docs: 添加代码审查代理"
 2. **定期更新**：根据团队反馈调整代理配置
 3. **测试效果**：创建新代理后测试其输出是否符合预期
 4. **团队共享**：有效的代理配置应该提交到代码库
-5. **避免重叠**：不同代理的职责应该明确区分
+5. **避免重叠**：不同代理的职责应该明确区分，description 有明显差异
 
 ## 常见问题
 
@@ -531,16 +508,16 @@ git commit -m "docs: 添加代码审查代理"
 
 ### Q：一个代理可以调用另一个代理吗？
 
-**A**：可以。如果代理配置中允许使用 `Agent` 工具，它就可以调用其他代理。
+**A**：可以。如果代理配置中允许使用任务委派工具（如 Agent/Task），它就可以调用其他代理，形成多级协作。
 
 ### Q：代理可以访问主会话的上下文吗？
 
-**A**：默认不可以。代理是独立的，只能访问传递给它的信息。
+**A**：默认不可以。代理是独立的，只能访问传递给它的任务描述和它自己读取的信息。
 
 ### Q：如何测试代理是否有效？
 
-**A**：在实际场景中调用代理，观察其输出是否符合预期。必要时调整代理的提示内容。
+**A**：在实际场景中调用代理，观察其输出是否符合预期。必要时调整代理的提示内容和 description。
 
 ### Q：代理配置文件应该提交到代码库吗？
 
-**A**：应该。团队共享的代理配置应该提交，让所有成员使用一致的专业代理。
+**A**：项目级的应该提交，让所有成员使用一致的专业代理；用户级的保存在本地即可。

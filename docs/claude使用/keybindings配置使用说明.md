@@ -1,5 +1,9 @@
 # keybindings.json 使用说明
 
+> 📚 **官方文档**：[Claude Code Key Bindings](https://code.claude.com/docs/en/interactive-mode#keyboard-shortcuts)
+
+> ⚠️ **注意**：自定义快捷键是较新的实验性功能，配置格式和可绑定的动作可能随版本变化，请以官方文档为准。
+
 ## 什么是 keybindings.json
 
 `keybindings.json` 是**快捷键配置文件**，让你可以自定义键盘快捷键，按自己的习惯操作 Claude Code。
@@ -12,105 +16,36 @@
 ~/.claude/keybindings.json
 ```
 
-## 为什么需要自定义快捷键
-
-### 默认快捷键
+## 默认快捷键
 
 | 操作 | 默认快捷键 |
 |------|-----------|
-| 提交消息 | `Ctrl + Enter` |
-| 取消操作 | `Escape` |
-| 中断执行 | `Ctrl + C` |
-| 退出程序 | `Ctrl + D` |
+| 提交消息 | `Enter`（换行 `\\` + `Enter` 或 `Option/Alt + Enter`） |
+| 中断执行 | `Esc` |
+| 多行换行 | `Shift + Enter`（部分终端） |
+| 清屏 | `Ctrl + L` |
+| 退出程序 | `Ctrl + C`（两次）或 `Ctrl + D` |
 
-### 自定义场景
+> 实际快捷键与终端有关，输入 `/help` 可查看当前环境的快捷键列表。
+
+## 自定义场景
 
 - 与其他工具保持一致
 - 适应不同的键盘布局
 - 个人操作习惯
 - 避免按键冲突
 
-## 配置结构
+## 配置格式
+
+配置文件为 JSON，按键使用小写的组合表示，修饰键用 `+` 连接：
 
 ```json
 {
   "submit": "ctrl+enter",
   "cancel": "escape",
-  "interrupt": "ctrl+c",
-  "quit": "ctrl+d"
+  "interrupt": "ctrl+c"
 }
 ```
-
-## 可配置的快捷键
-
-### 1. submit - 提交消息
-
-发送用户输入给 Claude。
-
-| 值 | 说明 |
-|----|------|
-| `ctrl+enter` | Ctrl + Enter（默认） |
-| `enter` | 单独 Enter |
-| `ctrl+s` | Ctrl + S |
-
-**使用场景**：
-- 默认 `Ctrl+Enter` 避免误提交
-- 改为 `Enter` 适合快速对话
-- 改为 `Ctrl+S` 适合保存习惯
-
-### 2. cancel - 取消操作
-
-取消当前输入或操作。
-
-| 值 | 说明 |
-|----|------|
-| `escape` | Escape 键（默认） |
-| `ctrl+c` | Ctrl + C |
-| `ctrl+g` | Ctrl + G |
-
-### 3. interrupt - 中断执行
-
-中断正在运行的命令。
-
-| 值 | 说明 |
-|----|------|
-| `ctrl+c` | Ctrl + C（默认） |
-| `ctrl+x` | Ctrl + X |
-| `ctrl+shift+c` | Ctrl + Shift + C |
-
-### 4. quit - 退出程序
-
-退出 Claude Code。
-
-| 值 | 说明 |
-|----|------|
-| `ctrl+d` | Ctrl + D（默认） |
-| `ctrl+q` | Ctrl + Q |
-| `ctrl+shift+q` | Ctrl + Shift + Q |
-
-### 5. clear - 清除历史
-
-清除对话历史。
-
-| 值 | 说明 |
-|----|------|
-| `ctrl+l` | Ctrl + L |
-
-### 6. help - 显示帮助
-
-显示帮助信息。
-
-| 值 | 说明 |
-|----|------|
-| `ctrl+h` | Ctrl + H |
-
-### 7. historyUp / historyDown
-
-浏览历史输入。
-
-| 值 | 说明 |
-|----|------|
-| `ctrl+p` / `ctrl+n` | 上一个/下一个历史 |
 
 ## 按键格式
 
@@ -131,7 +66,7 @@ home, end, pageup, pagedown
 ctrl+    # Control
 alt+     # Alt/Option
 shift+   # Shift
-meta+    # Command/Mac 键
+meta+    # Command/Mac 键（也可写作 cmd+）
 ```
 
 ### 组合示例
@@ -140,7 +75,6 @@ meta+    # Command/Mac 键
 ctrl+enter           # Ctrl + Enter
 ctrl+shift+a         # Ctrl + Shift + A
 alt+cmd+s            # Alt + Command + S
-ctrl+alt+delete      # Ctrl + Alt + Delete
 ```
 
 ## 完整示例
@@ -149,12 +83,7 @@ ctrl+alt+delete      # Ctrl + Alt + Delete
 {
   "submit": "ctrl+enter",
   "cancel": "escape",
-  "interrupt": "ctrl+c",
-  "quit": "ctrl+d",
-  "clear": "ctrl+l",
-  "help": "ctrl+h",
-  "historyUp": "ctrl+p",
-  "historyDown": "ctrl+n"
+  "interrupt": "ctrl+c"
 }
 ```
 
@@ -166,8 +95,7 @@ ctrl+alt+delete      # Ctrl + Alt + Delete
 {
   "submit": "ctrl+enter",
   "cancel": "escape",
-  "interrupt": "ctrl+c",
-  "quit": "ctrl+d"
+  "interrupt": "ctrl+c"
 }
 ```
 
@@ -177,8 +105,7 @@ ctrl+alt+delete      # Ctrl + Alt + Delete
 {
   "submit": "cmd+enter",
   "cancel": "escape",
-  "interrupt": "ctrl+c",
-  "quit": "cmd+q"
+  "interrupt": "ctrl+c"
 }
 ```
 
@@ -187,20 +114,7 @@ ctrl+alt+delete      # Ctrl + Alt + Delete
 ```json
 {
   "submit": "ctrl+j",
-  "cancel": "ctrl+[",
-  "interrupt": "ctrl+c",
-  "quit": "shift+zz"
-}
-```
-
-### Emacs 用户习惯
-
-```json
-{
-  "submit": "ctrl+x ctrl+s",
-  "cancel": "ctrl+g",
-  "interrupt": "ctrl+c",
-  "quit": "ctrl+x ctrl+c"
+  "cancel": "ctrl+["
 }
 ```
 
@@ -208,41 +122,23 @@ ctrl+alt+delete      # Ctrl + Alt + Delete
 
 ### 场景 1：避免与编辑器冲突
 
-如果你常用的编辑器使用某些快捷键：
+如果你常用的编辑器占用某些快捷键，换用其他组合：
 
 ```json
 {
-  // VS Code 使用 Ctrl+D，改用其他
   "quit": "ctrl+q",
-
-  // JetBrains 使用 Ctrl+Alt+L，避免冲突
   "format": "ctrl+shift+f"
 }
 ```
 
-### 场景 2：单手操作
-
-方便单手使用的配置：
-
-```json
-{
-  "submit": "ctrl+enter",
-  "cancel": "escape",
-  "interrupt": "ctrl+c",
-  "quit": "ctrl+q"
-}
-```
-
-### 场景 3：保持终端习惯
+### 场景 2：保持终端习惯
 
 与常用终端工具一致：
 
 ```json
 {
   "submit": "enter",
-  "cancel": "ctrl+c",
-  "interrupt": "ctrl+shift+c",
-  "quit": "ctrl+d"
+  "cancel": "ctrl+c"
 }
 ```
 
@@ -264,12 +160,11 @@ ctrl+alt+delete      # Ctrl + Alt + Delete
   "submit": "ctrl+shift+enter",
 
   // 使用不常用的组合
-  "quit": "ctrl+alt+q",
-
-  // 添加更多修饰键
-  "interrupt": "ctrl+shift+alt+c"
+  "quit": "ctrl+alt+q"
 }
 ```
+
+> ⚠️ JSON 标准不支持注释，上面仅为示意，实际文件中请删除注释。
 
 ## 注意事项
 
@@ -281,9 +176,7 @@ ctrl+alt+delete      # Ctrl + Alt + Delete
    - 如果常用 VS Code，参考其快捷键设置
    - 如果使用 Vim，保持 Vim 快捷键习惯
 
-3. **测试修改**：修改后测试确保没有问题
-   - 逐一测试每个快捷键
-   - 确认没有冲突
+3. **测试修改**：修改后重启会话，逐一测试每个快捷键
 
 4. **备份配置**：修改前备份原配置
    ```bash
@@ -294,28 +187,20 @@ ctrl+alt+delete      # Ctrl + Alt + Delete
 
 ### Q：修改后需要重启吗？
 
-**A**：不需要。快捷键修改后立即生效。
+**A**：部分版本需要新开会话才能生效，修改后请测试确认。
 
 ### Q：如何恢复默认快捷键？
 
 **A**：删除 `keybindings.json` 文件，会自动恢复默认设置。
 
-### Q：可以设置多个快捷键吗？
+### Q：一个操作可以设置多个快捷键吗？
 
-**A**：目前一个操作只能设置一个快捷键。
+**A**：视版本实现而定，多数情况下一个动作只绑定一个快捷键。
 
 ### Q：快捷键不生效怎么办？
 
 **A**：
 1. 检查快捷键是否被其他应用拦截
-2. 确认 `keybindings.json` 格式正确
+2. 确认 `keybindings.json` 是有效的 JSON
 3. 尝试使用不同的快捷键组合
-
-### Q：macOS 上如何设置 Command 键？
-
-**A**：使用 `meta` 或 `cmd`：
-```json
-{
-  "submit": "cmd+enter"
-}
-```
+4. 该功能为实验性，确认所用版本是否支持

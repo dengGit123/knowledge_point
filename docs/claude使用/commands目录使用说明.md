@@ -1,31 +1,33 @@
 # commands/ 目录使用说明
 
+> 📚 **官方文档**：[Claude Code Slash Commands](https://code.claude.com/docs/en/slash-commands)
+
 ## 什么是 commands/
 
-`commands/` 目录用于存放**自定义命令**，让你可以通过简单的斜杠命令（`/命令名`）快速执行常用的任务。
+`commands/` 目录用于存放**自定义斜杠命令**，让你通过 `/命令名` 快速执行常用的任务。
 
 > **通俗理解**：就像给 Claude 定义"快捷指令"或"模板"。比如你经常需要"清理缓存"，就可以定义一个 `/cleanup` 命令，以后直接输入就能执行，不用每次都详细说明。
 
 ## 文件位置
 
 ```
-项目/.claude/commands/*.md
-全局/.claude/commands/*.md
+项目/.claude/commands/*.md    # 项目级（团队共享）
+~/.claude/commands/*.md       # 用户级（个人全局）
 ```
+
+命令名称就是文件名：`cleanup.md` 对应 `/cleanup`。放在子目录中会形成带命名空间的命令，如 `frontend/build.md` 对应 `/frontend:build`。
 
 ## 为什么需要自定义命令
 
 ### 问题场景
 
 有些任务你会反复做，每次都要详细说明：
-- "帮我清理所有缓存文件，包括 node_modules/.cache、.next/cache 和 dist/"
 - "帮我运行测试、检查类型、然后检查代码风格"
 - "帮我构建项目、检查构建结果、报告文件大小"
 
 ### 解决方案
 
 通过自定义命令，这些操作只需一行：
-- `/cleanup` — 清理缓存
 - `/check` — 完整检查
 - `/build` — 构建项目
 
@@ -33,61 +35,112 @@
 
 ### 基本结构
 
-```markdown
+````markdown
 ---
-description: 命令的简短描述
-trigger: ["触发关键词1", "触发关键词2"]
+description: 命令的简短描述（显示在命令列表中）
+argument-hint: [参数提示]          # 可选，如 [issue-number]
+allowed-tools: Bash(git *), Read  # 可选，命令中允许使用的工具
+model: sonnet                     # 可选，指定使用的模型
 ---
 
 # 命令标题
 
-请执行以下操作：
+请执行以下操作，目标：$ARGUMENTS
+
 1. 第一步
 2. 第二步
 3. 第三步
-```
+````
 
 ### Frontmatter 字段
 
 | 字段 | 类型 | 必需 | 说明 |
 |------|------|------|------|
-| description | string | ✅ | 命令的简短描述 |
-| trigger | string[] | ❌ | 触发关键词列表，支持自然语言触发 |
+| description | string | ✅ | 命令的简短描述，显示在 `/` 命令列表中 |
+| argument-hint | string | ❌ | 参数提示，输入命令时展示，如 `[模块名]` |
+| allowed-tools | string | ❌ | 该命令允许使用的工具列表 |
+| model | string | ❌ | 指定执行该命令时使用的模型 |
+
+### 动态内容
+
+命令文件本质是提示词模板，支持以下动态语法：
+
+| 语法 | 说明 | 示例 |
+|------|------|------|
+| `$ARGUMENTS` | 接收用户输入的全部参数 | `审查这个文件：$ARGUMENTS` |
+| `$1`、`$2`… | 按位置接收参数 | `把 $1 重命名为 $2` |
+| `` !`命令` `` | 在命令执行前先运行 shell 命令，把输出注入提示词 | `` 当前分支：!`git branch --show-current` `` |
+| `@文件` | 引用文件内容作为上下文 | `参考 @src/typedoc.md 的规范` |
+
+> **通俗理解**：`!` 开头的命令像"准备工作"，先执行并把结果填进提示词；`$` 是"留空待填"的参数位。
 
 ## 如何使用命令
 
-### 1. 斜杠命令
-
-使用 `/命令名` 调用：
+### 1. 斜杠调用
 
 ```
 /cleanup
 /build
-/test
+/check src/utils
 ```
 
-### 2. 自然语言触发
-
-如果设置了 `trigger`，也可以用自然语言触发：
+### 2. 带参数调用
 
 ```
-# 触发 cleanup 命令（如果 trigger 包含"清理"）
-帮我清理一下缓存
+# 命令文件中用 $ARGUMENTS 接收
+/review src/auth.ts
 
-# 触发 format 命令（如果 trigger 包含"格式化"）
-把代码格式化一下
+# 命令文件中用 $1 $2 接收
+/rename utils.ts helper.ts
 ```
 
 ## 常用命令示例
 
-### 1. 清理命令
+### 1. 检查命令
+
+检查代码质量（演示 bash 前置执行和参数）。
+
+````markdown
+---
+description: 运行类型检查、代码风格检查和测试
+allowed-tools: Bash(npm run *), Bash(npm test)
+---
+
+# 代码质量检查
+
+当前分支：!`git branch --show-current`
+
+请对 $ARGUMENTS（未指定则为整个项目）执行以下检查：
+
+## 1. 类型检查
+- 运行 `npm run typecheck`
+- 报告所有类型错误
+
+## 2. 代码风格
+- 运行 `npm run lint`
+- 报告风格问题
+
+## 3. 测试
+- 运行 `npm test`
+- 显示测试覆盖率
+
+## 输出格式
+
+### ✅ 通过
+- 列出通过的检查项
+
+### ❌ 失败
+- 列出失败项及位置，并给出修复建议
+````
+
+### 2. 清理命令
 
 清理缓存和临时文件。
 
-```markdown
+````markdown
 ---
-description: 清理缓存和临时文件
-trigger: ["清理", "缓存", "cleanup"]
+description: 清理构建缓存和临时文件
+allowed-tools: Bash(rm *), Bash(du *)
 ---
 
 # 清理缓存
@@ -96,65 +149,32 @@ trigger: ["清理", "缓存", "cleanup"]
 
 ## 1. 缓存目录
 - 删除 `node_modules/.cache/`
-- 删除 `.next/cache/`
 - 删除 `dist/`
 - 删除 `.vite/`
 
 ## 2. 临时文件
 - 删除 `*.log` 文件
 - 删除 `.DS_Store`
-- 删除 `*.tmp` 文件
 
 ## 3. 确认清理
 - 显示删除的文件列表
 - 报告释放的磁盘空间
-```
-
-### 2. 格式化命令
-
-格式化项目代码。
-
-```markdown
----
-description: 格式化代码
-trigger: ["格式化", "format"]
----
-
-# 代码格式化
-
-请按以下步骤格式化代码：
-
-## 1. 检查工具
-- 确保 Prettier 已安装
-- 检查 `.prettierrc` 配置文件
-
-## 2. 执行格式化
-- 运行 `npm run format` 或 `npx prettier --write .`
-- 格式化所有源代码文件
-
-## 3. 验证结果
-- 检查修改的文件列表
-- 确认没有语法错误
-- 运行 `npm run lint` 确认通过
-```
+````
 
 ### 3. 构建命令
 
 构建生产版本。
 
-```markdown
+````markdown
 ---
-description: 构建项目
-trigger: ["构建", "build"]
+description: 构建项目并验证结果
+allowed-tools: Bash(npm run *), Bash(du *)
 ---
 
 # 项目构建
 
-请执行以下构建流程：
-
 ## 前置检查
-- [ ] 检查环境变量
-- [ ] 确认依赖已安装
+- 确认依赖已安装（node_modules 是否存在）
 
 ## 构建步骤
 1. 清理旧的构建产物
@@ -170,54 +190,17 @@ trigger: ["构建", "build"]
 - 如果构建失败，显示错误信息
 - 分析失败原因
 - 提供修复建议
-```
+````
 
-### 4. 检查命令
-
-检查代码质量。
-
-```markdown
----
-description: 检查代码质量
-trigger: ["检查", "check", "lint"]
----
-
-# 代码质量检查
-
-请执行以下检查：
-
-## 1. 类型检查
-- 运行 TypeScript 检查：`npm run type-check`
-- 报告所有类型错误
-
-## 2. 代码风格
-- 运行 ESLint：`npm run lint`
-- 报告风格问题
-
-## 3. 测试覆盖
-- 运行测试：`npm test`
-- 显示测试覆盖率
-
-## 输出格式
-### ✅ 通过
-- 类型检查通过
-- 代码风格检查通过
-- 测试覆盖率：85%
-
-### ❌ 失败
-- 类型错误：src/utils.ts:23 - 类型不匹配
-- 风格问题：src/components/Header.vue - 缺少分号
-- 测试失败：2 个测试用例失败
-```
-
-### 5. 发布命令
+### 4. 发布命令
 
 发布新版本。
 
-```markdown
+````markdown
 ---
 description: 发布新版本
-trigger: ["发布", "release", "deploy"]
+allowed-tools: Bash(git *), Bash(npm *)
+argument-hint: [版本号]
 ---
 
 # 版本发布
@@ -225,15 +208,14 @@ trigger: ["发布", "release", "deploy"]
 ## 前置检查
 - [ ] 所有测试通过
 - [ ] CHANGELOG 已更新
-- [ ] 版本号已更新
+- [ ] 版本号已更新（目标版本：$ARGUMENTS）
 
 ## 发布步骤
-1. 确认发布版本号
-2. 运行完整测试套件
-3. 构建生产版本
-4. 创建 git tag
-5. 推送到远程仓库
-6. 触发 CI/CD 流程
+1. 运行完整测试套件
+2. 构建生产版本
+3. 创建 git tag
+4. 推送到远程仓库
+5. 触发 CI/CD 流程
 
 ## 发布后验证
 - 检查部署状态
@@ -246,52 +228,18 @@ trigger: ["发布", "release", "deploy"]
 2. 恢复到上一版本
 3. 检查错误日志
 4. 修复后重试
-```
-
-### 6. 测试命令
-
-运行测试并处理失败。
-
-```markdown
----
-description: 运行测试并修复
-trigger: ["测试", "test"]
----
-
-# 测试执行
-
-## 测试步骤
-1. 运行完整测试套件
-2. 分析失败原因
-3. 修复失败测试
-4. 重新运行验证
-5. 报告最终结果
-
-## 处理逻辑
-- 单个测试失败：定位并修复该测试
-- 多个测试失败：分析共同原因
-- 超时失败：检查异步逻辑
-- 断言失败：验证预期行为
-
-## 输出格式
-测试结果：
-- 通过：45 个
-- 失败：2 个
-- 跳过：1 个
-- 覆盖率：87%
-```
+````
 
 ## 目录结构示例
 
 ```
 .claude/commands/
-├── build.md          # 构建命令
-├── test.md           # 测试命令
-├── lint.md           # 代码检查命令
-├── format.md         # 格式化命令
-├── cleanup.md        # 清理命令
-├── deploy.md         # 部署命令
-└── release.md        # 发布命令
+├── build.md          # /build 构建命令
+├── test.md           # /test 测试命令
+├── lint.md           # /lint 代码检查命令
+├── cleanup.md        # /cleanup 清理命令
+└── frontend/
+    └── build.md      # /frontend:build 带命名空间的命令
 ```
 
 ## 与 skills/ 的区别
@@ -336,17 +284,6 @@ description: 帮你清理各种缓存    # ❌ 不要用"帮你"这种口语
 ---
 ```
 
-### 触发词选择
-
-选择用户可能使用的自然词汇：
-
-```markdown
----
-trigger: ["清理", "cleanup", "清除"]  # ✅ 包含多种表达方式
-trigger: ["执行清理操作"]              # ❌ 太正式
----
-```
-
 ## 最佳实践
 
 ### 1. 命名清晰
@@ -369,7 +306,7 @@ stuff.md        # 太随意
 
 命令执行步骤要清晰详细：
 
-```markdown
+````markdown
 # ✅ 好的命令
 ## 步骤
 1. 第一步具体做什么
@@ -381,35 +318,30 @@ stuff.md        # 太随意
 - 做一些操作
 - 然后做其他操作
 - 最后检查
-```
+````
 
-### 3. 错误处理
+### 3. 限制工具范围
+
+通过 `allowed-tools` 限定命令能使用的工具，更安全可控：
+
+````markdown
+---
+description: 查看 git 历史
+allowed-tools: Bash(git log *), Bash(git diff *)
+---
+````
+
+### 4. 错误处理
 
 包含错误情况的处理说明：
 
-```markdown
+````markdown
 ## 错误处理
 - 如果命令执行失败，显示错误信息
 - 分析失败原因
 - 提供修复建议
 - 不要忽略错误继续执行
-```
-
-### 4. 输出友好
-
-提供清晰的输出格式：
-
-```markdown
-## 输出格式
-### ✅ 成功
-清理完成！
-- 删除文件：23 个
-- 释放空间：156MB
-
-### ❌ 失败
-清理失败：权限不足
-请使用 `sudo` 重试
-```
+````
 
 ### 5. 合理拆分
 
@@ -445,7 +377,7 @@ everything.md # 构建+测试+部署+发布
 
 1. **文件名即命令名**：`cleanup.md` 对应 `/cleanup`
 2. **避免内置冲突**：不要使用与内置命令冲突的名称
-3. **提交到代码库**：命令文件应该提交，让团队共享
+3. **提交到代码库**：项目级命令文件应该提交，让团队共享
 4. **同步更新文档**：更新命令时同步更新说明
 5. **复杂命令升级**：过于复杂的命令考虑升级为 skill
 
@@ -457,11 +389,19 @@ everything.md # 构建+测试+部署+发布
 
 ### Q：命令可以接受参数吗？
 
-**A**：目前不支持参数传递。如果需要参数，考虑使用 skills/。
+**A**：可以。在命令文件中使用 `$ARGUMENTS` 接收全部参数，或使用 `$1`、`$2` 按位置接收：
 
-### Q：命令可以调用其他命令吗？
+````markdown
+---
+description: 审查指定文件
+argument-hint: [文件路径]
+---
+请审查这个文件：$ARGUMENTS
+````
 
-**A**：可以。在命令描述中可以说明需要调用的其他命令。
+### Q：命令可以执行 shell 命令吗？
+
+**A**：可以。使用 `` !`命令` `` 语法在命令执行前先运行 shell 命令，输出会注入提示词。需要配合 `allowed-tools` 授权。
 
 ### Q：命令修改后需要重启吗？
 
@@ -473,15 +413,16 @@ everything.md # 构建+测试+部署+发布
 
 ## 示例模板
 
-```markdown
+````markdown
 ---
 description: 简短描述命令的功能
-trigger: ["触发词1", "触发词2"]
+argument-hint: [参数说明]
+allowed-tools: Bash(允许的命令)
 ---
 
 # 命令标题
 
-请执行以下操作：
+请执行以下操作，目标：$ARGUMENTS
 
 ## 步骤
 1. 第一步做什么
@@ -494,4 +435,4 @@ trigger: ["触发词1", "触发词2"]
 ## 错误处理
 - 如果失败，说明原因
 - 提供修复建议
-```
+````

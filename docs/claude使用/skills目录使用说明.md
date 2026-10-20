@@ -1,31 +1,36 @@
 # skills/ 目录使用说明
 
+> 📚 **官方文档**：[Claude Code Skills（Agent Skills）](https://code.claude.com/docs/en/skills)
+
 ## 什么是 skills/
 
-`skills/` 目录用于存放**可重用的技能文件**，通过 `/skill-name` 调用或根据上下文自动触发。
+`skills/` 目录用于存放**可重用的技能**。每个技能是一个包含 `SKILL.md` 的目录，通过 `/技能名` 调用，或由 Claude 根据 description 判断相关性后自动使用。
 
 > **通俗理解**：就像给 Claude 定义"技能包"或"工作流程模板"。每个技能是一个完整的多步骤任务流程，比如"代码审查流程"、"部署流程"等。
 
 ## 文件位置
 
 ```
-项目/.claude/skills/<name>/SKILL.md
-全局/.claude/skills/<name>/SKILL.md
+项目/.claude/skills/<name>/SKILL.md    # 项目级（团队共享）
+~/.claude/skills/<name>/SKILL.md       # 用户级（个人全局）
 ```
+
+技能名称就是目录名。
 
 ## 目录结构
 
 ```
 .claude/skills/
 ├── review/
-│   └── SKILL.md
+│   └── SKILL.md          # 代码审查技能
 ├── test/
-│   └── SKILL.md
-├── deploy/
-│   └── SKILL.md
-└── docs/
-    └── SKILL.md
+│   └── SKILL.md          # 测试技能
+└── deploy/
+    ├── SKILL.md          # 部署技能
+    └── checklist.md      # 可选：辅助文件
 ```
+
+技能目录中除了必需的 `SKILL.md`，还可以放辅助文件（参考文档、模板、配置等），在 SKILL.md 中用相对路径引用它们。
 
 ## 为什么需要 skills/
 
@@ -47,49 +52,47 @@
 
 | 特性 | skills/ | commands/ |
 |------|---------|-----------|
-| 目录结构 | `<name>/SKILL.md` | `*.md` |
-| 支持文件 | 可包含辅助文件 | 单文件 |
-| 复杂度 | 适合复杂技能 | 适合简单命令 |
-| 命名 | 目录名 | 文件名 |
+| 目录结构 | `<name>/SKILL.md` | `*.md` 单文件 |
+| 支持文件 | 可包含辅助文件 | 不支持 |
+| 适用场景 | 复杂技能、多步骤流程 | 简单命令 |
+| 触发方式 | `/名称` 调用 + Claude 自动选用 | 仅 `/名称` 调用 |
 
 > **通俗理解**：
 > - **commands** 是"快捷方式"：一键完成简单任务
-> - **skills** 是"工作流程"：复杂的多步骤任务流程
+> - **skills** 是"工作流"：复杂的多步骤任务流程，还能附带参考资料
 
 ## 文件格式
 
 ### 基本结构
 
-```markdown
+````markdown
 ---
-description: 技能的简短描述
-trigger: ["触发关键词1", "触发关键词2"]
-model: claude-opus-4-7
-timeout: 300000
+name: review
+description: 审查代码变更。当用户请求代码审查、检查 PR 质量时使用
 ---
 
-# 技能名称
-
-## 技能说明
-<!-- 技能的详细说明 -->
+# 代码审查
 
 ## 执行步骤
+
 1. 第一步
 2. 第二步
 3. 第三步
 
 ## 输出格式
+
 <!-- 结果应该怎样呈现 -->
-```
+````
 
 ### Frontmatter 字段
 
 | 字段 | 类型 | 必需 | 说明 |
 |------|------|------|------|
-| description | string | ✅ | 技能的简短描述 |
-| trigger | string[] | ❌ | 触发关键词列表 |
-| model | string | ❌ | 指定使用的模型 |
-| timeout | number | ❌ | 超时时间（毫秒） |
+| name | string | ✅ | 技能唯一标识（小写连字符，与目录名一致） |
+| description | string | ✅ | 技能的功能描述和使用时机。**Claude 依据它判断何时自动使用该技能** |
+| allowed-tools | string | ❌ | 限制技能执行时可使用的工具 |
+
+> **关键**：description 是技能能否被正确触发的核心。要写清楚"做什么"和"什么时候用"，两者兼备自动触发才准确。
 
 ## 如何使用技能
 
@@ -98,38 +101,32 @@ timeout: 300000
 ```
 /review
 /test
-/deploy
+/deploy 修复登录页
 ```
 
-### 2. 自然语言触发
+斜杠调用时输入的参数会传递给技能，在 SKILL.md 中用 `$ARGUMENTS` 接收：
 
-如果设置了 `trigger`，也可以用自然语言触发：
-
-```
-# 触发 review 技能（如果 trigger 包含"审查"）
-帮我审查一下这段代码
-
-# 触发 deploy 技能（如果 trigger 包含"部署"）
-准备部署到生产环境
+```markdown
+请审查以下范围的代码：$ARGUMENTS
 ```
 
-### 3. 参数传递
+### 2. 自动触发
 
-```
-/deploy --env=production --skip-tests
-```
+Claude 会根据当前任务与各技能的 description 匹配，需要时自动加载技能内容。例如设置了代码审查技能后，用户说"帮我审查这段代码"，Claude 可能自动应用该技能的流程。
 
 ## 技能示例
 
 ### 1. 代码审查技能
 
-```markdown
+````markdown
 ---
-description: 审查代码变更
-trigger: ["review", "审查", "code review"]
+name: review
+description: 审查代码变更的质量与安全性。当用户请求代码审查、检查提交或 PR 时使用
 ---
 
 # 代码审查
+
+审查范围：$ARGUMENTS（未指定则审查当前未提交的变更）
 
 ## 审查步骤
 
@@ -169,14 +166,14 @@ trigger: ["review", "审查", "code review"]
 ### ❌ 必须修复
 - 严重问题 1
 - 严重问题 2
-```
+````
 
 ### 2. 测试技能
 
-```markdown
+````markdown
 ---
-description: 运行和修复测试
-trigger: ["test", "测试"]
+name: test
+description: 运行测试并修复失败用例。当用户要求跑测试、修复测试失败时使用
 ---
 
 # 测试执行
@@ -203,14 +200,14 @@ trigger: ["test", "测试"]
 - 单个测试失败：修复该测试
 - 多个测试失败：分析共同原因
 - 超时失败：检查异步逻辑
-```
+````
 
 ### 3. 部署技能
 
-```markdown
+````markdown
 ---
-description: 部署应用
-trigger: ["deploy", "部署", "release"]
+name: deploy
+description: 执行应用部署流程。当用户要求部署、发版时使用
 ---
 
 # 部署流程
@@ -233,14 +230,14 @@ trigger: ["deploy", "部署", "release"]
 1. 停止新版本
 2. 恢复到上一版本
 3. 检查错误日志
-```
+````
 
 ### 4. 文档生成技能
 
-```markdown
+````markdown
 ---
-description: 生成 API 文档
-trigger: ["docs", "文档", "api docs"]
+name: docs
+description: 根据代码生成 API 文档。当用户要求生成或更新接口文档时使用
 ---
 
 # API 文档生成
@@ -265,19 +262,7 @@ trigger: ["docs", "文档", "api docs"]
 
 ## 输出格式
 生成 Markdown 格式的文档，保存到 `docs/api.md`
-```
-
-## 目录结构示例
-
-```
-.claude/skills/
-├── review/SKILL.md         # 代码审查
-├── test/SKILL.md          # 测试执行
-├── deploy/SKILL.md         # 部署流程
-├── docs/SKILL.md          # 文档生成
-├── refactor/SKILL.md       # 重构助手
-└── debug/SKILL.md         # 调试专家
-```
+````
 
 ## 命名规范
 
@@ -326,51 +311,44 @@ deploy/     # 只做部署
 everything/  # 什么都能做
 ```
 
-### 2. 清晰描述
+### 2. 写好 description
 
-description 准确说明功能：
-
-```markdown
----
-description: 审查代码质量和安全性    # ✅ 清晰
-description: 做一些审查工作          # ❌ 模糊
----
-```
-
-### 3. 合理触发
-
-trigger 设置合适的关键词：
+description 决定技能能否被正确触发，要同时说明"做什么"和"什么时候用"：
 
 ```markdown
 ---
-trigger: ["review", "审查", "code review"]   # ✅ 多种表达
-trigger: ["执行审查操作"]                  # ❌ 太正式
+description: 审查代码质量和安全性。当用户请求代码审查时使用    # ✅ 清晰
+description: 做一些审查工作                                  # ❌ 模糊
 ---
 ```
 
-### 4. 参数处理
+### 3. 参数处理
 
 明确说明需要的参数：
 
-```markdown
+````markdown
 ## 参数
 - `--scope`：审查范围（all/changed/file）
 - `--strict`：严格模式（true/false）
 
 ## 使用示例
 /review --scope=changed --strict=true
-```
+````
 
-### 5. 错误处理
+### 4. 错误处理
 
 包含错误情况的说明：
 
-```markdown
+````markdown
 ## 错误处理
 - 如果找不到文件，提示用户检查路径
 - 如果测试失败，提供修复建议
 - 如果构建错误，显示完整错误信息
-```
+````
+
+### 5. 复杂技能附带辅助文件
+
+流程复杂时，把检查清单、模板等拆成辅助文件放在技能目录中，在 SKILL.md 里引用，保持主文件精炼。
 
 ## 选择建议
 
@@ -391,9 +369,9 @@ trigger: ["执行审查操作"]                  # ❌ 太正式
 ## 注意事项
 
 1. **技能名称不能与内置命令冲突**
-2. **触发词要具有辨识度**
-3. **复杂技能考虑拆分**
-4. **技能文件应该提交到代码库**
+2. **description 要有辨识度**，避免多个技能描述雷同导致触发混乱
+3. **复杂技能考虑拆分**或使用辅助文件
+4. **项目级技能文件应该提交到代码库**
 5. **更新技能时同步更新文档**
 
 ## 工作流程
@@ -403,11 +381,11 @@ trigger: ["执行审查操作"]                  # ❌ 太正式
 ```
 1. 确定技能需求
    ↓
-2. 创建技能目录
+2. 创建技能目录（如 .claude/skills/review/）
    ↓
-3. 编写 SKILL.md
+3. 编写 SKILL.md（含 name 和 description）
    ↓
-4. 测试技能功能
+4. 测试技能功能（/技能名）
    ↓
 5. 提交到代码库
 ```
@@ -417,7 +395,7 @@ trigger: ["执行审查操作"]                  # ❌ 太正式
 ```
 1. 修改 SKILL.md
    ↓
-2. 更新触发词（如需要）
+2. 调整 description（如需要）
    ↓
 3. 测试变更
    ↓
@@ -426,17 +404,17 @@ trigger: ["执行审查操作"]                  # ❌ 太正式
 
 ## 常见问题
 
-### Q：技能和代理有什么区别？
+### Q：技能和代理（agents）有什么区别？
 
-**A**：技能是可重用的工作流程，共享主会话上下文；代理是独立的子会话，有独立的系统提示。
-
-### Q：技能可以调用其他技能吗？
-
-**A**：可以。在技能描述中说明需要调用的其他技能。
+**A**：技能是可重用的工作流程，共享主会话上下文；代理是独立的子会话，有独立的系统提示和工具限制。
 
 ### Q：技能修改后需要重启吗？
 
 **A**：不需要。技能修改后立即生效。
+
+### Q：技能为什么没有被自动触发？
+
+**A**：自动触发基于 description 匹配。检查 description 是否准确描述了当前任务的类型和关键词，必要时直接用 `/技能名` 手动调用。
 
 ### Q：如何测试技能是否工作？
 
@@ -444,4 +422,4 @@ trigger: ["执行审查操作"]                  # ❌ 太正式
 
 ### Q：技能文件应该提交到代码库吗？
 
-**A**：应该。技能是团队共享的工作流程，应该提交到代码库。
+**A**：项目级技能应该提交，让团队共享一致的流程；用户级技能保存在本地。

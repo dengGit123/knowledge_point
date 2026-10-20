@@ -1,6 +1,8 @@
 # Claude Code 使用指南
 
-> Claude Code 是 Anthropic 官方的 Claude CLI 工具，让开发者能在终端中直接与 Claude 协作完成编程任务。
+> Claude Code 是 Anthropic 官方的 AI 编程助手 CLI 工具，让开发者能在终端中直接与 Claude 协作完成编程任务。
+
+> 📚 **官方文档**：<https://code.claude.com/docs/>
 
 ## 快速开始
 
@@ -17,9 +19,9 @@ claude
 ```
 
 首次运行会引导你完成：
-1. API 密钥配置
+1. 登录认证（Claude 账号或 API 密钥）
 2. 基础设置
-3. 编辑器选择
+3. 主题选择
 
 ### 第一个命令
 
@@ -41,9 +43,16 @@ claude
 | 命令 | 说明 |
 |------|------|
 | `/help` | 显示所有可用命令 |
-| `/fast` | 切换快速模式（使用 Sonnet 模型） |
+| `/clear` | 清除对话历史，释放上下文 |
+| `/compact` | 压缩对话历史，保留关键信息 |
 | `/config` | 打开配置界面 |
-| `/clear` | 清除对话历史 |
+| `/model` | 切换模型 |
+| `/fast` | 切换快速模式（更快的输出速度，不会降级到更小的模型） |
+| `/agents` | 管理子代理 |
+| `/mcp` | 查看 MCP 服务器连接状态 |
+| `/memory` | 编辑记忆文件（CLAUDE.md） |
+| `/init` | 扫描项目并生成初始 CLAUDE.md |
+| `/output-style` | 切换输出风格 |
 | `/exit` | 退出程序 |
 
 ### 交互技巧
@@ -51,6 +60,7 @@ claude
 - **直接描述任务**：用自然语言说明你想做什么
 - **指定文件**：直接提到文件名，Claude 会自动定位
 - **确认操作**：重要操作会先请求确认
+- **中断执行**：按 `Esc` 可中断当前正在执行的操作
 
 ## 核心功能
 
@@ -123,34 +133,44 @@ Claude Code 使用多层级配置系统，让你可以在不同范围设置规�
 
 ```
 全局配置 (~/.claude/)
-├── settings.json          # 全局默认设置
+├── settings.json          # 用户级设置
+├── CLAUDE.md              # 全局规则（对所有项目生效）
 ├── keybindings.json       # 快捷键配置
-├── themes/               # 主题文件
-└── agents/               # 全局子代理
+├── agents/                # 全局子代理
+├── commands/              # 全局自定义命令
+├── skills/                # 全局技能
+└── themes/                # 主题文件
 
 项目配置 (项目/.claude/)
-├── CLAUDE.md             # 项目级规则
-├── settings.json         # 项目设置
-├── settings.local.json   # 个人本地设置
-├── .mcp.json             # 团队 MCP 服务器
-├── commands/             # 自定义命令
-├── skills/               # 可重用技能
-├── rules/                # 路径相关规则
-├── memory/               # 记忆存储
-└── output-styles/        # 输出风格
+├── CLAUDE.md              # 项目级规则
+├── settings.json          # 项目共享设置
+├── settings.local.json    # 个人本地设置
+├── rules/                 # 路径相关规则
+├── agents/                # 项目子代理
+├── commands/              # 项目自定义命令
+├── skills/                # 项目技能
+└── output-styles/         # 输出风格
+
+项目根目录
+├── CLAUDE.md              # 项目级规则（也可以放在这里）
+└── .mcp.json              # 团队 MCP 服务器（project 范围）
 ```
 
 ### 配置优先级
 
 ```
-settings.local.json (最高)
+企业策略文件 (最高)
         ↓
-  settings.json
+命令行参数
         ↓
-~/.claude.json (settings)
+settings.local.json (项目本地)
         ↓
-全局 settings.json (最低)
+settings.json (项目共享)
+        ↓
+~/.claude/settings.json (用户级，最低)
 ```
+
+> **通俗理解**：越"靠近你"的配置优先级越高——项目里的个人配置覆盖项目共享配置，项目配置覆盖个人全局配置。
 
 ## 配置文件说明
 
@@ -167,7 +187,7 @@ settings.local.json (最高)
 
 | 文件/目录 | 作用 | 是否提交 |
 |-----------|------|----------|
-| [~/.claude.json](./claude配置使用说明.md) | 个人 API 密钥和偏好 | ❌ 不提交 |
+| [~/.claude.json](./claude配置使用说明.md) | CLI 自动管理的状态文件 | ❌ 不提交 |
 | [keybindings.json](./keybindings配置使用说明.md) | 快捷键配置 | ❌ 不提交 |
 | [themes/](./主题使用说明.md) | 自定义主题 | ❌ 不提交 |
 
@@ -181,6 +201,7 @@ settings.local.json (最高)
 | [rules/](./rules目录使用说明.md) | 路径规则 | 特定文件的编码规范 |
 | [memory/](./memory目录使用说明.md) | 记忆系统 | 跨会话信息存储 |
 | [output-styles/](./output-styles目录使用说明.md) | 输出风格 | 控制响应格式 |
+| [.worktreeinclude](./worktree配置使用说明.md) | worktree 复制清单 | 创建 worktree 时复制本地文件 |
 
 ## 进阶功能
 
@@ -212,8 +233,8 @@ Claude 会自动识别可并行执行的任务：
 ### 上下文管理
 
 - **@ 文件引用**：`@src/app.ts` 引用特定文件
-- **# 符号引用**：`#AuthService` 引用符号定义
 - **IDE 选区**：在编辑器中选中代码可直接传递上下文
+- **`/compact` 压缩**：对话过长时压缩历史，保留关键信息
 
 ## 常见工作流
 
@@ -282,7 +303,7 @@ Claude 会自动识别可并行执行的任务：
 
 ```
 # ✅ 好的描述
-创建一个用户登录组件，使用 TypeScript，包含邮箱和密码字段，提交时验证格式
+创建一个用户登录组件，使用 Vue 3 + TypeScript，包含邮箱和密码字段，提交时验证格式
 
 # ❌ 不好的描述
 做一个登录
@@ -331,9 +352,9 @@ Claude 会自动识别可并行执行的任务：
 
 ## 相关资源
 
+- [官方文档](https://code.claude.com/docs/)
 - [GitHub 仓库](https://github.com/anthropics/claude-code)
 - [问题反馈](https://github.com/anthropics/claude-code/issues)
-- [官方文档](https://claude.ai/code)
 
 ## 配置文件索引
 
@@ -342,7 +363,7 @@ Claude 会自动识别可并行执行的任务：
 1. [CLAUDE.md 使用说明](./CLAUDE文件使用说明.md) - 项目级规则
 2. [MEMORY.md 使用说明](./MEMORY文件使用说明.md) - 记忆索引
 3. [agents/ 目录说明](./agents目录使用说明.md) - 子代理配置
-4. [claude 配置说明](./claude配置使用说明.md) - 全局配置
+4. [claude 配置说明](./claude配置使用说明.md) - 全局状态文件
 5. [commands/ 目录说明](./commands目录使用说明.md) - 自定义命令
 6. [keybindings 配置说明](./keybindings配置使用说明.md) - 快捷键
 7. [mcp 配置说明](./mcp配置使用说明.md) - MCP 服务器

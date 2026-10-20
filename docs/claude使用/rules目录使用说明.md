@@ -1,5 +1,7 @@
 # rules/ 目录使用说明
 
+> 📚 **官方文档**：[Claude Code Memory](https://code.claude.com/docs/en/memory)
+
 ## 什么是 rules/
 
 `rules/` 目录用于存放**主题范围的规则文件**，支持**路径门控（path gating）**，让特定规则只在匹配的文件路径下生效。
@@ -9,8 +11,8 @@
 ## 文件位置
 
 ```text
-项目/.claude/rules/*.md
-全局/.claude/rules/*.md
+项目/.claude/rules/*.md      # 项目级（团队共享）
+~/.claude/rules/*.md         # 全局级（个人）
 ```
 
 ## 目录结构
@@ -18,7 +20,7 @@
 ```text
 .claude/rules/
 ├── typescript.md      # TypeScript 文件规范
-├── react.md           # React 组件规范
+├── vue.md             # Vue 组件规范
 ├── testing.md         # 测试文件规范
 ├── database.md        # 数据库操作规范
 ├── styles.md          # 样式文件规范
@@ -33,7 +35,7 @@
 在不同类型的文件中，需要遵循不同的规范：
 - 测试文件：需要遵循测试命名、Mock 使用等规范
 - 数据库代码：需要遵循安全查询、迁移规范
-- React 组件：需要遵循组件结构、Hooks 使用规范
+- Vue 组件：需要遵循组件结构、组合式 API 使用规范
 - 样式文件：需要遵循命名、嵌套等规范
 
 ### 解决方案
@@ -54,13 +56,13 @@
 ### 工作原理
 
 ```text
-操作文件: src/components/Button.tsx
+操作文件: src/components/Button.vue
          ↓
-检查 rules/*.md 中的 globs
+检查 rules/*.md 中的路径模式
          ↓
-找到匹配的规则: react.md (globs: ["src/components/**/*.tsx"])
+找到匹配的规则: vue.md (匹配 "src/components/**/*.vue")
          ↓
-应用 react.md 中的规则
+应用 vue.md 中的规则
 ```
 
 ## 作用
@@ -76,11 +78,10 @@
 
 ### 基本结构
 
-```markdown
+````markdown
 ---
 globs: ["src/**/*.ts", "lib/**/*.ts"]
 description: TypeScript 编码规范
-id: typescript-rules
 ---
 
 # TypeScript 规范
@@ -89,13 +90,13 @@ id: typescript-rules
 - 所有函数必须有返回类型注解
 - 禁止使用 `any` 类型
 - 接口优先于类型别名
-```
+````
 
 ### Frontmatter 字段
 
 | 字段 | 类型 | 必需 | 说明 |
 |------|------|------|------|
-| globs | string[] | ✅ | 匹配的文件路径模式（glob 表达式） |
+| globs | string[] | 视版本而定 | 匹配的文件路径模式（glob 表达式）。部分版本使用 `paths` 字段，以所用版本的官方文档为准 |
 | description | string | ✅ | 规则的简短描述 |
 | id | string | ❌ | 可选的规则标识符 |
 
@@ -105,15 +106,15 @@ id: typescript-rules
 |------|------|------|
 | `*.ts` | 所有 .ts 文件 | 当前目录 |
 | `**/*.ts` | 所有 .ts 文件 | 递归所有目录 |
-| `src/**/*.tsx` | src 下所有 .tsx | 递归匹配 |
-| `**/*.test.{ts,js}` | 测试文件 | 多扩展名 |
+| `src/**/*.vue` | src 下所有 .vue | 递归匹配 |
+| `**/*.{test,spec}.{ts,js}` | 测试文件 | 多扩展名 |
 | `!src/vendor/**` | 排除 vendor 目录 | 否定模式 |
 
 ## 路径门控示例
 
 ### 1. 按文件类型
 
-```markdown
+````markdown
 ---
 globs: ["**/*.test.ts", "**/*.spec.ts"]
 description: 测试文件规范
@@ -122,7 +123,7 @@ description: 测试文件规范
 # 测试文件规范
 
 ## 命名规范
-- 测试文件名与源文件对应：`Button.tsx` → `Button.test.tsx`
+- 测试文件名与源文件对应：`Button.vue` → `Button.spec.ts`
 - 测试用例描述使用 `应该...` 格式
 
 ## 结构规范
@@ -134,37 +135,36 @@ description: 测试文件规范
 - Mock 外部依赖和 API 调用
 - 使用清晰的 mock 数据
 - 测试完成后恢复 mock
-```
+````
 
 ### 2. 按目录路径
 
-```markdown
+````markdown
 ---
-globs: ["src/components/**/*.tsx", "src/components/**/*.jsx"]
-description: React 组件规范
+globs: ["src/components/**/*.vue"]
+description: Vue 组件规范
 ---
 
-# React 组件规范
+# Vue 组件规范
 
 ## 组件结构
-- 使用函数式组件，避免类组件
-- Props 使用 TypeScript 接口定义
+- 使用 `<script setup lang="ts">` 语法
+- Props 使用 `defineProps<T>()` 并提供 TypeScript 接口
 - 组件文件使用 PascalCase 命名
 
-## Hooks 规范
-- Hooks 只在函数顶层调用
-- 自定义 Hook 以 `use` 开头
-- 遵循 Hooks 规则：不在条件、循环中使用
+## 逻辑复用
+- 跨组件逻辑提取为组合式函数（composables），以 `use` 开头
+- 组合式函数放在 `src/composables/` 目录
 
 ## 性能优化
-- 纯展示组件使用 `React.memo`
-- 使用 `useMemo` 缓存计算结果
-- 使用 `useCallback` 稳定函数引用
-```
+- 纯展示的静态列表项使用 `v-memo`
+- 大列表渲染提供合理的 `key`
+- 计算属性替代方法调用缓存结果
+````
 
 ### 3. 按模块划分
 
-```markdown
+````markdown
 ---
 globs: ["src/api/**/*.ts", "src/services/**/*.ts"]
 description: API 层规范
@@ -186,41 +186,15 @@ description: API 层规范
 - 记录请求参数和响应
 - 不记录敏感信息（密码、token）
 - 错误时记录完整的错误堆栈
-```
-
-### 4. 按技术栈
-
-```markdown
----
-globs: ["**/*.vue"]
-description: Vue 组件规范
----
-
-# Vue 组件规范
-
-## 组件结构
-- 使用 `<script setup>` 语法
-- 组件命名使用 PascalCase
-- Props 使用 `defineProps<T>()` 定义
-
-## 样式规范
-- 使用 scoped 样式
-- 优先使用 CSS Modules
-- 避免使用全局样式
-
-## 响应式数据
-- 使用 `ref` 和 `reactive` 管理状态
-- 避免 `reactive` 解构
-- computed 计算属性缓存计算结果
-```
+````
 
 ## 常见规则模板
 
 ### 1. 数据库操作规则
 
-```markdown
+````markdown
 ---
-globs: ["src/db/**/*.ts", "**/*migration*.ts", "**/seeds/**/*.ts"]
+globs: ["src/db/**/*.ts", "**/*migration*.ts"]
 description: 数据库操作规范
 ---
 
@@ -243,13 +217,13 @@ description: 数据库操作规范
 - 合理使用索引
 - 分页查询限制结果数量
 - 只选择需要的字段
-```
+````
 
 ### 2. 样式文件规则
 
-```markdown
+````markdown
 ---
-globs: ["**/*.css", "**/*.scss", "**/*.module.css", "**/*.module.scss"]
+globs: ["**/*.css", "**/*.scss", "**/*.module.css"]
 description: 样式文件规范
 ---
 
@@ -274,11 +248,11 @@ description: 样式文件规范
 - 使用媒体查询实现响应式
 - 移动优先（Mobile First）策略
 - 使用相对单位（rem, em, %）
-```
+````
 
 ### 3. 文档规则
 
-```markdown
+````markdown
 ---
 globs: ["**/*.md", "docs/**/*", "README.md"]
 description: 文档编写规范
@@ -302,11 +276,11 @@ description: 文档编写规范
 - 代码变更时同步更新文档
 - 过时信息及时删除或标注
 - 重要变更添加变更日志
-```
+````
 
 ### 4. 安全规则
 
-```markdown
+````markdown
 ---
 globs: ["src/auth/**/*.ts", "src/middleware/**/*.ts"]
 description: 安全相关规范
@@ -331,13 +305,13 @@ description: 安全相关规范
 - 日志中不记录敏感信息
 - 实现 CSRF 保护
 - 使用 HTTPS 传输
-```
+````
 
 ### 5. Git 提交规则
 
-```markdown
+````markdown
 ---
-globs: [".git/**/*", "COMMIT_EDITMSG"]
+globs: ["COMMIT_EDITMSG", "**/*.git/COMMIT_EDITMSG"]
 description: Git 工作规范
 ---
 
@@ -364,7 +338,7 @@ description: Git 工作规范
 - feature/*: 功能开发
 - bugfix/*: 问题修复
 - hotfix/*: 紧急修复
-```
+````
 
 ## 与 CLAUDE.md 的区别
 
@@ -402,7 +376,7 @@ CLAUDE.md
 ✅ 好的设计
 .claude/rules/
 ├── typescript.md
-├── react.md
+├── vue.md
 ├── testing.md
 └── database.md
 
@@ -418,7 +392,7 @@ CLAUDE.md
 
 ```text
 ✅ 好的设计
-globs: ["src/components/**/*.tsx"]
+globs: ["src/components/**/*.vue"]
 globs: ["**/*.test.ts"]
 
 ❌ 不好的设计
@@ -430,11 +404,7 @@ globs: ["src/**/*"]       # 过于宽泛
 
 description 字段准确说明规则用途：
 
-```markdown
----
-description: TypeScript 编码规范
----
-
+```text
 ✅ 清晰
 description: 定义 TypeScript 类型注解、接口使用、泛型等规范
 
@@ -461,9 +431,8 @@ vue.md:        globs: ["src/**/*"]  # 重叠冲突
 rules 文件应该提交到代码库，团队共享：
 
 ```bash
-# 提交规则文件
 git add .claude/rules/
-git commit -m "docs: 添加 TypeScript 和 React 编码规范"
+git commit -m "docs: 添加 TypeScript 和 Vue 编码规范"
 ```
 
 ## 工作流程
@@ -502,7 +471,8 @@ git commit -m "docs: 添加 TypeScript 和 React 编码规范"
 2. **规则文件会合并**：同一路径可以匹配多条规则，规则会叠加生效
 3. **规则优先级**：项目级 > 全局级
 4. **规则数量适中**：规则太多可能影响性能，合理组织
-5. **定期审查**：定期检查规则是否需要更新或删除过时规则
+5. **字段名以版本为准**：部分版本使用 `paths` 而非 `globs`，以官方文档为准
+6. **定期审查**：定期检查规则是否需要更新或删除过时规则
 
 ## 常见问题
 

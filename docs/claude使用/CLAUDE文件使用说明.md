@@ -1,5 +1,7 @@
 # CLAUDE.md 使用说明
 
+> 📚 **官方文档**：[Manage Claude's memory - CLAUDE.md](https://code.claude.com/docs/en/memory)
+
 ## 什么是 CLAUDE.md
 
 `CLAUDE.md` 是**项目级配置文件**，你可以把它理解为项目的"使用说明书"或"操作指南"。每次打开项目与 Claude 对话时，它会自动被加载，告诉 Claude 这个项目的规则、约定和特殊要求。
@@ -8,9 +10,15 @@
 
 ## 文件位置
 
-```
-项目根目录/.claude/CLAUDE.md
-```
+`CLAUDE.md` 可以放在多个位置，作用范围不同：
+
+| 位置 | 作用范围 | 是否提交 |
+|------|----------|----------|
+| `项目根目录/CLAUDE.md` 或 `项目/.claude/CLAUDE.md` | 当前项目，团队共享 | ✅ 应提交 |
+| `项目根目录/CLAUDE.local.md` | 当前项目，仅本人 | ❌ 不提交 |
+| `~/.claude/CLAUDE.md` | 所有项目，个人全局 | ❌ 不提交 |
+
+子目录中的 `CLAUDE.md` 会在 Claude 处理该目录下的文件时按需加载，适合为特定模块补充局部规则。
 
 ## 为什么需要 CLAUDE.md
 
@@ -30,7 +38,7 @@
 
 ### 基本结构
 
-```markdown
+````markdown
 # 项目名称 - Claude 指令
 
 ## 项目概述
@@ -53,6 +61,18 @@
 
 ## 注意事项
 <!-- 需要特别注意的地方 -->
+````
+
+### 导入其他文件
+
+`CLAUDE.md` 支持使用 `@路径` 语法导入其他文件，便于拆分维护：
+
+```markdown
+## 编码规范
+@docs/standards/code-style.md
+
+## API 约定
+@docs/standards/api.md
 ```
 
 ## 可配置的内容
@@ -81,7 +101,7 @@
 
 让 Claude 知道项目文件应该如何组织。
 
-```markdown
+````markdown
 ## 目录结构
 
 ```
@@ -96,12 +116,13 @@ src/
 ├── types/        # TypeScript 类型定义
 └── main.ts       # 入口文件
 ```
+````
 
 ### 3. 代码风格约定
 
 指定代码应该如何编写。
 
-```markdown
+````markdown
 ## 代码风格
 
 ### 命名规范
@@ -118,13 +139,13 @@ src/
 - ❌ 禁止使用 `any` 类型
 - ❌ 禁止在模板中编写复杂逻辑
 - ❌ 禁止使用 `var` 声明变量
-```
+````
 
 ### 4. 工作流程指南
 
 说明开发和部署的标准流程。
 
-```markdown
+````markdown
 ## 开发流程
 
 ### 功能开发
@@ -147,30 +168,30 @@ src/
 - 代码必须通过 CI 检查
 - 至少一人代码审查
 - 关联相关的 Issue
-```
+````
 
 ### 5. 常用命令
 
 列出项目常用的命令，方便 Claude 执行。
 
-```markdown
+````markdown
 ## 常用命令
 
 | 命令 | 说明 |
 |------|------|
-| npm dev | 启动开发服务器（端口 5173） |
-| npm build | 构建生产版本 |
+| npm run dev | 启动开发服务器（端口 5173） |
+| npm run build | 构建生产版本 |
 | npm test | 运行测试 |
 | npm run lint | 代码风格检查 |
 | npm run format | 代码格式化 |
 | npm run typecheck | TypeScript 类型检查 |
-```
+````
 
 ### 6. 特殊注意事项
 
 提醒 Claude 需要特别注意的地方。
 
-```markdown
+````markdown
 ## 注意事项
 
 ### 禁止修改
@@ -186,11 +207,11 @@ src/
 - 支持 Chrome 最新版本
 - 支持 Safari 最新版本
 - 支持 Edge 最新版本
-```
+````
 
 ## 完整示例
 
-```markdown
+````markdown
 # 电商管理后台 - Claude 指令
 
 ## 项目概述
@@ -262,10 +283,9 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // 3. Emits 定义
-interface Emits {
+const emit = defineEmits<{
   (e: 'update', value: number): void
-}
-const emit = defineEmits<Emits>()
+}>()
 
 // 4. 响应式状态
 const count = ref(props.count)
@@ -346,9 +366,9 @@ chore: 更新依赖版本
 
 | 命令 | 说明 |
 |------|------|
-| `npm dev` | 启动开发服务器（http://localhost:5173） |
-| `npm build` | 构建生产版本到 `dist/` 目录 |
-| `npm preview` | 预览构建结果 |
+| `npm run dev` | 启动开发服务器（http://localhost:5173） |
+| `npm run build` | 构建生产版本到 `dist/` 目录 |
+| `npm run preview` | 预览构建结果 |
 | `npm test` | 运行测试套件 |
 | `npm run lint` | 检查代码风格 |
 | `npm run format` | 自动格式化代码 |
@@ -386,19 +406,13 @@ chore: 更新依赖版本
 - **文档地址**：https://docs.example.com
 - **测试环境**：https://admin-test.example.com
 - **生产环境**：https://admin.example.com
-
-### 联系方式
-
-- **技术负责人**：张三
-- **架构师**：李四
-- **问题反馈**：在 GitHub 提 Issue
-```
+````
 
 ## 最佳实践
 
 ### 1. 保持简洁
 
-只写真正需要 Claude 知道的内容。如果项目中某些信息可以通过 README 或其他文档获取，就不需要在 `CLAUDE.md` 中重复。
+只写真正需要 Claude 知道的内容。如果项目中某些信息可以通过 README 或其他文档获取，就不需要在 `CLAUDE.md` 中重复。内容越精炼，Claude 遵守得越好。
 
 ### 2. 分类清晰
 
@@ -406,11 +420,15 @@ chore: 更新依赖版本
 
 ### 3. 及时更新
 
-当项目的技术栈、规范或流程发生变化时，同步更新 `CLAUDE.md`。
+当项目的技术栈、规范或流程发生变化时，同步更新 `CLAUDE.md`。可以使用 `/init` 命令让 Claude 帮助生成或更新。
 
 ### 4. 团队同步
 
-`CLAUDE.md` 应该提交到代码库，让整个团队共享同一份规则。
+`CLAUDE.md` 应该提交到代码库，让整个团队共享同一份规则。个人偏好放在 `CLAUDE.local.md` 或全局 `~/.claude/CLAUDE.md` 中。
+
+### 5. 用强调语气标注重要规则
+
+重要规则可以使用 **加粗** 或 "IMPORTANT"、"必须" 等字眼，Claude 会给予更高优先级。
 
 ## 与其他配置的关系
 
@@ -421,15 +439,17 @@ chore: 更新依赖版本
 | `settings.json` | 权限和配置 | ✅ 应提交 |
 | `settings.local.json` | 个人配置覆盖 | ❌ 不提交 |
 
+详细规则拆分方式见 [rules/ 目录使用说明](./rules目录使用说明.md)。
+
 ## 常见问题
 
 ### Q：CLAUDE.md 和 README 有什么区别？
 
 **A**：README 是给人类开发者看的，包含项目介绍、安装步骤、使用方法等；CLAUDE.md 是给 AI 助手看的，包含代码规范、工作流程、技术约定等。两者可以有关联，但服务于不同的读者。
 
-### Q：规则太多会不会影响性能？
+### Q：规则太多会不会影响效果？
 
-**A**：不会。`CLAUDE.md` 的内容在每次会话开始时一次性加载，对性能的影响微乎其微。但建议保持简洁，只包含必要信息。
+**A**：`CLAUDE.md` 的内容会占用上下文窗口。内容过多会稀释重点，建议保持精炼，把特定路径的规则拆分到 `.claude/rules/` 中按需加载。
 
 ### Q：可以覆盖 CLAUDE.md 中的规则吗？
 
@@ -437,4 +457,4 @@ chore: 更新依赖版本
 
 ### Q：项目没有 .claude 目录怎么办？
 
-**A**：在项目根目录创建 `.claude` 目录，然后创建 `CLAUDE.md` 文件即可。
+**A**：在项目根目录直接创建 `CLAUDE.md` 即可，或使用 `/init` 命令让 Claude 自动生成。也可以创建 `.claude/CLAUDE.md`，两者效果相同。
