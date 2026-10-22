@@ -1,8 +1,8 @@
 ### setCurrentScope
 
-> 📖 [Vue 3 响应式 API：进阶 — 官方文档](https://cn.vuejs.org/api/reactivity-advanced)
+> 📖 [Vue 3 响应式 API：进阶 — 官方文档](https://cn.vuejs.org/api/reactivity-advanced.html)
 >
-> ⚠️ **注意：** `setCurrentScope` 并非 Vue 3 官方公开文档中列出的公共 API，而是 Vue 响应式系统内部的底层函数。Vue 官方公开的 EffectScope 相关 API 为 `effectScope()`、`getCurrentScope()` 和 `onScopeDispose()`。`setCurrentScope` 可从 `vue` 中导入，但主要用于高级场景和库的开发。
+> ⚠️ **注意：** `setCurrentScope` 并非 Vue 3 官方公开文档中列出的公共 API，而是 Vue 响应式系统内部的底层逻辑。Vue 官方公开的 EffectScope 相关 API 只有 `effectScope()`、`getCurrentScope()` 和 `onScopeDispose()`。**`setCurrentScope` 并没有从 `vue` 包中导出**，`import { setCurrentScope } from 'vue'` 拿到的是 `undefined`——下文涉及它的示例仅用于说明内部机制，不能直接运行。实际开发中请使用 `scope.run(fn)`（自动切换并恢复作用域）配合 `getCurrentScope()`（读取当前作用域）。
 
 ### 一、概述
 
@@ -67,6 +67,8 @@ run<T>(fn: () => T): T | undefined {
 `setCurrentScope` 提供了**不使用回调函数**的方式来切换作用域，适用于无法将代码包裹在 `run()` 回调中的场景。
 
 ### 三、详细用法
+
+> ⚠️ 再次强调：`setCurrentScope` 未从 `vue` 导出，以下示例描述的是框架内部行为。应用代码中实现同样效果的正确写法是 `scope.run(fn)`，需要拿到当前作用域时用 `getCurrentScope()`。
 
 #### 1. 基本用法
 
@@ -305,6 +307,8 @@ setCurrentScope(savedParent)
 ```
 
 #### 3. API 参数说明
+
+> ⚠️ 下表描述的是 Vue 内部行为（便于理解原理），`setCurrentScope` 并非公开 API，参数与返回值可能随版本变化。
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
@@ -668,6 +672,8 @@ manager.destroyModule('user') // 输出：[user] 模块已销毁
 ```
 
 #### 6. 作用域暂停与恢复（配合 EffectScope 的 pause/resume）
+
+> 💡 `pause()` / `resume()` 是 Vue 3.5 新增的 `EffectScope` 公开方法，与 `setCurrentScope` 无关，可以直接使用。
 
 ```ts
 import {
@@ -1126,21 +1132,17 @@ scope.stop() // 输出：作用域已清理
 
 #### 10. TypeScript 类型提示
 
-`setCurrentScope` 从 `vue` 中导出时可能没有完整的类型声明，建议自行补充类型。
+不要尝试为 `setCurrentScope` 做模块扩充（module augmentation）——它根本不存在于 `vue` 的导出中，`declare module 'vue'` 声明只会制造"可用"的假象，运行时依然拿不到函数。需要类似能力时，用公开 API 组合实现：
 
 ```ts
-import {
-  effectScope,
-  getCurrentScope,
-  type EffectScope
-} from 'vue'
+import { effectScope, getCurrentScope, type EffectScope } from 'vue'
 
-// 当前版本 setCurrentScope 可能需要额外的类型声明
-declare module 'vue' {
-  export function setCurrentScope(
-    scope: EffectScope | null | undefined
-  ): EffectScope | undefined
-}
+// ✅ 用公开 API 获取并临时切换作用域
+const scope = effectScope()
+scope.run(() => {
+  console.log(getCurrentScope() === scope) // true
+  // 这个作用域内创建的副作用都会被 scope 收集
+})
 ```
 
 ### 七、相关 API 对比
@@ -1182,4 +1184,4 @@ scope.off() // 停用，引用计数 -1
 2. **跨函数的作用域管理**：适用于无法将代码包裹在 `scope.run()` 回调中的复杂场景
 3. **库和工具开发**：为构建更高级的响应式管理工具提供基础能力
 
-> 💡 **提示：** 在日常应用开发中，99% 的场景应该使用 `scope.run()` 而非 `setCurrentScope`。只有在构建库、实现自定义作用域管理策略、或需要在复杂流程中灵活切换作用域时，才需要考虑使用 `setCurrentScope`。使用时务必记住保存和恢复之前的作用域，避免副作用归属错误。
+> 💡 **提示：** 在日常应用开发中，99% 的场景应该使用 `scope.run()`。`setCurrentScope` 本身无法导入——即使是库作者，需要手动控制作用域激活时，也应使用 `EffectScope` 实例上的公开方法 `scope.on()` / `scope.off()`（激活/停用当前作用域），并务必保证成对调用，避免副作用归属错误。

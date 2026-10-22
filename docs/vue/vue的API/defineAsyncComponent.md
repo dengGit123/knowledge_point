@@ -4,7 +4,7 @@
 
 `defineAsyncComponent()` 用于定义异步组件，使其只在需要时才加载。这对于代码分割、减少初始加载体积和提升应用性能非常有用。
 
-📖 [defineAsyncComponent](https://cn.vuejs.org/api/general#defineasynccomponent)
+📖 [defineAsyncComponent](https://cn.vuejs.org/api/general.html#defineasynccomponent)
 
 ## 用法
 
@@ -25,34 +25,39 @@ const AsyncComponent = defineAsyncComponent(() =>
 import { defineAsyncComponent } from 'vue'
 
 const AsyncComponent = defineAsyncComponent({
-  // 加载组件的函数
+  // 加载组件的函数（必填）
   loader: () => import('./components/MyComponent.vue'),
 
   // 加载中显示的组件
   loadingComponent: LoadingComponent,
 
-  // 加载失败的组件
+  // 加载失败 / 超时后显示的组件
   errorComponent: ErrorComponent,
 
-  // 延迟显示 loading 组件的时间（默认 200ms）
+  // 延迟显示 loading 组件的时间（默认 200ms，避免闪烁）
   delay: 200,
 
-  // 超时时间（默认 Infinity）
+  // 超时时间，超过后显示 errorComponent（默认 Infinity，即永不超时）
   timeout: 3000,
 
-  // 组件可以被挂载前的延迟时间
+  // SSR 水合策略（3.5+），控制异步组件在服务端渲染时何时加载
+  // 如 hydrate: 'idle' | hydrate: { timeout: 3000 } 等
+  hydrate: 'idle',
+
+  // 是否交由父级 <Suspense> 控制加载状态（默认 true）
   suspensible: false,
 
-  // 错误重试的次数
-  onError(error, retry, fail) {
+  // 加载出错时的处理
+  onError(error, retry, fail, attempts) {
     // error: 错误对象
-    // retry: 重试函数
-    // fail: 失败函数
+    // retry: 重试函数（注意要 return 它的返回值）
+    // fail: 放弃加载
+    // attempts: 已重试次数
 
     if (error.message.includes('fetch')) {
-      retry() // 重试
+      return retry() // 重试
     } else {
-      fail() // 失败
+      return fail() // 失败
     }
   }
 })
@@ -219,14 +224,13 @@ const AdminPanel = defineAsyncComponent(async () => {
 
 ### TypeScript 支持
 
-```javascript
-import { defineAsyncComponent } from 'vue'
+```ts
+import { defineAsyncComponent, type Component } from 'vue'
 
-// 推导组件类型
-const AsyncComponent = defineAsyncComponent<
-  ComponentType & {
-    exposedMethod: () => void
-  }>(() => import('./MyComponent.vue'))
+// loader 返回 Promise<Component>，组件类型由动态导入的模块决定
+const AsyncComponent: Component = defineAsyncComponent(
+  () => import('./MyComponent.vue')
+)
 ```
 
 ### 全局注册异步组件
@@ -291,9 +295,9 @@ const AsyncComp = defineAsyncComponent({
   timeout: 5000, // 5 秒超时
   onError(error, retry, fail) {
     if (error.message.includes('timeout')) {
-      retry() // 超时重试
+      return retry() // 超时重试（必须 return 返回值）
     } else {
-      fail() // 其他错误直接失败
+      return fail() // 其他错误直接失败
     }
   }
 })
@@ -334,16 +338,17 @@ const AsyncComp = defineAsyncComponent(() => import('./MyComponent.vue'))
 ### 5. 服务端渲染 (SSR)
 
 ```javascript
-// SSR 中需要特殊处理
+// SSR 中需要注意：suspensible 为 true（默认）时，
+// 加载状态由父级 <Suspense> 统一控制
 const AsyncComp = defineAsyncComponent({
   loader: () => import('./MyComponent.vue'),
-  suspensible: false // 禁用 Suspense 支持
+  suspensible: false // 设为 false 后由组件自身控制加载状态
 })
 
-// 或使用 SSR 友好的加载方式
+// SSR 场景下也可以按环境选择加载方式
 if (import.meta.env.SSR) {
-  // 服务端：直接导入
-  const AsyncComp = defineComponent(MyComponent)
+  // 服务端：直接静态导入
+  const AsyncComp = MyComponent
 } else {
   // 客户端：异步加载
   const AsyncComp = defineAsyncComponent(() => import('./MyComponent.vue'))
@@ -547,9 +552,11 @@ const MapComponent = defineAsyncComponent({
   onError(error, retry, fail) {
     if (error.message.includes('network')) {
       console.log('网络错误，重试中...')
-      setTimeout(() => retry(), 2000)
+      return new Promise(resolve => {
+        setTimeout(() => resolve(retry()), 2000)
+      })
     } else {
-      fail()
+      return fail()
     }
   }
 })
@@ -609,20 +616,25 @@ const useVirtualScroll = computed(() => items.value.length > 100)
 ```javascript
 const AsyncComponent = defineAsyncComponent({
   loader: () => import('./Component.vue'),
-  onError(error, retry, fail) {
+  onError(error, retry, fail, attempts) {
     if (error.message.match(/fetch/)) {
-      // 处理 fetch 错误，重试
-      retry()
+      // 处理 fetch 错误，重试（超过 3 次不再重试）
+      if (attempts < 3) return retry()
+      return fail()
     } else if (error.message.match(/timeout/)) {
       // 超时错误，延迟后重试
-      setTimeout(() => retry(), 2000)
+      return new Promise(resolve => {
+        setTimeout(() => resolve(retry()), 2000)
+      })
     } else {
       // 其他错误，直接失败
-      fail()
+      return fail()
     }
   }
 })
 ```
+
+> ⚠️ **注意：** 使用 `retry()` 时必须 `return` 它的返回值，否则 Vue 在开发环境会发出警告（`If you are using retry(), make sure to return its return value`）。
 
 ### 10. 预加载组件
 
@@ -646,13 +658,14 @@ router.beforeEach((to, from, next) => {
 
 | 选项 | 类型 | 默认值 | 说明 |
 |-----|------|--------|------|
-| loader | () => Promise\<Component\> | - | 返回组件的函数 |
+| loader | () => Promise\<Component\> | - | 返回组件的函数（必填） |
 | loadingComponent | Component | - | 加载中显示的组件 |
-| errorComponent | Component | - | 加载失败显示的组件 |
+| errorComponent | Component | - | 加载失败 / 超时后显示的组件 |
 | delay | number | 200 | 延迟显示 loading 的时间 |
-| timeout | number | Infinity | 超时时间 |
-| suspensible | boolean | true | 是否可被 Suspense 控制 |
-| onError | (error, retry, fail) => void | - | 错误处理函数 |
+| timeout | number | Infinity | 超时时间，超过后显示 errorComponent |
+| hydrate | HydrationStrategy | - | SSR 水合策略（3.5+），如 `'idle'` / `{ timeout: 3000 }` |
+| suspensible | boolean | true | 是否交由父级 Suspense 控制 |
+| onError | (error, retry, fail, attempts) => any | - | 错误处理函数 |
 
 ## 最佳实践
 

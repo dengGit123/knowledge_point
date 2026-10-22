@@ -52,8 +52,10 @@ const selected = ref('')
 import { ref } from 'vue'
 
 const message = ref('')
+const age = ref('')
+const username = ref('')
 
-// .lazy - 失去焦点时更新
+// .lazy - 改为在 change 事件后同步
 // .number - 自动转为数字
 // .trim - 自动去除首尾空格
 </script>
@@ -101,6 +103,26 @@ const text = ref('')
     :model-value="text"
     @update:model-value="text = $event"
   />
+</template>
+```
+
+### 组件 v-model（3.4+ 推荐写法）
+
+Vue 3.4 起可以使用 `defineModel()` 宏，它会自动展开为一个名为 `modelValue` 的 prop 和一个 `update:modelValue` 的事件，父组件用法不变：
+
+```vue
+<!-- 子组件 -->
+<script setup>
+const model = defineModel()
+
+function update() {
+  // 在脚本中通过 model.value 读取和修改
+  model.value = 'new value'
+}
+</script>
+
+<template>
+  <input v-model="model" />
 </template>
 ```
 
@@ -337,15 +359,19 @@ const message = ref('')
 
 ### 6. 组件 v-model 参数
 
-```vue
-<!-- Vue 2.x 语法 -->
-<ChildComponent v-model="page" />
+v-model 在组件上的默认 prop 名和事件名在 Vue 3 中发生了变化：
 
-<!-- Vue 3.x 语法（默认参数名改变） -->
+```vue
+<!-- Vue 2：prop 名为 value，事件为 input（可用 model 选项自定义） -->
+<ChildComponent :value="page" @input="page = $event" />
+
+<!-- Vue 3：prop 名改为 modelValue，事件为 update:modelValue -->
 <ChildComponent v-model="page" />
 <!-- 等同于 -->
 <ChildComponent :model-value="page" @update:model-value="page = $event" />
 ```
+
+> ⚠️ **注意：** Vue 2 的 `model` 选项和 `.sync` 修饰符（如 `:title.sync="title"`）在 Vue 3 中均已移除，统一改用 `v-model` 及其参数（如 `v-model:title="title"`）实现。
 
 ### 7. 与 v-bind 的冲突
 
@@ -570,7 +596,8 @@ const range = ref([20, 80])
     <input v-model="volume" type="range" min="0" max="100" />
 
     <label>范围: {{ range[0] }} - {{ range[1] }}</label>
-    <input v-model="range" type="range" multiple min="0" max="100" />
+    <input v-model.number="range[0]" type="range" min="0" max="100" />
+    <input v-model.number="range[1]" type="range" min="0" max="100" />
   </div>
 </template>
 ```
@@ -595,6 +622,8 @@ function handleFileUpload(event) {
   </div>
 </template>
 ```
+
+> ⚠️ **注意：** `type="file"` 的 input 不支持 `v-model`（文件选择框没有可写的 value），需要用 `@change` 事件自行处理，如上例所示。
 
 ### 10. 自定义开关
 
@@ -653,10 +682,10 @@ button.active {
 
 | 修饰符 | 作用 | 适用元素 |
 |------|------|----------|
-| .lazy | 失去焦点时更新 | input, textarea |
-| .number | 自动转为数字 | input[type=number] |
+| .lazy | 改为在 change 事件后同步（而非每次 input） | input, textarea, select |
+| .number | 自动转为数字（parseFloat，失败时保留原始值；type="number" 时自动启用） | input |
 | .trim | 去除首尾空格 | input, textarea |
-| .capitalize | 首字母大写（自定义） | 组件 |
+| .capitalize | 首字母大写（非内置修饰符，官方示例，需在组件中自行实现） | 组件 |
 
 ## 最佳实践
 

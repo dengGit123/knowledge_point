@@ -4,13 +4,15 @@
 
 `isVNode()` 检查一个值是否为 Vue 的 VNode（虚拟 DOM 节点）对象。主要用于在渲染函数或工具函数中进行类型判断。
 
-📖 [Vue 官方文档 - 渲染函数 API](https://cn.vuejs.org/api/render-function)
+📖 [Vue 官方文档 - isVNode](https://cn.vuejs.org/api/render-function.html#isvnode)
 
 ## 函数签名
 
 ```typescript
-function isVNode(value: unknown): boolean
+function isVNode(value: any): value is VNode
 ```
+
+它是一个 TypeScript 类型守卫：在 `if (isVNode(value))` 分支内，`value` 的类型会自动收窄为 `VNode`。
 
 ## 基本用法
 
@@ -102,7 +104,7 @@ export default {
 ### 3. 条件渲染工具
 
 ```javascript
-import { h, isVNode, Fragment } from 'vue'
+import { h, isVNode, createTextVNode, Fragment } from 'vue'
 
 // 安全包装内容为 VNode
 function ensureVNode(content) {
@@ -119,7 +121,9 @@ function ensureVNode(content) {
   }
 
   // 字符串或数字 → 文本 VNode
-  return h(String(content))
+  // ❌ 注意不能写 h(String(content))：那会把内容当作「标签名」创建元素
+  //    （例如数字 123 会变成 <123> 标签）
+  return createTextVNode(String(content))
 }
 
 export default {

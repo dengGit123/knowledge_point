@@ -2,7 +2,7 @@
 
 ## 作用
 
-📖 [Vue 官方文档 - onMounted](https://cn.vuejs.org/api/composition-api-lifecycle#onmounted)
+📖 [Vue 官方文档 - onMounted](https://cn.vuejs.org/api/composition-api-lifecycle.html#onmounted)
 
 `onMounted()` 是 Vue 3 的生命周期钩子，用于在组件挂载完成后注册回调函数。此时组件已完成了以下工作：
 - 创建响应式状态
@@ -300,7 +300,9 @@ function initApp() {
 }
 ```
 
-### 3. 必须同步调用
+### 3. 必须同步注册
+
+钩子的**注册**必须发生在 `setup()` 的同步执行阶段。放在异步回调（`setTimeout`、`Promise.then`、`await` 之后）中会因为没有活跃的组件实例而失效；条件语句中的**同步**注册是允许的（组合式函数中很常见）。
 
 ```javascript
 import { onMounted } from 'vue'
@@ -310,19 +312,17 @@ onMounted(() => {
   console.log('挂载')
 })
 
-// ❌ 错误：异步调用
+// ✅ 正确：条件语句中的同步注册
+if (needAutoFocus) {
+  onMounted(() => inputRef.value?.focus())
+}
+
+// ❌ 错误：异步注册，不会生效
 setTimeout(() => {
   onMounted(() => {
-    // 不会执行
+    // 开发环境会警告：没有活跃的组件实例
   })
 }, 1000)
-
-// ❌ 错误：条件语句中
-if (someCondition) {
-  onMounted(() => {
-    // 不会执行
-  })
-}
 ```
 
 ### 4. 清理副作用
@@ -380,14 +380,9 @@ onMounted(() => {
   // 这个代码不会在服务器端执行
   console.log('只在客户端执行')
 })
-
-// ✅ 如果需要服务端和客户端都执行，使用 onBeforeMount
-import { onBeforeMount } from 'vue'
-
-onBeforeMount(() => {
-  // 服务端和客户端都会执行
-})
 ```
+
+> ⚠️ 不要误以为 `onBeforeMount` 会在服务端执行——它在 SSR 中同样不会被调用。需要在服务器上预取数据请使用 `onServerPrefetch`（一个仅在 SSR 中调用的异步钩子），客户端再配合 `onMounted` 补充获取。
 
 ### 7. 父子组件的挂载顺序
 

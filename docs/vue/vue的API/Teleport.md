@@ -4,7 +4,7 @@
 
 `Teleport` 是一个内置组件，用于将模板内容"传送"到 DOM 的其他位置。它允许你控制组件内容在 DOM 中的渲染位置，而不影响组件层级结构。
 
-📖 [官方文档：Teleport](https://cn.vuejs.org/api/built-in-components#teleport)
+📖 [官方文档：Teleport](https://cn.vuejs.org/api/built-in-components.html#teleport)
 
 ## 用法
 
@@ -190,6 +190,23 @@ const target = ref('body')
 </template>
 ```
 
+### 延迟挂载目标（defer，3.5+）
+
+如果目标元素在模板中位于 `Teleport` 之后（挂载时还不存在），默认会解析失败。加上 `defer` 属性后，Vue 会推迟到组件挂载完成后再解析目标，这样同一段模板里后渲染的目标也能找到：
+
+```vue
+<template>
+  <Teleport defer to="#late-target">
+    <div class="modal">内容</div>
+  </Teleport>
+
+  <!-- 目标在 Teleport 之后才渲染，必须配合 defer -->
+  <div id="late-target"></div>
+</template>
+```
+
+> ⚠️ **注意：** `defer` 只解决"同一渲染流程中目标还没挂载"的问题。如果目标由 `v-if` 等条件控制、渲染时机完全不确定，还是应该保证目标先于内容出现。
+
 ### 传送多个插槽内容
 
 ```vue
@@ -243,39 +260,36 @@ const show = ref(true)
 </template>
 ```
 
-### 2. 生命周期钩子的执行
+### 2. 生命周期钩子照常执行
+
+`Teleport` 只是把 DOM 移到了目标容器，内容的挂载、更新、卸载流程不受影响，`onMounted` 等钩子照常触发：
 
 ```vue
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
+
+const show = ref(true)
 
 onMounted(() => {
-  console.log('组件已挂载')
-  // Teleport 内容的 onMounted 也会执行
+  console.log('组件挂载完成，Teleport 内容也已渲染到目标位置')
 })
 </script>
 
 <template>
   <Teleport to="body">
-    <div @mounted="console.log('Teleport content mounted')">
-      Content
-    </div>
+    <div v-if="show" class="modal">内容</div>
   </Teleport>
 </template>
 ```
 
-### 3. 事件冒泡
+### 3. 事件冒泡遵循真实 DOM 位置
+
+传送后的 DOM 挂在目标容器（如 body）下，原生事件只沿真实 DOM 结构冒泡，**不会**冒泡到组件里原来的父级元素。父子组件间的事件通信用 `emits`，不受传送影响：
 
 ```vue
-<script setup>
-function handleClick() {
-  console.log('Clicked')
-}
-</script>
-
 <template>
-  <!-- Teleport 会保留事件冒泡行为 -->
-  <div @click="handleClick">
+  <!-- ❌ 点击按钮时 outer 的 @click 不会触发（DOM 已经在 body 下） -->
+  <div class="outer" @click="handleOuter">
     <Teleport to="body">
       <button @click="handleClick">Click</button>
     </Teleport>
@@ -283,24 +297,25 @@ function handleClick() {
 </template>
 ```
 
-### 4. 插槽内容
+### 4. 插槽内容也会被传送
+
+`Teleport` 内的默认插槽、具名插槽、作用域插槽内容都会被传送到目标位置，且插槽的作用域仍属于定义它的父组件：
 
 ```vue
-<script setup>
-const show = ref(true)
-</script>
-
+<!-- Modal.vue：把调用方传入的插槽内容整体传送到 body -->
 <template>
-  <!-- 默认插槽内容会被传送 -->
   <Teleport to="body">
-    <template>
-      <div>传送的内容</div>
-    </template>
+    <div class="modal">
+      <slot name="header">默认标题</slot>
+      <slot />
+    </div>
   </Teleport>
 </template>
 ```
 
 ### 5. 目标元素必须存在
+
+`to` 接收 CSS 选择器字符串或真实的 DOM 元素。挂载时目标还不存在，开发环境会给出 `Invalid Teleport target on mount` 警告，内容不会渲染到目标位置：
 
 ```vue
 <template>
@@ -315,12 +330,14 @@ const show = ref(true)
     <div>Content</div>
   </Teleport>
 
-  <!-- ❌ 目标元素不存在时会报错 -->
+  <!-- ⚠️ 挂载时目标不存在：开发环境警告，内容不渲染 -->
   <Teleport to="#non-existent">
     <div>Content</div>
   </Teleport>
 </template>
 ```
+
+> 💡 **提示：** 如果目标元素和 `Teleport` 在同一段模板中且写在后面，使用 `defer` 属性（见上文）延迟解析目标。
 
 ### 6. 作用域插槽
 
@@ -752,11 +769,12 @@ const isFullscreen = ref(false)
 
 | 特性 | 说明 |
 |-----|------|
-| to | 目标位置（CSS 选择器或实际元素）|
-| disabled | 是否禁用传送 |
-| 保留层级 | 组件层级结构不变 |
+| to | 目标位置（CSS 选择器或实际元素），必填 |
+| disabled | 是否禁用传送（为 true 时内容在原地渲染）|
+| defer | 延迟到挂载后再解析目标（3.5+）|
+| 保留层级 | 组件层级结构不变，逻辑关系（props/emits/inject）不受影响 |
 | 生命周期 | 正常执行 |
-| 事件冒泡 | 保留原有行为 |
+| 事件冒泡 | 原生事件按真实 DOM 位置（目标容器）冒泡 |
 
 ## 最佳实践
 

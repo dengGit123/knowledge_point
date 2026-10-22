@@ -1,6 +1,6 @@
-### resolveComponent
+# resolveComponent
 
-> 📖 [Vue 官方文档 - resolveComponent](https://cn.vuejs.org/api/render-function#resolvecomponent)
+> 📖 [Vue 官方文档 - resolveComponent](https://cn.vuejs.org/api/render-function.html#resolvecomponent)
 
 ---
 
@@ -23,19 +23,22 @@
 `resolveComponent()` 的工作流程如下：
 
 1. **上下文感知**：调用时需要处于当前组件实例的上下文中（`setup()` 或渲染函数内部），这样它才能访问当前组件的注册信息
-2. **查找顺序**：
-   - 第一步：查找**局部注册**的组件（通过 `components` 选项注册）
-   - 第二步：查找**全局注册**的组件（通过 `app.component()` 注册）
-   - 第三步：查找 **Vue 内置组件**（如 `Transition`、`KeepAlive`、`Teleport`、`Suspense`）
+2. **查找顺序**（对应源码 `resolveAsset` 的实现）：
+   - 第一步：与**当前组件自身的名称**匹配（用于递归组件的自引用）
+   - 第二步：查找**局部注册**的组件（通过 `components` 选项注册）
+   - 第三步：查找**全局注册**的组件（通过 `app.component()` 注册）
+   - 每一步名称匹配都会依次尝试原名、camelCase、PascalCase 三种形式
 3. **降级处理**：如果以上都没有找到，会在控制台发出运行时警告，并返回传入的**名称字符串本身**。`h()` 函数接收到字符串时，会将其当作原生 HTML 标签处理
 
 **函数签名：**
 
 ```typescript
-function resolveComponent(name: string): Component | string
+function resolveComponent(name: string, maybeSelfReference?: boolean): Component | string
 ```
 
-- **参数**：`name` — 组件的注册名称（`string` 类型）
+- **参数**：
+  - `name` — 组件的注册名称（`string` 类型）
+  - `maybeSelfReference` — 可选，未找到注册项时是否允许把当前组件自身作为候选（配合递归组件）
 - **返回值**：如果找到组件，返回 `Component` 对象；如果未找到，返回传入的名称字符串
 
 ---
@@ -152,32 +155,26 @@ export default defineComponent({
 </script>
 ```
 
-##### （3）解析 Vue 内置组件
+##### （3）内置组件直接 import，不要用名称解析
 
-`resolveComponent()` 也可以解析 Vue 内置的特殊组件：
+`Transition`、`KeepAlive`、`Teleport`、`Suspense` 等内置组件**不会**被注册到局部/全局注册表里，`resolveComponent('Transition')` 解析不到（会触发警告并返回字符串）。模板中能用内置组件，是编译器直接生成了对它们的引用；渲染函数里应从 `vue` 直接导入：
 
 ```vue
 <script lang="ts">
-import { h, resolveComponent, defineComponent } from 'vue'
+// ✅ 内置组件：直接 import
+import { h, Transition, KeepAlive, defineComponent } from 'vue'
 
 export default defineComponent({
-  setup() {
-    return () => {
-      // 解析 Vue 内置组件
-      const Transition = resolveComponent('Transition')
-      const KeepAlive = resolveComponent('KeepAlive')
-
-      return h('div', [
-        // Transition 包裹动态内容
-        h(Transition, { name: 'fade' }, () =>
-          h('p', '带过渡效果的内容')
-        ),
-        // KeepAlive 缓存组件
-        h(KeepAlive, null, () =>
-          h(resolveComponent('DynamicPanel') as any)
-        )
-      ])
-    }
+  props: ['panel'],
+  setup(props) {
+    return () => h('div', [
+      // Transition 包裹动态内容
+      h(Transition, { name: 'fade' }, () =>
+        h('p', '带过渡效果的内容')
+      ),
+      // KeepAlive 缓存组件
+      h(KeepAlive, null, () => h(props.panel))
+    ])
   }
 })
 </script>
@@ -227,7 +224,7 @@ export const ConsumerComponent = defineComponent({
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `name` | `string` | 是 | 组件的注册名称，支持全局注册名、局部注册名以及 Vue 内置组件名 |
+| `name` | `string` | 是 | 组件的注册名称，支持局部注册名与全局注册名（也支持匹配当前组件自身名称，用于递归组件） |
 
 | 返回值类型 | 说明 |
 |------------|------|
@@ -268,7 +265,7 @@ export default defineComponent({
 
 **控制台输出效果：**
 
-```
+```text
 [Vue warn]: Failed to resolve component: UnknownComp. If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
 ```
 
@@ -632,7 +629,7 @@ export default defineComponent({
 })
 ```
 
-> ⚠️ **注意：** 即使在 `setup()` 中，也要在**渲染函数（返回的函数）内部**调用 `resolveComponent()`，而不是在 `setup()` 的同步执行阶段直接调用。因为解析需要等到渲染阶段才能获取到正确的上下文。
+> 💡 **提示：** `setup()` 的同步执行阶段或渲染函数内部都可以调用（官方文档的示例就是在 `setup()` 同步代码中解析、再返回渲染函数），真正的要求是「必须处于组件实例上下文中」——即 `setup()`、渲染函数或生命周期钩子内部。组件外部的模块顶层没有实例上下文，无法解析。
 
 #### 2. 组件必须已注册
 
@@ -689,7 +686,7 @@ export default defineComponent({
 
 > 💡 **提示：** 直接 `import` 的组件可以被 Vite/Webpack 进行 tree-shaking 和懒加载优化，而 `resolveComponent()` 基于字符串名称，这些优化都无法应用。
 
-#### 4. 解析优先级：局部注册 > 全局注册 > 内置组件
+#### 4. 解析优先级：局部注册 > 全局注册
 
 当局部注册和全局注册有同名组件时，局部注册优先：
 
@@ -831,7 +828,7 @@ export function registerSharedComponents(app: App) {
 
 `resolveComponent()` 是 Vue 3 渲染函数体系中的重要辅助 API，主要用于以下情况：
 
-1. **在渲染函数中按名称解析已注册的组件**，包括全局注册、局部注册和 Vue 内置组件
+1. **在渲染函数中按名称解析已注册的组件**，包括局部注册和全局注册的组件
 2. **适用于组件名称在运行时动态确定的场景**，如配置驱动的表单、低代码平台、动态布局系统等
 3. **只能在 `setup()` 或渲染函数的上下文中调用**，依赖组件实例
 4. **应作为最后手段使用**，优先考虑直接 `import` 组件
@@ -840,4 +837,5 @@ export function registerSharedComponents(app: App) {
 - 需要**渲染函数 + 字符串组件名**时才用它
 - 如果能直接 `import`，就**不需要**它
 - 未找到组件时**返回字符串**而非抛错，需注意处理
-- 解析顺序为**局部注册 > 全局注册 > 内置组件**
+- 解析顺序为**自身名称（递归） > 局部注册 > 全局注册**
+- 内置组件（`Transition` 等）**不在解析范围内**，直接从 `vue` 导入

@@ -1,3 +1,5 @@
+# shallowReadonly
+
 > 📖 [官方文档 - shallowReadonly](https://cn.vuejs.org/api/reactivity-advanced.html#shallowreadonly)
 
 ### 一、概述
@@ -21,7 +23,7 @@
 3. **值原样存储**：属性的值会被原样存储和暴露，值为 `ref` 的属性**不会**被自动解包。
 4. **开发模式警告**：在开发环境下，尝试修改根级属性时会在控制台输出警告信息；在生产环境下，修改操作会静默失败（不抛出错误，但值不会改变）。
 
-```
+```text
 ┌──────────────────────────────────┐
 │        shallowReadonly(obj)       │
 ├──────────────────────────────────┤
@@ -114,7 +116,7 @@ updateConfig('apiUrl', 'https://new-api.example.com')
 **在组合式函数中返回只读状态**
 
 ```ts
-import { ref, shallowReadonly, computed, type Ref, type ShallowReadonly } from 'vue'
+import { ref, shallowReadonly } from 'vue'
 
 interface User {
   id: number
@@ -142,9 +144,9 @@ export function useUser() {
 
   // 对外暴露只读状态，防止外部直接修改
   return {
-    user: shallowReadonly(user) as ShallowReadonly<Ref<User | null>>,
-    loading: shallowReadonly(loading) as ShallowReadonly<Ref<boolean>>,
-    error: shallowReadonly(error) as ShallowReadonly<Ref<string | null>>,
+    user: shallowReadonly(user),
+    loading: shallowReadonly(loading),
+    error: shallowReadonly(error),
     fetchUser
   }
 }
@@ -183,7 +185,7 @@ provide('theme', shallowReadonly(theme))
 ```vue
 <!-- 子组件：注入并使用只读配置 -->
 <script setup lang="ts">
-import { inject, type ShallowReadonly } from 'vue'
+import { inject } from 'vue'
 
 interface ThemeConfig {
   primaryColor: string
@@ -194,7 +196,7 @@ interface ThemeConfig {
   }
 }
 
-const theme = inject<ShallowReadonly<ThemeConfig>>('theme')!
+const theme = inject<Readonly<ThemeConfig>>('theme')!
 
 // ✅ 可以读取
 console.log(theme.primaryColor) // '#409eff'
@@ -238,7 +240,7 @@ console.log(isReadonly(deep.nested)) // true —— 嵌套对象也是只读的
 function shallowReadonly<T extends object>(target: T): Readonly<T>
 ```
 
-> 💡 **提示：** `shallowReadonly()` 的泛型约束为 `T extends object`，因此不能传入原始值（如数字、字符串、布尔值）。如果需要创建只读的原始值引用，请使用 `readonly(ref(value))` 或 `computed(() => value)`。
+> 💡 **提示：** `shallowReadonly()` 的泛型约束为 `T extends object`，因此不能传入原始值（如数字、字符串、布尔值）。如果需要创建只读的原始值引用，请使用 `readonly(ref(value))` 或 `computed(() => value)`。另外，返回值类型 `Readonly<T>` 是 TypeScript 内置工具类型，Vue 并没有导出名为 `ShallowReadonly` 的类型。
 
 ### 四、实现效果
 
@@ -306,7 +308,7 @@ original.name = 'Vue.js'
 
 ```ts
 // src/composables/useAppConfig.ts
-import { reactive, shallowReadonly, type ShallowReadonly } from 'vue'
+import { reactive, shallowReadonly } from 'vue'
 
 interface AppConfig {
   apiBaseUrl: string
@@ -329,7 +331,7 @@ const config = reactive<AppConfig>({ ...defaultConfig })
 
 // ✅ 对外暴露只读配置
 export function useAppConfig(): {
-  config: ShallowReadonly<AppConfig>
+  config: Readonly<AppConfig>
   setConfig: (key: keyof AppConfig, value: any) => void
   resetConfig: () => void
 } {
@@ -353,7 +355,7 @@ export function useAppConfig(): {
 
 ```ts
 // src/stores/userStore.ts
-import { reactive, shallowReadonly, computed, type ShallowReadonly } from 'vue'
+import { reactive, shallowReadonly, computed } from 'vue'
 
 interface UserState {
   userInfo: { id: number; name: string; avatar: string } | null
@@ -410,7 +412,7 @@ export function useUserStore() {
 
 ```ts
 // src/plugins/analytics.ts
-import { reactive, shallowReadonly, type App, type ShallowReadonly } from 'vue'
+import { reactive, shallowReadonly, type App } from 'vue'
 
 interface AnalyticsOptions {
   trackingId: string
@@ -424,7 +426,7 @@ export function createAnalyticsPlugin(defaultOptions: AnalyticsOptions) {
   return {
     install(app: App): void {
       // ✅ 向应用提供只读配置
-      app.provide<ShallowReadonly<AnalyticsOptions>>('analyticsOptions', shallowReadonly(options))
+      app.provide<Readonly<AnalyticsOptions>>('analyticsOptions', shallowReadonly(options))
 
       // 提供内部方法来修改配置
       app.provide('updateAnalyticsOption', <K extends keyof AnalyticsOptions>(
@@ -507,7 +509,7 @@ function handleSubmit(): void {
 
 ```ts
 // src/composables/useApiCache.ts
-import { ref, shallowReadonly, type Ref, type ShallowReadonly } from 'vue'
+import { ref, shallowReadonly, type Ref } from 'vue'
 
 interface CacheEntry<T> {
   data: T
@@ -527,7 +529,7 @@ export function useApiCache() {
   }
 
   // ✅ 返回只读版本，防止调用方修改缓存中的数据
-  function getCache<T>(key: string): ShallowReadonly<CacheEntry<T>> | null {
+  function getCache<T>(key: string): Readonly<CacheEntry<T>> | null {
     const entry = cache.value[key]
     if (!entry) return null
 
@@ -594,9 +596,9 @@ console.log(PAGINATION_CONFIG.pageSize) // 20
 
 ```ts
 // src/composables/useEventBus.ts
-import { reactive, shallowReadonly, type ShallowReadonly } from 'vue'
+import { reactive, shallowReadonly } from 'vue'
 
-type EventHandler<T = any> = (payload: ShallowReadonly<T>) => void
+type EventHandler<T = any> = (payload: Readonly<T>) => void
 
 interface EventBusState {
   lastEvent: string | null
@@ -737,7 +739,7 @@ export const locales = { 'zh-CN': zhCN, 'en-US': enUS }
 
 ```ts
 // src/composables/useLargeDataset.ts
-import { shallowReadonly, ref, type ShallowReadonly } from 'vue'
+import { shallowReadonly, ref } from 'vue'
 
 interface DataItem {
   id: number
@@ -757,11 +759,11 @@ export function useLargeDataset() {
 
   // ✅ 对外暴露浅层只读版本，避免深层递归代理的性能开销
   // 对于包含数千条数据的大型数据集，shallowReadonly 比 readonly 性能更好
-  function getData(): ShallowReadonly<DataItem[]> {
+  function getData(): Readonly<DataItem[]> {
     return shallowReadonly(dataset.value)
   }
 
-  function getItemById(id: number): ShallowReadonly<DataItem> | undefined {
+  function getItemById(id: number): Readonly<DataItem> | undefined {
     const item = dataset.value.find(item => item.id === id)
     return item ? shallowReadonly(item) : undefined
   }
@@ -811,7 +813,7 @@ const count = ref(0)
 const state = shallowReadonly({ count })
 
 // ❌ 不会自动解包
-console.log(state.count) // Ref<{ value: 0 }>，而不是 0
+console.log(state.count) // 是 ref 本身（未被解包），而不是 0
 
 // ✅ 需要手动通过 .value 访问
 console.log(state.count.value) // 0
@@ -854,7 +856,7 @@ const root = reactive({
 
 #### 5. 原始对象的修改仍会反映到只读代理
 
-`shallowReadonly()` 创建的是代理而非拷贝，修改原始对象会直接影响只读代理中对应的值（对于嵌套属性而言）。
+`shallowReadonly()` 创建的是代理而非拷贝，修改原始对象（无论是根级还是嵌套属性）都会同步反映到只读代理上。
 
 ```ts
 import { reactive, shallowReadonly } from 'vue'

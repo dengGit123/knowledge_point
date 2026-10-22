@@ -48,7 +48,16 @@ CREATE TABLE users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 ```
 
-### 1.3 字段注释 COMMENT（强烈推荐）
+### 1.3 加上 IF NOT EXISTS（脚本可重复执行）
+
+```sql
+-- 表已存在时不报错，直接跳过创建
+CREATE TABLE IF NOT EXISTS users (...);
+```
+
+> 💡 **提示：** 写初始化/迁移脚本时建议加 `IF NOT EXISTS`，避免重复执行脚本报错。
+
+### 1.4 字段注释 COMMENT（强烈推荐）
 
 ```sql
 -- 给每个字段加注释，方便团队理解含义

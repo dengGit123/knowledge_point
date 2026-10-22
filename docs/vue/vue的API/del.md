@@ -1,248 +1,113 @@
 # del
 
-> 📖 [Vue 官方文档 - del（已废弃）](https://v3-migration.vuejs.org/breaking-changes/#removed-api)
+> ⚠️ **更正：Vue 3 中没有 `del` 这个 API。** `import { del } from 'vue'` 会报错（`del` 不是 Vue 3 的导出）。Vue 2 中的对应 API 是全局方法 **`Vue.delete()`** 和组件内的实例方法 **`this.$delete()`**；Vue 3 基于 `Proxy` 实现响应式，删除属性直接用 `delete` 操作符即可，该 API 已随 `Vue.set` 一起移除。
 
-删除对象属性的响应式 API，用于确保删除操作能被 Vue 的响应式系统追踪。
+📖 [Vue 2 官方文档 - Vue.delete](https://v2.cn.vuejs.org/v2/api/#Vue-delete)
 
-## 语法
+📖 [Vue 3 迁移指南 - 移除的 API](https://v3-migration.vuejs.org/breaking-changes/#removed-apis)
 
-```javascript
-import { del } from 'vue'
+## Vue 2：Vue.delete / this.$delete
 
-del(obj, key)
+### 语法
+
+```js
+// 全局方法
+import Vue from 'vue'
+
+Vue.delete(target, propertyNameOrIndex)
+
+// 组件内的实例方法（全局方法的别名）
+this.$delete(target, propertyNameOrIndex)
 ```
 
-## 参数
+### 参数
 
-- `obj`: 目标对象
-- `key`: 要删除的属性名
+- `target`: `Object | Array`，目标响应式对象或数组（**不能是 Vue 实例或实例的根数据对象 `$data`**）
+- `propertyNameOrIndex`: `string | number`，要删除的属性名或数组索引（数组 + 索引用法需要 **2.2.0+**）
 
-## 返回值
+### 返回值
 
 无
 
-## 基础用法
+### 基础用法
 
-```javascript
-import { del, reactive } from 'vue'
-
-const state = reactive({
-  name: 'Vue',
-  version: '3.0',
-  isAwesome: true
-})
-
-// 删除属性
-del(state, 'version')
-
-console.log(state.version) // undefined
-console.log('version' in state) // false
-```
-
-## 删除嵌套属性
-
-```javascript
-import { del, reactive } from 'vue'
-
-const user = reactive({
-  name: 'Alice',
-  address: {
-    city: 'Beijing',
-    country: 'China'
-  }
-})
-
-// 删除嵌套属性
-del(user.address, 'city')
-
-console.log(user.address.city) // undefined
-```
-
-## 条件删除
-
-```javascript
-import { del, reactive } from 'vue'
-
-const items = reactive({
-  a: { value: 1 },
-  b: { value: 2 },
-  c: { value: 3 }
-})
-
-// 条件删除
-Object.keys(items).forEach(key => {
-  if (items[key].value < 2) {
-    del(items, key)
-  }
-})
-```
-
-## 与 delete 的区别
-
-```javascript
-import { del, reactive } from 'vue'
-
-const state = reactive({
-  name: 'Vue',
-  version: '3.0'
-})
-
-// Vue 2 风格：使用 del 确保响应式
-del(state, 'name')
-
-// Vue 3 中：可以直接使用 delete
-delete state.version
-
-// 但为了代码兼容性和明确性，使用 del 更好
-```
-
-## 动态删除
-
-```javascript
-import { del, reactive } from 'vue'
-
-const form = reactive({
-  username: '',
-  password: '',
-  confirmPassword: '',
-  email: ''
-})
-
-function removeField(field) {
-  del(form, field)
-}
-
-removeField('confirmPassword')
-```
-
-## 与 TypeScript 结合
-
-```typescript
-import { del, reactive } from 'vue'
-
-interface User {
-  name: string
-  age: number
-  email?: string
-}
-
-const user: User = reactive({
-  name: 'Alice',
-  age: 25,
-  email: 'alice@example.com'
-})
-
-// 删除可选属性
-if (user.email) {
-  del(user, 'email')
-}
-```
-
-## 删除数组元素
-
-```javascript
-import { del, reactive } from 'vue'
-
-const list = reactive({
-  items: ['a', 'b', 'c', 'd']
-})
-
-// 不推荐：直接删除索引
-// delete list.items[1] // 会留下空位
-
-// 推荐：使用 splice
-list.items.splice(1, 1)
-
-// 或使用 del（用于对象属性）
-del(list, 'items')
-```
-
-## 表单字段管理
-
-```javascript
-import { del, reactive } from 'vue'
-
-export function useForm(initialFields) {
-  const form = reactive({ ...initialFields })
-
-  function removeField(fieldName) {
-    del(form, fieldName)
-  }
-
-  function clearForm() {
-    Object.keys(form).forEach(key => {
-      del(form, key)
-    })
-  }
-
-  return {
-    form,
-    removeField,
-    clearForm
-  }
-}
-```
-
-## 动态对象清理
-
-```javascript
-import { del, reactive, watch } from 'vue'
-
-const cache = reactive({
-  temp1: 'data1',
-  temp2: 'data2',
-  persistent: 'important'
-})
-
-// 监听并清理临时数据
-setInterval(() => {
-  Object.keys(cache).forEach(key => {
-    if (key.startsWith('temp')) {
-      del(cache, key)
+```js
+// Vue 2 组件
+export default {
+  data() {
+    return {
+      user: { name: 'Alice', temp: 'value' }
     }
-  })
-}, 5000)
-```
+  },
+  methods: {
+    // ❌ delete 操作符：Vue 2 检测不到属性删除，视图不更新
+    removeWrong() {
+      delete this.user.temp
+    },
 
-## 权限管理
-
-```javascript
-import { del, reactive } from 'vue'
-
-const permissions = reactive({
-  read: true,
-  write: true,
-  delete: true,
-  admin: true
-})
-
-function revokePermission(permission) {
-  del(permissions, permission)
+    // ✅ 使用 $delete：删除并触发视图更新
+    removeCorrect() {
+      this.$delete(this.user, 'temp')
+    }
+  }
 }
-
-revokePermission('admin')
 ```
+
+### 删除数组元素（2.2.0+）
+
+```js
+export default {
+  data() {
+    return {
+      list: ['a', 'b', 'c']
+    }
+  },
+  methods: {
+    // ✅ Vue.delete 支持数组 + 索引（2.2.0+）
+    removeFirst() {
+      this.$delete(this.list, 0) // ['b', 'c']
+    },
+
+    // ✅ 更常用：splice（被 Vue 包装过的变异方法，同样触发更新）
+    removeBySplice() {
+      this.list.splice(0, 1)
+    }
+  }
+}
+```
+
+## Vue 3 为什么移除了它
+
+Vue 2 用 `Object.defineProperty` 只能拦截「已有属性的读取和写入」，检测不到属性的新增与删除，所以需要 `Vue.set` / `Vue.delete` 显式通知。
+
+Vue 3 改用 ES6 `Proxy`，在**整个对象层面**拦截操作，`delete`（`deleteProperty` trap）天然可被检测，因此这对 API 失去了存在的意义，在 Vue 3 中被移除。
+
+```js
+// Vue 3：直接用 delete，响应式更新照常触发
+import { reactive } from 'vue'
+
+const user = reactive({ name: 'Alice', temp: 'value' })
+
+delete user.temp // ✅ Proxy 自动检测，视图同步更新
+console.log('temp' in user) // false
+```
+
+## 迁移对照
+
+| Vue 2 写法 | Vue 3 写法 |
+|-----------|-----------|
+| `Vue.delete(obj, key)` / `this.$delete(obj, key)` | `delete obj.key` |
+| `Vue.delete(arr, index)` / `this.$delete(arr, index)` | `arr.splice(index, 1)` 或直接赋值方案 |
+| `Vue.set(obj, key, value)`（新增属性用的姊妹 API） | `obj.key = value` |
+
+> 💡 **提示：** 配合组合式 API 时，「删除可选取属性」也可以用整体替换的思路：`Object.fromEntries(Object.entries(obj).filter(([k]) => k !== key))`，或者干脆用 `ref` 保存整份对象后替换 `value`。
 
 ## 注意事项
 
-1. **Vue 3 变化**：Vue 3 中使用 Proxy，普通的 `delete` 操作也能触发响应式更新
+1. **不要在 Vue 3 项目中写 `import { del } from 'vue'`**：这不是合法导入，运行时会得到 `undefined` 并报 `del is not a function`
 
-2. **向后兼容**：`del` 主要用于 Vue 2 代码迁移
+2. **数组仍推荐 `splice`**：`delete arr[i]`（操作符）会在数组中留下空位（`empty`），`length` 也不变；删除数组元素应使用 `splice`
 
-3. **推荐用法**：Vue 3 中可以直接使用 `delete`
+3. **Vue 2 中 `$delete` 同样有目标限制**：目标不能是 Vue 实例或 `$data` 根数据对象，且对非响应式对象调用没有意义（只是普通的 `delete`）
 
-4. **响应式对象**：只对响应式对象有意义
-
-5. **数组删除**：数组元素应该使用 `splice` 而不是 `del` 或 `delete`
-
-6. **性能考虑**：删除属性操作有性能开销，避免频繁操作
-
-7. **替代方案**：
-   ```javascript
-   // Vue 3 推荐写法
-   const state = reactive({ name: 'Vue' })
-   delete state.name // 正常工作
-
-   // 或使用解构
-   const { name, ...rest } = state
-   ```
+4. **官方态度**：Vue 2 文档就明确「你应该很少会使用它」——优先在初始化时把属性声明为可选（置为 `null` / `undefined`），而不是动态增删属性

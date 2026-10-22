@@ -29,7 +29,7 @@
 
 #### 底层机制
 
-```
+```text
 shallowRef 数据变化流程：
 
 1. 修改 shallowRef.value.count → Vue 不感知（无响应式代理）
@@ -95,18 +95,15 @@ const userInfo = shallowRef<UserInfo>({
   hobbies: ['阅读', '游泳']
 })
 
-// 开启 deep 选项或者 triggerRef 都能触发 watch 回调
-watch(
-  userInfo,
-  (newVal) => {
-    console.log('用户信息更新了：', newVal)
-  },
-  { deep: true } // 如果不开启 deep，仅 triggerRef 无法触发 watch
-)
+// shallowRef 作为 watch source 时，依赖被触发就会执行回调
+// triggerRef 的通知不需要 deep 也能触发下面的回调
+watch(userInfo, (newVal) => {
+  console.log('用户信息更新了：', newVal)
+})
 
 function addHobby(hobby: string) {
   userInfo.value.hobbies.push(hobby)
-  triggerRef(userInfo) // 触发视图更新，配合 deep watch 可触发回调
+  triggerRef(userInfo) // 触发视图更新，watch 回调也会同步触发
 }
 ```
 
@@ -256,14 +253,14 @@ export function useECharts(containerId: string) {
 ##### 函数签名
 
 ```ts
-function triggerRef(ref: ShallowRef): void
+function triggerRef(ref: Ref): void
 ```
 
 ##### 参数说明
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `ref` | `ShallowRef` | 是 | 需要触发更新的 `shallowRef` 实例 |
+| `ref` | `Ref` | 是 | 需要触发更新的 ref，通常是 `shallowRef` 实例 |
 
 ##### 返回值
 
@@ -271,7 +268,7 @@ function triggerRef(ref: ShallowRef): void
 |--------|------|------|
 | 无返回值 | `void` | 该函数没有返回值 |
 
-> 💡 **提示：** `triggerRef` 只接受 `shallowRef` 作为参数。虽然技术上也可以传入普通 `ref`，但没有实际意义，因为普通 `ref` 会自动触发更新。
+> 💡 **提示：** `triggerRef` 主要配合 `shallowRef` 使用。技术上也可以传入普通 `ref`，但普通 `ref` 的深层变化已能自动触发更新，手动触发只会造成多余的重复执行。
 
 ---
 
@@ -957,21 +954,21 @@ state.value.count = 2 // 需要 triggerRef
 
 #### 3. triggerRef 与 watch 的配合
 
-默认情况下，`triggerRef` 触发的更新不会被普通 `watch`（非 deep 模式）捕获，因为 `watch` 比较的是新旧引用。
+`watch` 监听 `shallowRef` 时，只要该 ref 的依赖被触发就会执行回调，所以 `triggerRef` 引起的更新**不需要 `deep: true`** 也能触发回调。但要注意：深层修改后 `.value` 的引用没有变，回调收到的新旧值是同一个对象。
 
 ```ts
 const state = shallowRef({ count: 0 })
 
-// ❌ 不会触发——因为 .value 引用没变，watch 认为没有变化
-watch(state, (newVal) => {
-  console.log('更新了', newVal)
+// ✅ 不开启 deep，triggerRef 触发后回调也会执行
+watch(state, (newVal, oldVal) => {
+  console.log(newVal === oldVal) // true（引用没变，只是内部数据变了）
 })
 
-// ✅ 开启 deep 选项才能捕获 triggerRef 引起的深层变化
-watch(state, (newVal) => {
-  console.log('更新了', newVal)
-}, { deep: true })
+state.value.count = 1
+triggerRef(state)
 ```
+
+如果需要在回调里区分每次变化，可以在回调内部对比具体字段，或者改用「整体替换 `.value`」的写入方式。
 
 #### 4. 避免过度使用
 
@@ -1157,7 +1154,7 @@ function updateItem(id: number, newValue: number) {
 - 只有修改 `shallowRef` 内部深层属性时才需要使用
 - 替换整个 `.value` 时不需要 `triggerRef`
 - 批量操作后只调用一次 `triggerRef`，避免多次渲染
-- 配合 `watch` 使用时需要开启 `deep` 选项
+- 它的通知会同时触发视图更新、`watch`、`watchEffect` 等所有依赖，`watch` 不开启 `deep` 也能收到（但新旧值是同一个对象）
 - 适用于大数据、树形结构、Canvas、WebSocket 等性能敏感场景
 
 > 💡 **提示：** 在大多数日常开发中，直接使用 `ref` 就足够了。只有当你遇到明确的性能瓶颈时，才需要考虑 `shallowRef` + `triggerRef` 的组合方案。

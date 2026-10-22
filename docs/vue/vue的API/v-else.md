@@ -741,7 +741,7 @@ onUnmounted(() => {
 
 #### 1. 必须紧跟在 `v-if` 或 `v-else-if` 后面
 
-`v-else` 和前面的 `v-if` / `v-else-if` 之间不能有任何其他元素（包括注释节点），否则 Vue 无法识别它们属于同一个条件链。
+`v-else` 和前面的 `v-if` / `v-else-if` 之间不能有其他元素隔开，否则 Vue 无法识别它们属于同一个条件链。
 
 ```vue
 <template>
@@ -940,7 +940,10 @@ const statusConfig = computed(() => {
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
+
+const user = ref({ role: 'admin', permissions: ['edit'] })
+const isLocked = ref(false)
 
 const canEdit = computed(() => {
   return (

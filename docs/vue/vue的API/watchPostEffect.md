@@ -1,6 +1,6 @@
 # watchPostEffect
 
-> 📖 [Vue 官方文档 - watchPostEffect](https://cn.vuejs.org/api/reactivity-core#watchposteffect)
+> 📖 [Vue 官方文档 - watchPostEffect](https://cn.vuejs.org/api/reactivity-core.html#watchposteffect)
 
 ### 一、概述
 
@@ -182,7 +182,7 @@ watchPostEffect(() => {
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | `effect` | `(onCleanup: (cleanupFn: () => void) => void) => void` | 副作用函数，接收一个 `onCleanup` 回调用于注册清理函数 |
-| **返回值** | `() => void` | 返回一个停止函数，调用即可停止侦听 |
+| **返回值** | `WatchHandle` | 返回一个停止函数，调用即可停止侦听；3.5+ 还支持 `pause()` / `resume()` |
 | `onCleanup` | `(cleanupFn: () => void) => void` | 用于注册副作用清理函数，在下次副作用执行前调用 |
 
 > 💡 **提示：** `watchPostEffect` 的函数签名与 `watchEffect` 完全一致，唯一的区别是执行时机不同。
@@ -741,12 +741,12 @@ const loadComponent = async (name: string) => {
 
 1. **执行时机是 DOM 更新之后**：`watchPostEffect` 的回调在组件 DOM 更新完成后异步执行，不要在回调中修改响应式数据后再依赖同步的 DOM 状态。
 
-2. **首次立即执行**：`watchPostEffect` 会在创建时**立即执行一次**回调，即使没有任何响应式数据发生变化。这意味着回调中的 DOM 操作可能在首次执行时找不到目标元素。
+2. **首次也会执行一次**：`watchPostEffect` 创建后同样会先执行一次回调（不等待数据变化），只是这次执行被调度在组件首次渲染完成之后。若目标元素是条件渲染的，首次执行时可能还不存在。
 
    ```ts
-   // ❌ 首次执行时 showInput 可能为 false，inputRef.value 为 null
+   // ❌ 未做条件判断：showInput 为 false 时 inputRef.value 为 null
    watchPostEffect(() => {
-     inputRef.value?.focus() // 首次可能无效，但不会报错
+     inputRef.value?.focus() // 元素不存在时无效，但不会报错
    })
 
    // ✅ 加入条件判断，确保目标元素存在
@@ -801,7 +801,7 @@ const loadComponent = async (name: string) => {
 
 7. **组件卸载时自动停止**：在 `setup()` 或 `<script setup>` 中创建的 `watchPostEffect` 会在组件卸载时自动停止，无需手动清理。但如果在异步回调或非组件上下文中使用，需要手动调用停止函数。
 
-8. **SSR 兼容性**：在服务端渲染（SSR）环境中，`watchPostEffect` 的回调会在组件渲染后同步执行。但由于服务端没有真实的 DOM，任何 DOM 操作都会失败，请确保 DOM 操作仅在客户端执行。
+8. **SSR 兼容性**：在服务端渲染（SSR）环境中没有真实的 DOM，任何 DOM 操作都会失败，请确保 DOM 操作仅在客户端执行。
 
    ```ts
    // ✅ 安全的 SSR 写法
@@ -832,7 +832,7 @@ const loadComponent = async (name: string) => {
 
 | 特性 | `watchEffect` | `watchPostEffect` | `watch` + `flush: 'post'` |
 |------|--------------|-------------------|--------------------------|
-| **执行时机** | 组件更新前（同步调度） | 组件更新后（`flush: 'post'`） | 组件更新后（`flush: 'post'`） |
+| **执行时机** | 组件更新前（默认 `flush: 'pre'`，异步调度） | 组件更新后（`flush: 'post'`） | 组件更新后（`flush: 'post'`） |
 | **首次执行** | 立即执行 | 立即执行 | 可选（`immediate` 选项） |
 | **依赖追踪** | 自动追踪 | 自动追踪 | 显式指定侦听源 |
 | **惰性侦听** | 不支持 | 不支持 | 支持（默认惰性） |

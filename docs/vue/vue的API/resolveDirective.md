@@ -1,6 +1,6 @@
 # resolveDirective
 
-> 📖 [官方文档 - resolveDirective](https://cn.vuejs.org/api/render-function#resolvedirective)
+> 📖 [官方文档 - resolveDirective](https://cn.vuejs.org/api/render-function.html#resolvedirective)
 
 ### 一、概述
 
@@ -19,7 +19,7 @@
 3. **应用阶段**：将解析到的指令对象通过 `withDirectives()` 绑定到 VNode 上
 4. **挂载阶段**：Vue 在 VNode 挂载和更新时自动调用指令的对应钩子函数
 
-```
+```text
 注册指令 → resolveDirective 解析 → withDirectives 绑定到 VNode → Vue 调用指令钩子
 ```
 
@@ -310,12 +310,12 @@ app.mount('#app')
 
 ```typescript
 // ImageGallery.ts - 渲染函数中使用
-import { defineComponent, h, resolveDirective, withDirectives } from 'vue'
+import { defineComponent, h, resolveDirective, withDirectives, type PropType } from 'vue'
 
 export default defineComponent({
   props: {
     images: {
-      type: Array as { type: Array as () => string[] },
+      type: Array as PropType<string[]>,
       default: () => []
     }
   },
@@ -472,7 +472,7 @@ export default defineComponent({
 
 ```typescript
 // TooltipButton.ts
-import { defineComponent, h, resolveDirective, withDirectives } from 'vue'
+import { defineComponent, h, resolveDirective, withDirectives, type PropType } from 'vue'
 
 export default defineComponent({
   props: {
@@ -713,21 +713,12 @@ export default defineComponent({
 ```typescript
 // directive.spec.ts
 import { mount } from '@vue/test-utils'
-import { createApp, resolveDirective, h, withDirectives } from 'vue'
 import TestComponent from './TestComponent.vue'
 
 describe('指令注册测试', () => {
   it('应该正确解析全局注册的指令', () => {
-    const app = createApp(TestComponent)
-
-    app.directive('test-directive', {
-      mounted(el) {
-        el.setAttribute('data-test', 'mounted')
-      }
-    })
-
-    // 验证指令已注册
-    // 注意：在测试环境中需要在组件上下文中调用 resolveDirective
+    // 注意：resolveDirective 只能在组件上下文中调用，
+    // 测试中通过 global.directives 注入指令，再断言指令的执行效果
     const wrapper = mount(TestComponent, {
       global: {
         directives: {
@@ -755,7 +746,7 @@ describe('指令注册测试', () => {
 import { resolveDirective } from 'vue'
 
 // ❌ 错误：在组件外部调用，没有组件上下文
-const vFocus = resolveDirective('focus') // 返回 undefined
+const vFocus = resolveDirective('focus') // 返回 undefined（开发环境会在控制台警告）
 
 // ✅ 正确：在 setup() 或渲染函数中调用
 export default defineComponent({
@@ -857,7 +848,7 @@ export default defineComponent({
   async setup() {
     // ❌ 错误：async setup 中在 await 之后调用，上下文已丢失
     await someAsyncOperation()
-    const vFocus = resolveDirective('focus') // 返回 undefined
+    // const vFocusLate = resolveDirective('focus') // 返回 undefined
 
     // ✅ 正确：在 await 之前同步调用
     const vFocus = resolveDirective('focus')

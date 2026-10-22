@@ -1,6 +1,6 @@
 # onBeforeMount
 
-> 📖 [Vue 官方文档 - onBeforeMount](https://cn.vuejs.org/api/composition-api-lifecycle#onbeforemount)
+> 📖 [Vue 官方文档 - onBeforeMount](https://cn.vuejs.org/api/composition-api-lifecycle.html#onbeforemount)
 
 ## 作用
 
@@ -39,7 +39,7 @@ export default {
 }
 ```
 
-### 在 `` `<script setup>`` 中使用
+### 在 `<script setup>` 中使用
 
 ```vue
 <script setup>
@@ -288,27 +288,24 @@ export default {
 }
 ```
 
-### 4. 不能使用 async
+### 4. 回调可以是 async，但 Vue 不会等待
+
+钩子的**注册**必须同步完成；回调本身可以传 `async` 函数，只是 Vue 不会等待其中的 `await`，异步部分会在挂载之后才陆续完成。
 
 ```javascript
 import { onBeforeMount } from 'vue'
 
 export default {
   setup() {
-    // ❌ 错误：不能直接使用 async
+    // ✅ 合法：async 回调不会报错，但挂载不会等它完成
     onBeforeMount(async () => {
       await fetchData()
-    })
-    
-    // ✅ 正确：在内部使用异步操作
-    onBeforeMount(() => {
-      fetchData().then(data => {
-        console.log(data)
-      })
     })
   }
 }
 ```
+
+> ⚠️ 服务端渲染（SSR）期间 `onBeforeMount` 不会执行。需要在服务器上预取数据请使用 `onServerPrefetch`（一个仅在 SSR 中调用的异步钩子）。
 
 ## 生命周期对比
 

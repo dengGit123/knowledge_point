@@ -47,7 +47,7 @@ app.mount('#app')
 
 ### 四、定义 Store
 
-Pinia 提供两种风格，推荐使用组合式（Setup Store）：
+Pinia 提供两种风格。官方的态度是「选你顺手的」：选项式更简单直观，组合式更灵活（可自由使用组合式函数）：
 
 #### 1. 选项式（Option Store）
 
@@ -69,7 +69,7 @@ export const useCounterStore = defineStore('counter', {
 })
 ```
 
-#### 2. 组合式（Setup Store）⭐ 推荐
+#### 2. 组合式（Setup Store）⭐ 更灵活
 
 ```js
 import { defineStore } from 'pinia'
@@ -102,7 +102,7 @@ export const useCounterStore = defineStore('counter', () => {
 | State | `state: () => ({})` | `ref()` / `reactive()` |
 | Getter | `getters: {}` | `computed()` |
 | Action | `actions: {}` | 普通函数 |
-| TypeScript | 需额外类型声明 | **自动推断** ⭐ |
+| TypeScript | ✅ 自动推断（getter 用 `this` 时需标注返回类型） | ✅ 自动推断 |
 | 灵活性 | 固定结构 | 可用任何组合式函数 |
 
 ### 五、在组件中使用
@@ -139,15 +139,15 @@ const counter = useCounterStore()
 // 直接修改
 counter.count++
 
-// 批量修改
-counter.$patch({ count: counter.count + 1, name: '新名字' })
-counter.$patch((state) => { state.count++; state.name = '新名字' })
+// 批量修改：$patch 的多个变更会归入 devtools 的同一条记录
+counter.$patch({ count: counter.count + 1, name: '新名字' }) // 对象形式：补丁合并，不支持数组操作
+counter.$patch((state) => { state.count++; state.name = '新名字' }) // 函数形式：支持 push/splice 等任意修改
 
-// 重置为初始值（仅选项式 Store 原生支持）
+// 重置为初始值（仅选项式 Store 原生支持；Setup Store 需自己定义一个 $reset 函数）
 counter.$reset()
 ```
 
-> 💡 更多 State 操作详见 [State.md](./State.md)
+> 💡 关键点：对象形式 `$patch` 无法直接做数组 push/splice（需创建新集合替换），函数形式可以；`$state` 赋值内部等价于 `$patch`，是合并而不是整体替换。
 
 ### 六、快速 API 参考
 
@@ -176,7 +176,7 @@ export const useCartStore = defineStore('cart', () => {
 })
 ```
 
-> ⚠️ **注意：** 不要在 Store 顶层调用 `useXxxStore()`，应在 action 函数内部调用。
+> ⚠️ **注意：** setup store 顶层「单向」使用其他 store 是允许的（官方示例写法）；但如果两个 store 相互使用，不要在它们的 setup 顶层互相直接读取对方的 state（会形成循环依赖导致报错）。最稳妥的写法是在 getter / action 内部按需调用 `useXxxStore()`。
 
 ### 八、监听 Store 变化
 
@@ -184,12 +184,16 @@ export const useCartStore = defineStore('cart', () => {
 const counter = useCounterStore()
 
 // 方式 1：watch（推荐，灵活）
-watch(count, (newVal, oldVal) => { /* ... */ })
+watch(() => counter.count, (newVal, oldVal) => { /* ... */ })
 
 // 方式 2：$subscribe（监听整个 store）
 counter.$subscribe((mutation, state) => {
   // mutation.type: 'direct' | 'patch object' | 'patch function'
+  // mutation.payload: 仅 'patch object' 时可用，是传给 $patch 的补丁对象
 })
+
+// $subscribe 默认绑定当前组件，组件卸载时自动取消；
+// 传 { detached: true } 可在组件卸载后保留订阅
 
 // 方式 3：$onAction（监听 action 调用）
 counter.$onAction(({ name, args, after, onError }) => {
@@ -234,6 +238,8 @@ export const useCartStore = defineStore('cart', () => {
   },
 })
 ```
+
+> 💡 以上是插件 v4 的写法（`pick` / `omit`）；v3 版本用 `paths` 代替 `pick`。默认行为：整个 state 持久化到 localStorage，key 为 store 的 id，用 JSON 序列化；`storage` 必须是同步的（`sessionStorage` 可以）。
 
 ### 十、Pinia vs Vuex
 

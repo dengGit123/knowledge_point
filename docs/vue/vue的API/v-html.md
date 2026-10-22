@@ -222,6 +222,7 @@ const iconSvg = computed<string>(() => icons[currentIcon.value])
 | **元素内容** | 会完全覆盖元素的现有子内容 |
 | **scoped 样式** | 插入的内容**不受** `scoped` 样式影响 |
 | **安全性** | 动态渲染任意 HTML 非常危险，容易导致 XSS 攻击 |
+| **组件限制** | `v-html` 只能用在真实 DOM 元素上，不能用在 `<template>` 标签上 |
 
 ### 四、实现效果
 
@@ -601,7 +602,7 @@ const sanitizedAnnouncement = computed<string>(() => {
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref } from 'vue'
 
 type Locale = 'zh' | 'en'
 

@@ -4,7 +4,9 @@
 
 `isProxy()` 检查一个对象是否是由 Vue 的 `reactive()`、`readonly()`、`shallowReactive()` 或 `shallowReadonly()` 创建的代理对象。
 
-它是 `isReactive()` 和 `isReadonly()` 的超集：只要 `isReactive()` 或 `isReadonly()` 返回 `true`，`isProxy()` 也会返回 `true`。
+它是 `isReactive()` 和 `isReadonly()` 的超集：对于上述四种代理，只要 `isReactive()` 或 `isReadonly()` 返回 `true`，`isProxy()` 必然也返回 `true`。
+
+> ⚠️ **注意：** 唯一的例外是 getter 写法的 `computed`——它会被 `isReadonly()` 判为 `true`，但它不是代理对象，`isProxy()` 对它返回 `false`。
 
 📖 [Vue 官方文档 - isProxy](https://cn.vuejs.org/api/reactivity-utilities#isproxy)
 
@@ -63,7 +65,7 @@ console.log(isReadonly(readonlyObj)) // true
 
 ## 关系图
 
-```
+```text
 isProxy(obj) === true
 ├── isReactive(obj) === true
 │   ├── reactive()

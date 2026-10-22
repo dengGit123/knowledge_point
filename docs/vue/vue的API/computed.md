@@ -308,6 +308,8 @@ const filteredList = computed(() => items.value.filter(item => item.active))
 const maybeValue = computed(() => condition.value ? value.value : null)
 ```
 
+> ⚠️ 计算属性返回的值应被视为只读的派生快照：不要去修改它——修改不会持久，下次依赖变化重新计算时就会被覆盖。确实需要"可写"时，使用 getter + setter 形式（见上文）。
+
 ## 使用场景
 
 ### 1. 数据派生和转换

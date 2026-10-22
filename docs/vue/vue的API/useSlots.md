@@ -2,9 +2,9 @@
 
 ## 作用
 
-`useSlots()` 用于在 `<script setup>` 中访问组件的插槽内容。它返回一个 slots 对象，其中键是插槽名称，值是渲染函数。
+`useSlots()` 用于在 `<script setup>` 中访问组件的插槽内容。它返回一个 slots 对象，其中键是插槽名称，值是返回虚拟 DOM 节点的可调用函数。如果使用 TypeScript，官方建议优先使用 `defineSlots()` 为插槽标注类型。
 
-📖 [useSlots](https://cn.vuejs.org/api/composition-api-helpers#useslots)
+📖 [useSlots](https://cn.vuejs.org/api/composition-api-helpers.html#useslots)
 
 ## 用法
 
@@ -34,7 +34,7 @@ console.log(slots.footer)    // 具名插槽
 
 ```vue
 <script setup>
-import { useSlots } from 'vue'
+import { useSlots, computed } from 'vue'
 
 const slots = useSlots()
 
@@ -116,8 +116,8 @@ const slots = useSlots()
 
 // 获取插槽内容数量
 const slotCount = computed(() => {
-  return slots.default?.() || []
-}).value.length
+  return (slots.default?.() || []).length
+})
 
 // 过滤插槽内容
 const filteredSlots = computed(() => {
@@ -132,7 +132,7 @@ const filteredSlots = computed(() => {
 <template>
   <div>
     <p>共有 {{ slotCount }} 个子元素</p>
-    <component :is="() => filteredSlots()" />
+    <component :is="() => filteredSlots" />
   </div>
 </template>
 ```
@@ -217,7 +217,7 @@ const hasCustomRender = computed(() => {
 
 ```vue
 <script setup lang="ts">
-import { useSlots, VNode } from 'vue'
+import { useSlots, type VNode } from 'vue'
 
 interface Slots {
   default?: () => VNode[]
@@ -233,6 +233,8 @@ if (slots.header) {
 }
 </script>
 ```
+
+> 💡 **提示：** 如果要为插槽提供完整的类型约束，官方推荐优先使用 `defineSlots()`，它能在编译期声明每个插槽的签名，无需 `as` 断言。
 
 ### 在 setup 函数中使用
 
@@ -288,16 +290,20 @@ const hasSlotContent = computed(() => {
 
 ## 注意事项
 
-### 1. slots 是响应式的
+### 1. slots 对象本身不是响应式数据
+
+父组件更新插槽内容时，Vue 会更新组件并刷新 slots 对象的内容，但 slots 对象本身不是响应式对象，无法用 `watch` / `watchEffect` 侦听它。
 
 ```javascript
 const slots = useSlots()
 
-// slots 对象本身是响应式的
+// ❌ 无效：slots 不是响应式对象，watchEffect 不会随插槽变化重新执行
 watchEffect(() => {
-  console.log(Object.keys(slots)) // 当插槽变化时重新执行
+  console.log(Object.keys(slots))
 })
 ```
+
+💡 判断「有没有某个插槽」在模板渲染时进行即可（如 `v-if="slots.header"`），插槽变化会随父组件重渲染自然反映出来。
 
 ### 2. 插槽是函数
 
@@ -634,7 +640,8 @@ const activePanel = computed(() => {
     </div>
 
     <div class="tab-content">
-      <component :is="activePanel" />
+      <!-- activePanel 是 VNode，用函数包装后再交给 :is 渲染 -->
+      <component :is="() => activePanel" />
     </div>
   </div>
 </template>
@@ -751,13 +758,13 @@ const hasIconSlot = computed(() => !!slots.icon)
       :node="node"
     >
       <template #default>
-        <slot v-if="hasNodeSlot" name="node" :node="node" :expanded="expanded" />
+        <slot v-if="hasNodeSlot" name="node" :node="node" />
         <template v-else>{{ node.label }}</template>
       </template>
 
       <template #icon>
-        <slot v-if="hasIconSlot" name="icon" :node="node" :expanded="expanded" />
-        <template v-else>{{ expanded ? '▼' : '▶' }}</template>
+        <slot v-if="hasIconSlot" name="icon" :node="node" />
+        <template v-else>▶</template>
       </template>
     </TreeNode>
   </div>

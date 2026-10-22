@@ -165,7 +165,7 @@ const { count, message } = toRefs(state)
 
 ### TypeScript 类型支持
 
-```javascript
+```typescript
 import { reactive, toRefs } from 'vue'
 
 interface State {
@@ -235,10 +235,11 @@ const state = reactive({
 
 const { user } = toRefs(state)
 
-// user 是 ref，但 user.value 是普通对象
+// user 是 ref，user.value 取回的是 state.user
+// 由于 reactive 是深层代理，它仍然是一个响应式对象
 console.log(user.value.name) // 'Vue'
 
-// 如果需要解构 user 的属性
+// 要解构嵌套对象的属性，对它再套一层 toRefs 即可
 const { name, age } = toRefs(state.user)
 // ✅ 正确
 ```
@@ -273,7 +274,7 @@ count.value++
 // <template>{{ count }}</template>
 ```
 
-### 4. 返回新对象
+### 4. 每次调用返回新对象
 
 ```javascript
 const state = reactive({ count: 0 })
@@ -281,8 +282,14 @@ const state = reactive({ count: 0 })
 const refs1 = toRefs(state)
 const refs2 = toRefs(state)
 
-// refs1 !== refs2，但它们的属性指向同一个 ref
-console.log(refs1.count === refs2.count) // true
+// 每次调用都会创建新的对象和新的 ref 实例
+console.log(refs1 !== refs2)             // true
+console.log(refs1.count !== refs2.count) // true
+
+// 但两者都指向源对象的同一个属性，与源保持同步
+refs1.count.value = 1
+console.log(refs2.count.value) // 1
+console.log(state.count)       // 1
 ```
 
 ### 5. 对 null/undefined 的处理
@@ -322,19 +329,32 @@ const doubled = computed(() => count.value * 2)
 </script>
 ```
 
-### 7. 不适用于数组
+### 7. 对数组的处理
 
 ```javascript
 const list = reactive([1, 2, 3])
 
-// ❌ 不要对数组使用 toRefs
-// const { 0: first, 1: second } = toRefs(list) // 不推荐
+// toRefs 对数组同样有效：为数组的每个索引生成 ref
+const arrRefs = toRefs(list)
+console.log(arrRefs[0].value) // 1
 
-// ✅ 直接使用数组索引
-console.log(list[0])
+arrRefs[0].value = 10
+console.log(list[0]) // 10
+```
 
-// 或使用特定方法
-const items = toRef(list, 'value') // 如果需要
+数组场景通常直接用 `ref([...])` 管理整体数据，或用 `push`、`splice` 等响应式方法操作，很少需要对数组 toRefs。
+
+### 8. 参数必须是响应式对象
+
+```javascript
+const plain = { count: 0 }
+
+// ❌ 传普通对象：开发环境会有警告，返回的 ref 也无法触发视图更新
+const refs = toRefs(plain)
+
+// ✅ 先用 reactive() 包装，再交给 toRefs
+const state = reactive(plain)
+const okRefs = toRefs(state)
 ```
 
 ## 使用场景

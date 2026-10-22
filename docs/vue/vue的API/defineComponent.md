@@ -3,7 +3,9 @@
 ## 作用
 `defineComponent()` 是 Vue 3 提供的一个类型辅助函数，用于定义具有类型推导功能的 Vue 组件。它主要在 TypeScript 中使用，帮助 IDE 和编译器正确推导组件选项的类型。
 
-📖 [defineComponent](https://cn.vuejs.org/api/general#definecomponent)
+在运行时它基本是「原样返回传入对象」的空操作，价值全部体现在类型推导上。Vue 3.3+ 还支持函数签名：`defineComponent(setup函数, extraOptions?)`，其中 `extraOptions` 只支持 `name` / `inheritAttrs` / `props` / `emits` / `slots`。
+
+📖 [defineComponent](https://cn.vuejs.org/api/general.html#definecomponent)
 
 ## 用法
 
@@ -45,8 +47,8 @@ export default defineComponent({
 
 ### TypeScript 中使用
 
-```javascript
-import { defineComponent } from 'vue'
+```ts
+import { defineComponent, ref, type PropType } from 'vue'
 
 interface User {
   id: number
@@ -87,24 +89,17 @@ export default defineComponent({
 })
 ```
 
-### 组合式 API 使用
+### 与组合式 API（`<script setup>`）的关系
+
+`<script setup>` 由编译器直接处理，**不需要也不应该**再写 `defineComponent()`；`defineProps` / `defineEmits` 是编译器宏，与 `defineComponent` 无关：
 
 ```vue
 <script setup lang="ts">
-import { defineComponent, ref, computed } from 'vue'
-
-// 在 `<script setup>` 中通常不需要显式使用 defineComponent
-// 但可以用于添加组件选项
+import { ref, computed } from 'vue'
 
 const count = ref(0)
-
 const doubled = computed(() => count.value * 2)
 
-function increment() {
-  count.value++
-}
-
-// 可以定义 script setup 的选项
 defineProps<{
   message: string
 }>()
@@ -112,8 +107,6 @@ defineProps<{
 defineEmits<{
   (e: 'update', value: number): void
 }>()
-
-// 在 script setup 中很少需要显式使用 defineComponent
 </script>
 ```
 
@@ -175,8 +168,8 @@ export default defineComponent({
 
 ### 渲染函数中使用
 
-```javascript
-import { defineComponent, h } from 'vue'
+```ts
+import { defineComponent, h, type PropType } from 'vue'
 
 export default defineComponent({
   name: 'ButtonComponent',
@@ -248,7 +241,7 @@ export default defineComponent({
 
 ### 混入使用
 
-```javascript
+```ts
 import { defineComponent } from 'vue'
 
 const loggingMixin = defineComponent({
@@ -270,33 +263,31 @@ export default defineComponent({
 })
 ```
 
-### 插槽类型定义
+### 插槽使用（渲染函数）
 
-```javascript
-import { defineComponent } from 'vue'
+```js
+import { defineComponent, h } from 'vue'
 
 export default defineComponent({
   name: 'CardComponent',
 
   setup(_, { slots }) {
-    // slots 的类型被正确推导
-    return () => (
-      <div class="card">
-        {slots.header?.()}
-        {slots.default?.()}
-        {slots.footer?.()}
-      </div>
-    )
+    // 通过 setup 上下文访问插槽
+    return () => h('div', { class: 'card' }, [
+      slots.header?.(),
+      slots.default?.(),
+      slots.footer?.()
+    ])
   }
 })
 ```
 
 ## 注意事项
 
-### 1. 不带参数使用
+### 1. 运行时是空操作
 
-```javascript
-// ✅ 正确：用于推导 setup 的返回类型
+```js
+// ✅ defineComponent 原样返回选项对象，只为类型推导服务
 export default defineComponent({
   setup() {
     const count = ref(0)
@@ -314,12 +305,9 @@ export default defineComponent({
 
 ### 2. 组件名称
 
-```javascript
+```js
 export default defineComponent({
-  name: 'MyComponent', // 用于调试和 DevTools
-
-  // 或使用
-  // name: Symbol('MyComponent'), // 唯一标识
+  name: 'MyComponent' // 用于调试、DevTools、递归组件与 KeepAlive 缓存匹配
 })
 ```
 
@@ -377,16 +365,14 @@ export default defineComponent({
 
 ### 5. setup 上下文类型
 
-```javascript
-import { DefineComponent } from 'vue'
-
+```js
 export default defineComponent({
   setup(props, context) {
     // context 的类型被正确推导
     context.attrs // attrs: Record<string, unknown>
     context.slots // slots: Slots
     context.emit // emit: (event: string, ...args: any[]) => void
-    context.expose // expose: (exposed: Record<string, any>) => void
+    context.expose // expose: (exposed?: Record<string, any>) => void
 
     // 解构使用
     const { attrs, slots, emit, expose } = context
@@ -630,34 +616,25 @@ export default defineComponent({
 
 ### 3. 函数式组件
 
-```javascript
-import { defineComponent, h } from 'vue'
+> ⚠️ **注意：** `functional: true` 是 Vue 2 的写法，Vue 3 已移除该选项。Vue 3 中函数式组件就是一个**普通函数**（`(props, ctx) => VNode`），不需要 `defineComponent`：
 
-export default defineComponent({
-  name: 'FunctionalButton',
+```js
+import { h } from 'vue'
 
-  functional: true,
-
-  props: {
-    type: {
-      type: String as PropType<'primary' | 'secondary'>,
-      default: 'primary'
+// Vue 3 函数式组件：直接是一个函数
+function FunctionalButton(props, { slots, attrs, emit }) {
+  return h(
+    'button',
+    {
+      class: ['btn', `btn-${props.type}`],
+      onClick: () => emit('click')
     },
-    disabled: Boolean
-  },
+    slots.default ? slots.default() : 'Button'
+  )
+}
 
-  setup(props, { slots, emit }) {
-    return () => h(
-      'button',
-      {
-        class: ['btn', `btn-${props.type}`, { disabled: props.disabled }],
-        disabled: props.disabled,
-        onClick: () => emit('click')
-      },
-      slots.default ? slots.default() : 'Button'
-    )
-  }
-})
+FunctionalButton.props = ['type']
+FunctionalButton.emits = ['click']
 ```
 
 ### 4. 可复用的逻辑组合
@@ -728,7 +705,9 @@ export default defineComponent({
 })
 ```
 
-### 5. 带泛型的组件
+### 5. 泛型相关的类型定义
+
+> 💡 **提示：** 真正的泛型组件（`<script setup lang="ts" generic="T">`，3.3+ 支持）无法直接用 `defineComponent` 的选项式写法表达。选项式中通常只是使用具体的泛型工具类型：
 
 ```javascript
 import { defineComponent, PropType } from 'vue'
@@ -771,7 +750,7 @@ export default defineComponent({
 
 1. **类型推导**：提供完整的 TypeScript 类型推导
 2. **IDE 支持**：更好的自动完成和类型检查
-3. **编译器优化**：帮助编译器更好地处理模板
+3. **零运行时开销**：运行时只是原样返回传入的选项对象
 4. **文档化**：使组件结构更清晰
 5. **一致性**：统一的组件定义方式
 

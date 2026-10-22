@@ -365,6 +365,8 @@ const unsubscribe = productStore.$onAction(({ name, store, args, after, onError 
 unsubscribe()
 ```
 
+> 💡 **补充：** `after` 会等待 action 返回的 Promise 解决后才触发；`onError` 在 action 抛出错误或 Promise 被 reject 时触发。默认订阅绑定在当前组件上（组件卸载自动移除），传 `true` 作为第二个参数（`store.$onAction(fn, true)`）可在组件卸载后保留。
+
 #### 2. 实际应用：日志插件
 
 ```js
@@ -601,28 +603,32 @@ export const useStore = defineStore('store', () => {
 // 组件中调用会报错：store.doSomething is not a function
 ```
 
-#### 2. 不要在 Store 顶层获取其他 Store
+#### 2. 相互使用的 Store 要避免循环依赖
 
 ```js
-// ❌ 错误：在 store 定义顶层获取其他 store
-export const useOrderStore = defineStore('order', () => {
-  const cartStore = useCartStore() // 此时 cartStore 可能还未初始化
-
-  function checkout() {
-    cartStore.clearCart() // 可能报错
-  }
-  return { checkout }
+// ✅ setup store 顶层「单向」使用其他 store 是允许的（官方示例写法）
+export const useCartStore = defineStore('cart', () => {
+  const user = useUserStore()
+  // ...
 })
 
-// ✅ 正确：在 action 函数内部获取
+// ❌ 错误：两个 store 在各自的 setup 顶层互相直接读取对方的 state
+export const useXStore = defineStore('x', () => {
+  const y = useYStore()
+  console.log(y.name) // 若 useYStore 顶层也读取 x 的 state，就会形成循环 → 报错
+})
+
+// ✅ 最稳妥：在 action / getter 内部按需调用 useXxxStore()
 export const useOrderStore = defineStore('order', () => {
   function checkout() {
-    const cartStore = useCartStore() // 安全，此时所有 store 已安装
+    const cartStore = useCartStore() // 运行时获取，没有初始化顺序问题
     cartStore.clearCart()
   }
   return { checkout }
 })
 ```
+
+> ⚠️ **注意：** 官方规则是：相互使用的 store 不能通过 getters / actions 构建无限循环，也不能在 setup 顶层互相直接读取对方 state。单向依赖写在顶层没问题。
 
 #### 3. Action 可以是 async 也可以是同步
 

@@ -1,3 +1,5 @@
+# set
+
 ### 一、概述
 
 `Vue.set()` 是 Vue 2 时代用于**向响应式对象上添加新属性**的全局 API。在 Vue 2 中，由于响应式系统基于 `Object.defineProperty` 实现，它无法检测到对象属性的新增和删除，因此必须借助 `Vue.set()`（或组件内的 `this.$set()`）来确保新添加的属性也是响应式的。
@@ -240,11 +242,13 @@ export default {
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| `target` | `Array \| Object` | 目标响应式对象或数组（必须是 Vue 响应式数据源中的对象） |
+| `target` | `Array \| Object` | 目标响应式对象或数组（必须是 Vue 响应式数据源中的对象，**不能是 Vue 实例或实例的根数据对象 `$data`**） |
 | `propertyNameOrIndex` | `string \| number` | 要添加/修改的属性名或数组索引 |
 | `value` | `any` | 要设置的属性值。如果值是对象或数组，会自动递归转换为响应式 |
 
 **返回值：** `any` —— 返回设置的值本身。
+
+> ⚠️ **注意：** 官方文档明确说明「对象不能是 Vue 实例，或者 Vue 实例的根数据对象」。也就是 `this.$set(this, ...)` 和 `this.$set(this.$data, ...)` 都是不允许的，开发环境会收到警告。
 
 | 调用方式 | 适用版本 | 说明 |
 |----------|----------|------|
@@ -996,9 +1000,11 @@ set(state, 'version', '3.0')
 | 新增对象属性 | 需要 `Vue.set()` | 直接赋值，自动响应式 |
 | 删除对象属性 | 需要 `Vue.delete()` | `delete` 操作符，自动响应式 |
 | 数组索引赋值 | 需要 `Vue.set()` | 直接赋值，自动响应式 |
-| 修改 `length` | 需要 `Vue.set()` | 直接赋值，自动响应式 |
+| 修改 `length` | ❌ `Vue.set()` 也无法检测，需要 `splice()` 截断 | 直接赋值，自动响应式 |
 | 对象整体替换 | 直接赋值 `this.obj = newObj` | `reactive` 不能替换，`ref` 可以 |
 | 批量添加属性 | 逐个 `Vue.set()` | 直接 `Object.assign()` |
+
+> ⚠️ **注意：** Vue 2 中 `Vue.set()` 解决的是「新增属性 / 索引赋值」的检测问题；直接修改 `arr.length` 本质上不是新增属性，`Vue.set(this.items, 'length', 2)` 不会触发视图更新，正确做法是 `this.items.splice(2)`。
 
 ### 八、总结
 

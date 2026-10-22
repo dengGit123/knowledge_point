@@ -1,6 +1,6 @@
 ### Transition
 
-> 📖 [官方文档 - Transition](https://cn.vuejs.org/api/built-in-components#transition)
+> 📖 [官方文档 - Transition](https://cn.vuejs.org/api/built-in-components.html#transition)
 
 ---
 
@@ -1456,7 +1456,7 @@ const tabs: { key: TabKey; label: string }[] = [
 
 ```vue
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 
 const currentStep = ref(0)
 const formData = ref({
@@ -1467,10 +1467,6 @@ const formData = ref({
 })
 
 const totalSteps = 3
-
-const direction = computed(() =>
-  'forward'
-)
 
 const next = (): void => {
   if (currentStep.value < totalSteps - 1) {
@@ -1855,10 +1851,9 @@ const onEnterFixed = (el: Element, done: () => void): void => {
 
 #### 6. 过渡类名与 Scoped 样式
 
-使用 `<style scoped>` 时，过渡类名需要使用 `:deep()` 选择器，因为过渡类是添加到子元素上的：
+过渡类是动态添加到 `<Transition>` 直接子元素上的。子元素在**当前组件模板内**时，`<style scoped>` 可以直接命中，无需额外处理：
 
 ```vue
-<!-- ❌ 错误：scoped 样式无法匹配 Transition 添加的类名 -->
 <template>
   <Transition name="fade">
     <div v-if="show">内容</div>
@@ -1866,23 +1861,14 @@ const onEnterFixed = (el: Element, done: () => void): void => {
 </template>
 
 <style scoped>
-/* 无法生效！因为 .fade-* 类名由 Transition 动态添加到子元素上 */
+/* ✅ div 属于本组件模板，携带本组件的 scoped 属性，可以正常匹配 */
 .fade-enter-active {
   transition: opacity 0.3s;
 }
 </style>
-
-<!-- ✅ 正确方案 1：使用非 scoped 样式 -->
-<style>
-.fade-enter-active {
-  transition: opacity 0.3s;
-}
-</style>
-
-<!-- ✅ 正确方案 2：在子元素上直接设置过渡，通过类名切换触发 -->
 ```
 
-> ⚠️ **注意：** 推荐将过渡样式放在非 scoped 的 `<style>` 块中，或者直接在子组件内部定义过渡样式。
+> ⚠️ **注意：** 只有当过渡类需要作用于**子组件内部**的元素时（如嵌套过渡中的 `.inner` 属于子组件），才需要在父组件用 `:deep()` 匹配；更推荐直接把过渡样式写在子组件自己的样式里。
 
 #### 7. 过渡结束检测 —— type 属性
 
@@ -1952,7 +1938,7 @@ const onEnterFixed = (el: Element, done: () => void): void => {
 |------|----------------|---------------------|
 | 包裹元素数量 | **单个**元素或组件 | **多个**元素（列表） |
 | 支持列表排序动画 | 不支持 | 支持（FLIP 动画） |
-| 是否渲染额外 DOM | 否（不渲染额外包裹元素） | 默认渲染一个包裹元素（可自定义 tag） |
+| 是否渲染额外 DOM | 否（不渲染额外包裹元素） | 默认也不渲染（Vue 2 默认渲染 `span`，Vue 3 需用 `tag` 指定） |
 | 过渡触发方式 | 进入 / 离开 | 进入 / 离开 / **移动** |
 | 典型场景 | 弹窗、抽屉、路由切换 | 列表增删、排序、筛选 |
 | mode 属性 | 支持（`out-in` / `in-out`） | **不支持** |

@@ -1,10 +1,10 @@
 # useRoute
 
-> 📖 [官方文档 - useRoute](https://router.vuejs.org/zh/api/#useroute)
+> 📖 [官方文档 - useRoute](https://router.vuejs.org/zh/api/#Functions-useRoute)
 
 ### 一、概述
 
-`useRoute` 是 Vue Router 提供的一个组合式函数（Composable），用于在 **Vue 3 组合式 API** 中获取当前激活的路由信息对象。它返回一个响应式的路由对象，包含了当前 URL 解析后的所有信息，如路径、参数、查询字符串、哈希值、元信息等。
+`useRoute` 是 Vue Router 提供的一个组合式函数（Composable），用于在 **Vue 3 组合式 API** 中获取当前激活的路由信息对象。官方定义：*"返回当前的路由地址。相当于在模板中使用 `$route`。"* 它返回一个响应式的路由对象，包含了当前 URL 解析后的所有信息，如路径、参数、查询字符串、哈希值、元信息等。
 
 **解决什么问题？**
 
@@ -22,18 +22,18 @@
 
 `useRoute` 的核心工作流程如下：
 
-1. **依赖注入**：Vue Router 在安装时（`app.use(router)`）通过 `provide` 向整个应用注入路由器实例
-2. **获取当前路由**：`useRoute` 内部通过 `inject` 获取路由器实例，并返回当前的 `currentRoute`（即 `router.currentRoute.value`）
-3. **响应式代理**：返回的路由对象是一个 `ref`，当路由发生变化时，所有依赖该对象的组件会自动更新
+1. **依赖注入**：Vue Router 在安装时（`app.use(router)`）通过 `provide` 向整个应用注入路由器实例和路由状态对象
+2. **获取当前路由**：`useRoute` 内部就是 `inject(routeLocationKey)`，拿到的是 Router 安装时提供的那个路由状态对象；真正的数据源是 `router.currentRoute`（一个 `shallowRef`）
+3. **响应式访问**：返回值是一个**响应式对象（不是 `ref`）**——Router 把 `path`、`params`、`query` 等每个属性都包装成 getter，读取 `route.xxx` 时实时取自 `router.currentRoute.value`。因此路由变化时，所有依赖该对象的 `computed`、`watch`、模板都会自动更新，且访问时不需要 `.value`
 
-```
+```text
 app.use(router)
     ↓
-router 通过 provide 注入 Router 实例
+router 通过 provide 注入 Router 实例与路由状态对象
     ↓
-useRoute() 通过 inject 获取 Router 实例
+useRoute() 通过 inject 获取路由状态对象
     ↓
-返回 router.currentRoute（响应式路由对象）
+route 的每个属性实时映射自 router.currentRoute（shallowRef）
     ↓
 组件中可直接读取 route.path / route.params / route.query 等
 ```
@@ -239,7 +239,6 @@ const permissions = route.meta.permissions  // string[] | undefined
 | **route.meta** | `RouteMeta` | 路由元信息，可在路由配置中自定义 |
 | **route.matched** | `RouteRecordNormalized[]` | 匹配的路由记录数组（含嵌套路由） |
 | **route.redirectedFrom** | `RouteLocation \| undefined` | 如果是通过重定向到达的，记录重定向来源 |
-| **route.fullPath** | `string` | URL 编码后的完整路径 |
 
 ### 四、实现效果
 
@@ -598,7 +597,8 @@ console.log('用户原本想访问：', route.redirectedFrom?.fullPath)
    // ❌ 错误：在组件外部调用 useRoute
    // utils/route.ts
    import { useRoute } from 'vue-router'
-   const route = useRoute() // 报错：没有活跃的组件实例
+   const route = useRoute() // 开发环境会收到 inject 警告，route 为 undefined，
+                           // 后续访问 route.path 会抛出 TypeError
 
    // ✅ 正确：在组合式函数中调用
    export function useCurrentId() {
@@ -607,14 +607,14 @@ console.log('用户原本想访问：', route.redirectedFrom?.fullPath)
    }
    ```
 
-2. **返回的路由对象是只读的**
+2. **把返回的路由对象当作只读的**
 
-   `useRoute()` 返回的路由对象是只读的（`readonly`），不能直接修改其中的属性。要改变路由，必须使用 `useRouter` 的导航方法。
+   `useRoute()` 返回的对象在语义上是只读的：直接修改它的属性不会触发任何导航，且随时会被下一次导航的全新路由状态覆盖。要改变路由，必须使用 `useRouter` 的导航方法。
 
    ```ts
    const route = useRoute()
 
-   // ❌ 错误：不能直接修改路由对象
+   // ❌ 错误：直接修改路由对象（不报错，但不会导航，且会被下次导航覆盖）
    route.params.id = '456'
 
    // ✅ 正确：通过 router 进行导航

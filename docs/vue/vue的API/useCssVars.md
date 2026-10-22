@@ -1,23 +1,25 @@
-### useCssVars
+# useCssVars
 
-> 📖 [官方文档 - useCssVars](https://cn.vuejs.org/api/sfc-css-features.html#usecssvars)
+> 📖 [官方文档 - SFC CSS 功能（`v-bind()`）](https://cn.vuejs.org/api/sfc-css-features.html)
+>
+> ⚠️ **注意：** `useCssVars` 在 Vue 的类型定义中被标注为 `@private`（"Runtime helper for SFC's CSS variable injection feature"），官方 API 参考没有为它单独设立章节。它主要作为 `<style>` 中 `v-bind()` CSS 特性的底层运行时辅助函数，由 SFC 编译器在编译产物中自动调用。
 
 ### 一、概述
 
-`useCssVars` 是 Vue 3 提供的一个组合式 API，用于在**非单文件组件（non-SFC）**场景下，将响应式数据绑定到 CSS 自定义属性（CSS Variables）。它的作用与 `<style>` 中的 `v-bind()` CSS 函数等价，但适用于 `render` 函数或 JSX 等非 SFC 环境。
+`useCssVars` 是 Vue 3 提供的一个运行时辅助函数，用于把**响应式数据**桥接到 **CSS 自定义属性（CSS Variables）**上。SFC 单文件组件中 `<style>` 的 `v-bind(color)` 语法，编译后就是通过调用 `useCssVars` 实现的。
 
-简单来说：当你不在 `.vue` 单文件组件中写模板和样式，而是使用 `setup` 函数 + `render` 函数（或 `.tsx` 文件）来构建组件时，你无法使用 `<style>` 块中的 `v-bind()` 语法。此时 `useCssVars` 就是你的最佳选择——它将响应式 JavaScript 变量与 CSS 变量桥接起来，使得 CSS 可以消费 Vue 的响应式状态。
+它也可以手动调用：当你不在 `.vue` 单文件组件中写模板和样式，而是使用 `setup` 函数 + `render` 函数（或 `.tsx` 文件）来构建组件时，无法使用 `<style>` 块中的 `v-bind()` 语法，此时可以手动调用 `useCssVars` 获得同样的能力。
 
-> 💡 **提示：** 如果你使用的是 `.vue` 单文件组件，通常更推荐直接在 `<style>` 中使用 `v-bind(color)`，写法更简洁。`useCssVars` 主要面向非 SFC 场景。
+> 💡 **提示：** 如果你使用的是 `.vue` 单文件组件，更推荐直接在 `<style>` 中使用 `v-bind(color)`，写法更简洁，编译器会自动生成 `useCssVars` 的调用。
 
 ### 二、核心原理
 
 `useCssVars` 的工作机制可以概括为以下步骤：
 
-1. **创建响应式绑定**：接收一个函数，该函数返回一个键值对对象，键为 CSS 变量名（会自动加上 `--` 前缀），值为对应的响应式数据
-2. **挂载时注入**：在组件挂载时，通过 `watchEffect` 监听依赖变化，将 CSS 变量以内联样式 `style` 的形式注入到组件的根元素上
-3. **响应式更新**：当响应式数据变化时，自动更新对应根元素上的 CSS 变量值，从而驱动 UI 更新
-4. **卸载时清理**：组件卸载时自动停止监听，清理副作用
+1. **创建响应式绑定**：接收一个函数，该函数返回一个键值对对象，键为 CSS 变量名（运行时会自动加上 `--` 前缀），值为对应的响应式数据
+2. **挂载时注入**：组件挂载后，将 CSS 变量以内联样式（`style="--xxx: ..."`）的形式设置到组件子树的**根元素**上，后代元素通过 CSS 变量的继承机制共享这些值
+3. **响应式更新**：内部用 `watch(..., { flush: 'post' })`（在 DOM 更新后执行）跟踪 getter 依赖，数据变化时重新写入变量；同时通过 `onBeforeUpdate` + `MutationObserver` 兜底，捕获与响应式无关的 DOM 结构变化
+4. **卸载时清理**：watcher 随组件实例自动停止，`MutationObserver` 在 `onUnmounted` 中断开连接
 
 底层实现核心逻辑（简化版）：
 
@@ -25,19 +27,29 @@
 // 伪代码，展示 useCssVars 的核心思路
 function useCssVars(getter: (ctx: any) => Record<string, string>) {
   const instance = getCurrentInstance()
-  if (!instance) return
+  if (!instance) {
+    warn('useCssVars is called without current active component instance.')
+    return
+  }
 
   const setVars = () => {
-    const el = instance.subTree.el
     const vars = getter(instance.proxy)
-    // 将变量设置到根元素的 style 上
+    const el = findRootEl(instance.subTree) // 定位子树根元素
     for (const key in vars) {
       el.style.setProperty(`--${key}`, vars[key])
     }
   }
 
-  // 使用 watchPostEffect 在 DOM 更新后执行
-  watchPostEffect(setVars)
+  onBeforeUpdate(() => queuePostFlushCb(setVars))
+
+  onMounted(() => {
+    // 数据变化后在 DOM 更新完成时重新写入变量
+    watch(setVars, () => {}, { flush: 'post' })
+    // 兜底：监听子树 DOM 结构变化
+    const ob = new MutationObserver(setVars)
+    ob.observe(instance.subTree.el.parentNode, { childList: true })
+    onUnmounted(() => ob.disconnect())
+  })
 }
 ```
 
@@ -206,7 +218,9 @@ export default defineComponent({
 })
 ```
 
-##### 2.3 使用 scoped 选项控制作用域
+##### 2.3 变量的作用范围：组件子树根元素
+
+`useCssVars` 只接收一个 `getter` 参数，**没有作用域配置项**。变量始终以内联样式写入组件子树的根元素，依靠 CSS 自定义属性的继承规则作用于后代元素：
 
 ```ts
 import { defineComponent, ref, useCssVars } from 'vue'
@@ -215,10 +229,10 @@ export default defineComponent({
   setup() {
     const color = ref<string>('#42b983')
 
-    // ✅ scoped: true（默认值）—— 变量仅注入到当前组件根元素
+    // ✅ 变量注入到本组件根元素，后代元素都能通过 var(--main-color) 消费
     useCssVars(() => ({
       'main-color': color.value
-    }), { scoped: true })
+    }))
 
     return { color }
   },
@@ -228,24 +242,11 @@ export default defineComponent({
 })
 ```
 
+如果确实需要**全局**变量（挂到 `document.documentElement` 上），直接操作根元素即可，不要指望 `useCssVars` 替你做：
+
 ```ts
-import { defineComponent, ref, useCssVars } from 'vue'
-
-export default defineComponent({
-  setup() {
-    const color = ref<string>('#42b983')
-
-    // ✅ scoped: false —— 变量注入到 document.documentElement（全局生效）
-    useCssVars(() => ({
-      'global-color': color.value
-    }), { scoped: false })
-
-    return { color }
-  },
-  render() {
-    return <div class="box">Hello</div>
-  }
-})
+// 全局变量：手动写入 <html> 元素
+document.documentElement.style.setProperty('--global-color', color.value)
 ```
 
 ##### 2.4 在 JSX / TSX 组件中使用
@@ -273,7 +274,8 @@ export default defineComponent({
           type="range"
           min="0"
           max="100"
-          v-model={sliderValue.value}
+          value={sliderValue.value}
+          onInput={(e: Event) => (sliderValue.value = Number((e.target as HTMLInputElement).value))}
         />
       </div>
     )
@@ -306,12 +308,19 @@ export default defineComponent({
 
 #### 3. API 参数说明
 
+官方类型签名（见 Vue 类型声明，标注为 `@private`）：
+
+```ts
+function useCssVars(getter: (ctx: any) => Record<string, string>): void
+```
+
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `getter` | `(ctx: ComponentPublicInstance) => Record<string, string \| number>` | 是 | 一个函数，接收组件实例 `ctx`（即 `setup` 中 `this` 的代理），返回一个对象，其键名为 CSS 变量名（不需要加 `--` 前缀），键值为对应的响应式值 |
-| `options` | `{ scoped?: boolean }` | 否 | 配置选项。`scoped` 默认为 `true`，表示变量仅作用于当前组件根元素；设为 `false` 时，变量注入到 `document.documentElement`，全局生效 |
+| `getter` | `(ctx: any) => Record<string, string>` | 是 | 一个函数，接收组件实例代理 `ctx`，返回一个对象，其键名为 CSS 变量名（运行时会自动加 `--` 前缀），键值为对应的值。函数内读取响应式数据即可建立依赖追踪 |
 
 **返回值**：`void`（无返回值）
+
+> ⚠️ **注意：** `useCssVars` 只有这一个参数，没有第二个 `options` / `scoped` 参数，也没有"注入到 `document.documentElement` 全局生效"的模式。
 
 ### 四、实现效果
 
@@ -698,9 +707,9 @@ function toggle() {
 </style>
 ```
 
-#### 场景 8：组件库全局 Design Token 注入
+#### 场景 8：组件库 Design Token 注入
 
-在组件库中，通过 `scoped: false` 将设计令牌注入全局，实现统一的视觉规范。
+在组件库中，用一个 Provider 组件统一注入设计令牌，令牌变量会写入 Provider 子树的根元素，子树内的所有组件都能通过继承使用它们。
 
 ```ts
 // DesignTokenProvider.tsx
@@ -736,8 +745,8 @@ export default defineComponent({
       'font-family': "'Inter', sans-serif"
     })
 
-    // ✅ scoped: false 使变量全局生效
-    useCssVars(() => ({ ...tokens }), { scoped: false })
+    // ✅ 变量注入到 Provider 子树的根元素，整个子树内可继承使用
+    useCssVars(() => ({ ...tokens }))
 
     return { tokens }
   },
@@ -748,7 +757,7 @@ export default defineComponent({
 ```
 
 ```css
-/* 任何组件都可以使用这些全局 Design Token */
+/* Provider 子树内的任何组件都可以使用这些 Design Token */
 .my-button {
   background: var(--color-primary);
   border-radius: var(--radius-md);
@@ -756,6 +765,8 @@ export default defineComponent({
   box-shadow: var(--shadow-sm);
 }
 ```
+
+> ⚠️ **注意：** 令牌只对 `<DesignTokenProvider>` 子树内的内容生效，子树之外的组件拿不到这些变量。若确需全局令牌，请手动执行 `document.documentElement.style.setProperty('--color-primary', ...)`。
 
 #### 场景 9：暗色模式适配
 
@@ -778,13 +789,14 @@ export function useDarkMode() {
   }
 
   // ✅ 根据暗色模式状态动态设置 CSS 变量
+  // 变量注入到"调用该函数的组件"的子树根元素
   useCssVars(() => ({
     'bg-color': isDark.value ? '#1a1a2e' : '#ffffff',
     'text-color': isDark.value ? '#e0e0e0' : '#333333',
     'card-bg': isDark.value ? '#16213e' : '#f5f5f5',
     'border-color': isDark.value ? '#333355' : '#e0e0e0',
     'shadow-opacity': isDark.value ? '0.3' : '0.1'
-  }), { scoped: false })
+  }))
 
   function toggleDark() {
     isDark.value = !isDark.value
@@ -794,7 +806,7 @@ export function useDarkMode() {
 }
 ```
 
-#### 场景 10：数据可视化中的动态图表样式
+> ⚠️ **注意：** `useDarkMode()` 内部调用了 `useCssVars`，因此它必须在组件的 `setup()` / `<script setup>` 中同步调用，变量也只作用于调用它的那个组件的子树。
 
 在图表组件中，根据数据范围动态调整颜色、尺寸等视觉属性。
 
@@ -908,19 +920,21 @@ export default defineComponent({
 
 #### 3. 变量注入到根元素
 
-`useCssVars` 默认（`scoped: true`）将 CSS 变量注入到组件的**根元素**上。如果组件有多个根节点（Fragment），变量只会注入到第一个根节点。
+`useCssVars` 将 CSS 变量以内联 `style` 写到组件**子树的根元素**上。组件是单根时写在根元素上；是多根节点（Fragment）时，源码会遍历每一个根节点并逐一写入，因此每个根元素都会带上这些变量，各自的后代也都能继承。
 
 ```ts
-// ⚠️ 多根节点时，变量只注入到第一个根元素
+// 多根节点（Fragment）时，每个根元素都会被注入变量
 render() {
   return (
     <>
-      <div class="first">变量会注入到这里</div>
-      <div class="second">这里没有变量</div>
+      <div class="first">  {/* style 含 --xxx 变量 */}
+      <div class="second"> {/* style 同样含 --xxx 变量 */}
     </>
   )
 }
 ```
+
+> 💡 **提示：** 变量挂在根元素上、靠继承传给后代，意味着如果某个后代元素自己用内联 `style` 或更近的祖先重新定义了同名变量，会就近覆盖继承值。
 
 #### 4. 与 SFC `v-bind()` 的选择
 
@@ -929,8 +943,8 @@ render() {
 | 对比项 | `useCssVars` | SFC `v-bind()` |
 |--------|-------------|-----------------|
 | 适用场景 | 非 SFC（render / JSX / TSX） | `.vue` 单文件组件 |
-| 写法位置 | `<script setup>` 中调用 | `<style>` 块中使用 |
-| 作用域控制 | 通过 `scoped` 选项 | 自动跟随 `<style scoped>` |
+| 写法位置 | `setup()` 中调用 | `<style>` 块中使用 |
+| 作用范围 | 均注入到组件子树根元素，靠继承生效 | 一致（底层就是 `useCssVars`） |
 | 推荐度（SFC 中） | 不推荐（冗余） | 推荐 |
 
 ```vue
@@ -945,7 +959,7 @@ render() {
 
 #### 5. 性能考量
 
-`useCssVars` 内部使用 `watchPostEffect` 监听变化，每次响应式数据变更都会触发 DOM 更新。对于高频变化的值（如鼠标位置、滚动偏移等），需要注意性能影响。
+`useCssVars` 内部在挂载后通过 `watch(..., { flush: 'post' })` 追踪 `getter` 的依赖，每次响应式数据变更都会在组件更新后重新写入内联样式；同时还会用 `MutationObserver` 监听子树根元素的替换。对于高频变化的值（如鼠标位置、滚动偏移等），需要注意性能影响。
 
 ```ts
 // ❌ 避免高频更新
@@ -972,13 +986,7 @@ window.addEventListener('mousemove', (e) => {
 
 #### 6. SSR 兼容性
 
-在服务端渲染（SSR）环境中，`useCssVars` 可以正常工作，但需要注意：CSS 变量是通过内联 `style` 注入的，在 SSR 输出的 HTML 中会包含这些内联样式。
-
-```ts
-// SSR 场景下，输出的 HTML 会包含内联 style
-// <div style="--main-color: #42b983;" class="box">
-// 这确保了客户端水合前样式即可正确渲染
-```
+`useCssVars` 的变量写入发生在客户端的 `onMounted` / 组件更新之后（服务端不会执行这些生命周期钩子），因此 SSR 输出的 HTML 中**不包含**这些内联变量样式，首屏到水合完成之间可能存在短暂的样式差异。SSR 下若需要首屏就有正确的变量值，应在服务端渲染前把变量写入初始 HTML（如在根元素上输出 `style`），或改用 CSS 类切换主题。
 
 #### 7. 不支持 CSS Modules 的 hash
 
@@ -1045,7 +1053,7 @@ useCssVars(() => ({
 |------|-------------|-----------------|---------------|
 | 使用场景 | 非 SFC 组件 | `.vue` 单文件组件 | 任何场景 |
 | 语法形式 | 函数调用 | CSS 函数 `v-bind(expr)` | 模板绑定 `:style="{ ... }"` |
-| 作用域 | 可选 `scoped` 或全局 | 跟随 `<style scoped>` | 仅当前元素 |
+| 作用范围 | 组件子树（根元素注入，后代继承） | 与 `useCssVars` 一致（底层实现相同） | 仅当前元素 |
 | CSS 中使用 | `var(--name)` | 直接 `v-bind(expr)` | 不适用 |
 | 多元素共享 | 支持（多个元素用同一变量） | 支持 | 需要逐元素绑定 |
 | 媒体查询可用 | 支持（`@media` 中可用） | 支持 | 不支持 |
@@ -1082,7 +1090,7 @@ useCssVars(() => ({ 'text-color': color.value }))
 
 1. **非 SFC 场景**：在 JSX / TSX / render 函数中无法使用 `v-bind()` CSS 函数时，`useCssVars` 提供了等价的响应式 CSS 变量绑定能力
 2. **响应式样式**：让 CSS 变量的值能够跟随 Vue 的响应式系统自动更新，无需手动操作 DOM
-3. **作用域控制**：通过 `scoped` 选项灵活控制变量作用范围（组件级或全局）
+3. **子树级作用**：变量写入组件子树的根元素并靠继承传播；确需全局变量时手动操作 `document.documentElement`
 4. **设计系统支持**：非常适合实现主题切换、Design Token 注入等需要批量管理 CSS 变量的场景
 
 **核心记忆点**：

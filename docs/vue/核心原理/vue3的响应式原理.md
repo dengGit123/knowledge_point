@@ -131,10 +131,11 @@ state.user.address.city = 'Shanghai'  // 响应式
 const { count } = state
 count++  // 不会触发更新
 
-// ❌ 不能直接替换整个对象
-state = reactive({ count: 1 })  // 错误
+// ❌ 不能整体替换 reactive 对象本身：
+//    const 不允许重新赋值；即便换成 let，模板绑定的还是旧代理，更新会"断线"
+state = reactive({ count: 1 })
 
-// ✅ 正确的替换方式
+// ✅ 正确的替换方式：修改原对象的属性
 Object.assign(state, { count: 1 })
 // 或
 for (const key in newState) {
@@ -178,23 +179,30 @@ count.value++
 // reactive: 不需要 .value，只能用于对象
 const state = reactive({ count: 0 })
 state.count++
+```
 
-// ========== ref 解包 ==========
-// 在模板中自动解包，不需要 .value
-<template>
-  <div>{{ count }}</div>  <!-- 不需要 count.value -->
-</template>
-
-// 在 reactive 对象中自动解包
+```javascript
+// ========== ref 解包：在 reactive 对象中作为属性访问时自动解包 ==========
 const state = reactive({
   count: ref(0)
 })
 console.log(state.count)  // 0，不需要 .value
-state.count++  // 正确
+state.count++  // 正确，写回的还是原来的 ref
 
-// 但如果替换 ref，需要 .value
-state.count = ref(10)
-console.log(state.count.value)  // 需要重新使用 .value
+// 如果把一个新 ref 赋值给已有属性，会替换掉旧的 ref（旧 ref 不再关联）
+const otherCount = ref(10)
+state.count = otherCount
+console.log(state.count)       // 10 —— 读取时依然自动解包，不需要 .value
+console.log(otherCount.value)  // 10
+// 注意：reactive 数组的元素、Map/Set 集合中的 ref 不会自动解包
+```
+
+模板中 ref 同样自动解包，不需要 `.value`：
+
+```vue
+<template>
+  <div>{{ count }}</div>  <!-- 不需要 count.value -->
+</template>
 ```
 
 ### 2.3 computed
@@ -272,6 +280,7 @@ count.value++
 // 输出: count changed from 0 to 1
 
 // 侦听多个来源
+const another = ref('hello')
 watch([count, another], ([newCount, newAnother], [oldCount, oldAnother]) => {
   console.log(`count: ${oldCount} -> ${newCount}`)
   console.log(`another: ${oldAnother} -> ${newAnother}`)
@@ -406,15 +415,16 @@ let activeEffect = null
 const targetMap = new WeakMap()  // 目标对象 -> 依赖映射
 
 // 2. effect 函数（副作用）
-function effect(fn) {
+function effect(fn, options = {}) {
   const effectFn = () => {
     try {
       activeEffect = effectFn
       return fn()
     } finally {
-      activeEffect = null
+      activeEffect = null  // 真实实现用 effect 栈恢复外层 effect，此处简化
     }
   }
+  effectFn.options = options  // 调度器等选项，trigger 时会用到
   effectFn()
   return effectFn
 }
@@ -443,7 +453,11 @@ function trigger(target, key) {
 
   const dep = depsMap.get(key)
   if (dep) {
-    dep.forEach(effect => effect())
+    dep.forEach(fn => {
+      // 有调度器就交给调度器（computed 的脏标记、组件更新的异步批处理都靠它）
+      if (fn.options?.scheduler) fn.options.scheduler(fn)
+      else fn()
+    })
   }
 }
 
@@ -453,10 +467,10 @@ function reactive(target) {
     get(target, key, receiver) {
       const result = Reflect.get(target, key, receiver)
 
-      // 收集依赖
+      // 读取时收集依赖
       track(target, key)
 
-      // 如果是对象，递归代理
+      // 如果是对象，递归代理（真实实现会缓存子代理，同一子对象只代理一次）
       if (typeof result === 'object' && result !== null) {
         return reactive(result)
       }
@@ -467,12 +481,12 @@ function reactive(target) {
     set(target, key, value, receiver) {
       const oldValue = target[key]
 
-      // 设置值
+      // 先改值，再触发依赖（与 Vue 真实实现一致）
       const result = Reflect.set(target, key, value, receiver)
 
-      // 值变化时触发依赖
-      if (oldValue !== value) {
-        trigger(target, key)
+      // hasChanged 用 Object.is 比较（能正确处理 NaN）；新增属性同样要触发
+      if (!Object.is(oldValue, value)) {
+        trigger(target, key)  // 真实实现还区分 ADD（新增）/ DELETE（删除）等触发类型
       }
 
       return result
@@ -481,10 +495,7 @@ function reactive(target) {
 }
 
 // ========== 使用示例 ==========
-const state = reactive({
-  count: 0,
-  double: computed(() => state.count * 2)
-})
+const state = reactive({ count: 0 })
 
 effect(() => {
   console.log(`count is: ${state.count}`)
@@ -584,7 +595,7 @@ count.value++
 │     ↓                                                       │
 │  6. 将 activeEffect 添加到依赖集合                           │
 │     ↓                                                       │
-│  7. 清空 activeEffect                                        │
+│  7. 执行完毕，清空 activeEffect（真实实现用 effect 栈）       │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -616,9 +627,7 @@ count.value++
 ### 4.3 WeakMap 的使用
 
 ```javascript
-// ========== 为什么使用 WeakMap ==========
-
-// 1. 自动垃圾回收
+// ========== 1. 自动垃圾回收 ==========
 const targetMap = new WeakMap()
 
 let obj = { key: 'value' }
@@ -634,23 +643,26 @@ obj = null
 
 // WeakMap 中的 entry 会被自动垃圾回收
 // 不会造成内存泄漏
+```
 
-// 2. 键必须是对象
+```javascript
+// ========== 2. 键必须是对象 ==========
 const map = new Map()
 const weakMap = new WeakMap()
 
-map.set('key', 'value')  // ✓ 可以用字符串作为键
+map.set('key', 'value')      // ✓ 可以用字符串作为键
 weakMap.set('key', 'value')  // ✗ 只能用对象作为键
 
 const obj = { id: 1 }
-weakMap.set(obj, 'value')  // ✓ 正确
+weakMap.set(obj, 'value')    // ✓ 正确
+```
 
-// 3. 不可枚举
-const obj = {}
+```javascript
+// ========== 3. 不可枚举 ==========
 const weakMap = new WeakMap()
+weakMap.set({ id: 1 }, 'value')
 
-weakMap.set(obj, 'value')
-console.log(Object.keys(weakMap))  // []
+console.log(Object.keys(weakMap))    // []，无法遍历 WeakMap 的键
 console.log(Object.values(weakMap))  // []
 ```
 
@@ -661,35 +673,35 @@ console.log(Object.values(weakMap))  // []
 ### 5.1 computed 实现原理
 
 ```javascript
-// ========== 简化版 computed 实现 ==========
+// ========== 简化版 computed 实现（dirty 标记 + 调度器）==========
 
 class ComputedRefImpl {
   constructor(getter) {
-    this._getter = getter
     this._value = undefined
-    this._dirty = true  // 是否需要重新计算
-    this._dep = new Set()  // 依赖此计算属性的 effect 集合
-    this.effect = null
+    this._dirty = true    // 脏标记：true 表示缓存失效，需要重新计算
+    this._dep = new Set() // 依赖此 computed 的 effect 集合
 
-    // 创建 effect
-    this.effect = effect(() => {
-      this._value = this._getter()
-      this._dirty = false
+    // 内部 effect：追踪 getter 的依赖；依赖变化时通过 scheduler 走"标脏"逻辑
+    this._effect = effect(getter, {
+      scheduler: () => {
+        if (!this._dirty) {
+          this._dirty = true               // ① 只标记缓存失效，不立刻重算
+          this._dep.forEach(fn => fn())    // ② 通知依赖此 computed 的 effect
+        }
+      }
     })
   }
 
   get value() {
-    // 收集依赖
+    // 收集依赖此 computed 的 effect
     if (activeEffect) {
       this._dep.add(activeEffect)
     }
-
-    // 脏检查，需要重新计算
+    // 脏检查：缓存失效时才真正重新计算
     if (this._dirty) {
       this._dirty = false
-      this._value = this.effect()
+      this._value = this._effect()
     }
-
     return this._value
   }
 }
@@ -713,54 +725,26 @@ count.value++
 
 ### 5.2 computed 缓存机制
 
+缓存的关键就是上面那个 `_dirty` 标记，读写时序如下：
+
 ```javascript
-// ========== computed 缓存原理 ==========
-
-// 1. 首次访问
+const count = ref(0)
 const doubled = computed(() => count.value * 2)
-console.log(doubled.value)  // 执行计算，输出: 0
 
-// 2. 依赖未变化
-console.log(doubled.value)  // 使用缓存，输出: 0（不执行计算）
+// 1. 首次访问 doubled.value → _dirty 为 true → 真正计算，结果缓存
+console.log(doubled.value)  // 输出: 0
 
-// 3. 依赖变化
+// 2. 再次访问 → _dirty 为 false → 直接返回缓存，getter 不执行
+console.log(doubled.value)  // 输出: 0
+
+// 3. 依赖变化 → scheduler 只把 _dirty 标回 true，并不计算
 count.value++
 
-// 4. 重新访问
-console.log(doubled.value)  // 重新计算，输出: 2
-
-// ========== dirty 标记机制 ==========
-class ComputedRefImpl {
-  constructor(getter) {
-    this._getter = getter
-    this._value = undefined
-    this._dirty = true
-
-    // 创建 effect，在依赖变化时设置 dirty
-    this.effect = effect(() => {
-      if (this._dirty) {
-        this._value = this._getter()
-        this._dirty = false
-      }
-    }, {
-      scheduler: () => {
-        // 依赖变化时，标记为脏，但不立即计算
-        this._dirty = true
-        // 触发依赖此计算属性的 effect
-        trigger(this, 'value')
-      }
-    })
-  }
-
-  get value() {
-    if (this._dirty) {
-      this._value = this.effect()
-      this._dirty = false
-    }
-    return this._value
-  }
-}
+// 4. 下一次访问 → 发现缓存失效 → 才重新计算
+console.log(doubled.value)  // 输出: 2
 ```
+
+> 💡 关键在"依赖变化时只标脏、不重算"：如果没有任何地方读取 `doubled`，即使 `count` 改了一百次，getter 也一次都不会执行——这就是 computed 的惰性计算。
 
 ### 5.3 computed vs 方法
 
@@ -802,54 +786,45 @@ doubled()  // 输出: 执行 doubled 方法
 // ========== 简化版 watch 实现 ==========
 
 function watch(source, cb, options = {}) {
-  // 1. 获取 getter 函数
-  let getter
-  if (typeof source === 'function') {
-    getter = source
-  } else if (typeof source === 'object' && source !== null) {
-    getter = () => traverse(source)
+  // 1. 归一化 getter：函数直接用；reactive 对象则递归遍历一遍以收集所有依赖（深侦听）
+  const getter =
+    typeof source === 'function' ? source : () => traverse(source)
+
+  let oldValue
+  let cleanup = null
+  let stopped = false
+
+  // 供回调注册"下次执行前清理"的逻辑
+  const onCleanup = (fn) => {
+    cleanup = fn
   }
 
-  // 2. 保存旧值
-  let oldValue
-  let cleanup
-
-  // 3. 创建 effect
-  const effectFn = effect(() => {
+  const run = () => {
+    if (cleanup) { cleanup(); cleanup = null }
     const newValue = getter()
-
-    if (cleanup) {
-      cleanup()
-    }
-
-    // 不是首次执行，调用回调
-    if (oldValue !== undefined) {
-      cb(newValue, oldValue, onCleanup)
-    }
-
     oldValue = newValue
-  }, {
-    scheduler: () => {
-      // flush: 'post' 在更新后执行
-      if (options.flush === 'post') {
-        const p = Promise.resolve()
-        p.then(effectFn)
-      } else {
-        effectFn()
-      }
+    return newValue
+  }
+
+  // 2. 首次执行：收集依赖 + 记录初始值（此时不调用 cb）
+  effect(run, {
+    scheduler: () => {          // 依赖变化时走调度器，而不是立刻重跑
+      if (stopped) return
+      if (cleanup) { cleanup(); cleanup = null }
+      const newValue = getter()
+      cb(newValue, oldValue, onCleanup)  // 新旧值都拿到了，才调用回调
+      oldValue = newValue
     }
   })
 
-  // 4. 立即执行
+  // 3. immediate：首次就以 (新值, undefined) 调用回调
   if (options.immediate) {
-    oldValue = getter()
     cb(oldValue, undefined, onCleanup)
   }
 
-  // 5. 返回停止函数
+  // 4. 返回停止函数（真实实现还会停止内部 effect 的依赖收集）
   return () => {
-    // 停止侦听
-    cleanup = null
+    stopped = true
   }
 }
 
@@ -874,48 +849,31 @@ function traverse(value, seen = new Set()) {
 }
 ```
 
+> 💡 `flush: 'post'` 在真实实现里是把回调任务放进**组件更新之后**执行的队列（`queuePostRenderEffect`），而不是简单的 `Promise.then`——这保证了回调读到的是更新后的 DOM。
+
 ### 6.2 watchEffect 实现原理
 
 ```javascript
 // ========== 简化版 watchEffect 实现 ==========
 
-function watchEffect(effect, options = {}) {
-  let cleanup
+function watchEffect(fn) {
+  let cleanup = null
+  let stopped = false
 
-  // 包装 effect，支持 onCleanup
-  const wrappedEffect = () => {
-    if (cleanup) {
-      cleanup()
-    }
-    cleanup = effect(onCleanup)
+  const job = () => {
+    if (stopped) return
+    if (cleanup) { cleanup(); cleanup = null }  // 重跑前清理上一次的副作用
+    fn((newFn) => {       // 向回调传入 onCleanup，供注册清理逻辑
+      cleanup = newFn
+    })
   }
 
-  // 创建 effect
-  const effectFn = effect(wrappedEffect, {
-    scheduler: () => {
-      if (options.flush === 'post') {
-        const p = Promise.resolve()
-        p.then(effectFn)
-      } else {
-        effectFn()
-      }
-    }
-  })
+  effect(job)  // 立即执行一次；之后依赖变化时自动重新执行 job
 
-  // 立即执行
-  effectFn()
-
-  // 返回停止函数
   return () => {
-    if (cleanup) {
-      cleanup()
-    }
+    stopped = true
+    if (cleanup) cleanup()
   }
-}
-
-// onCleanup 函数
-function onCleanup(fn) {
-  cleanup = fn
 }
 ```
 
@@ -1050,10 +1008,10 @@ const rawState = toRaw(state)
 rawState.count++  // 不会触发更新
 
 // ========== 应用场景 ==========
-// 1. 比较对象
-if (toReadonly(obj1) === obj2) {
-  // ...
-}
+// 1. 判断代理背后是不是同一个原始对象
+const raw = { id: 1 }
+const state = reactive(raw)
+console.log(toRaw(state) === raw)  // true
 
 // 2. 避免响应式开销
 const rawData = toRaw(reactiveData)
@@ -1177,27 +1135,26 @@ Object.assign(state, { count: 1 })
 // ✅ 正确：逐个属性赋值
 state.count = 1
 
-// ========== 问题 3：数组方法 ==========
+// ========== 问题 3：数组的"替换"与"修改" ==========
 const items = reactive(['a', 'b', 'c'])
 
-// ❌ 错误：使用会改变引用的方法
-items = ['d', 'e', 'f']  // 错误
-items = items.filter(x => x !== 'a')  // 错误
+// ❌ 整体替换 reactive 变量本身：模板绑定的还是旧代理，不会触发更新
+// items = ['d', 'e', 'f']
 
-// ✅ 正确：使用不会改变引用的方法
+// ✅ 直接在原数组上修改，Proxy 全部能拦截（含索引赋值、length）
 items.push('d')
 items.splice(0, 1)
 items[0] = 'new'
 
-// ✅ 正确：使用 ref 包装数组
-const items = ref(['a', 'b', 'c'])
-items.value = items.value.filter(x => x !== 'a')  // 正确
+// ✅ 需要整体替换时，用 ref 包装数组（对 .value 赋值本身就是响应式的）
+const list = ref(['a', 'b', 'c'])
+list.value = list.value.filter((x) => x !== 'a')
 ```
 
 ### 8.3 深层响应式 vs 浅层响应式
 
 ```javascript
-import { reactive, ref, shallowReactive, shallowRef } from 'vue'
+import { reactive, ref, shallowReactive, shallowRef, readonly } from 'vue'
 
 // ========== reactive 深层响应式 ==========
 const state = reactive({
@@ -1295,32 +1252,26 @@ state.count++  // 会触发
 #### 问题 3：computed 不更新
 
 ```javascript
-// ❌ 问题
+// 这不是 bug：computed 只有依赖变化才会重算，否则返回缓存
 const count = ref(0)
 const doubled = computed(() => count.value * 2)
-count.value = 0  // 值没有变化
-console.log(doubled.value)  // 仍然是旧的值（缓存）
-
-// ✅ 这是正常的，computed 有缓存机制
-// 如果确实需要更新，可以强制刷新
-// 但通常不应该这样使用
+count.value = 0  // 依赖没变，doubled 保持缓存值是正常行为
 ```
+
+排查方向：依赖是否真的变化了？依赖是否因为解构、非响应式数据而根本没被 track？
 
 ### 9.2 调试技巧
 
 #### 查看 Proxy 对象
 
 ```javascript
-import { reactive } from 'vue'
+import { reactive, toRaw } from 'vue'
 
 const state = reactive({ count: 0 })
 
-// 查看原始对象
-console.log(state)
-console.log(state.__v_raw)  // 原始对象
-
-// 查看依赖映射
-console.log(state.__v_cache)  // 内部缓存
+// 查看原始对象（内部标志 __v_raw，或直接用 toRaw）
+console.log(state.__v_raw)
+console.log(toRaw(state))
 ```
 
 #### 使用 devtools
@@ -1341,21 +1292,20 @@ import { reactive, watchEffect } from 'vue'
 
 const state = reactive({ count: 0 })
 
-// 自动追踪响应式数据变化
-watchEffect(() => {
-  console.log('state changed:', {
-    count: state.count
-  })
-})
-
-// 使用 onTrack 和 onTrigger（开发模式）
-onTrack((event) => {
-  console.log('tracking:', event)
-})
-
-onTrigger((event) => {
-  console.log('triggering:', event)
-})
+// onTrack / onTrigger 是调试钩子，作为选项传入 watchEffect / watch（仅开发模式生效）
+watchEffect(
+  () => {
+    console.log('state changed:', state.count)
+  },
+  {
+    onTrack(event) {
+      console.log('track:', event)    // 依赖被收集时触发
+    },
+    onTrigger(event) {
+      console.log('trigger:', event)  // 依赖变化触发重新执行时触发
+    }
+  }
+)
 ```
 
 ### 9.3 性能优化

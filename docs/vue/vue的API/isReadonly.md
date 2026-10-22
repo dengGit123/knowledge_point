@@ -89,13 +89,13 @@ console.log(isReactive(wrapped))  // true（底层是 reactive）
 
 ```vue
 <script setup>
-import { isReadonly, readonly } from 'vue'
+import { isReadonly } from 'vue'
 
 const props = defineProps({
   data: Object
 })
 
-// 在子组件中检查 props 是否只读
+// 开发环境下 setup 收到的 props 是 shallowReadonly 代理
 if (isReadonly(props)) {
   console.log('props 是只读的，不应被修改')
 }
@@ -264,6 +264,25 @@ console.log(isReadonly(state))        // true
 console.log(isReadonly(state.nested)) // false
 // shallowReadonly 只保护根层级，嵌套对象不是 readonly
 ```
+
+### 4. getter 写法的 computed 也返回 true
+
+```javascript
+import { computed, isReadonly } from 'vue'
+
+const doubled = computed(() => 1 + 1)
+
+console.log(isReadonly(doubled)) // true（只读 computed 内部带有只读标记）
+
+const writable = computed({
+  get: () => 1,
+  set: () => {}
+})
+
+console.log(isReadonly(writable)) // false（可写 computed 没有只读标记）
+```
+
+> ⚠️ **注意：** 这类 computed 虽然会被 `isReadonly()` 判为 true，但它不是代理对象，`isProxy()` 对它仍返回 false。
 
 ## 最佳实践
 

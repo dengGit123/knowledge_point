@@ -6,15 +6,20 @@
 
 VNode 应被视为**不可变的**，不应直接修改已有 VNode 的 props，而应通过 `cloneVNode()` 创建带有不同属性的新副本。
 
-📖 [Vue 官方文档 - cloneVNode](https://cn.vuejs.org/api/render-function#clonevnode)
+📖 [Vue 官方文档 - cloneVNode](https://cn.vuejs.org/api/render-function.html#clonevnode)
 
 ## 函数签名
 
 ```typescript
+// 官方文档签名
+function cloneVNode(vnode: VNode, extraProps?: object): VNode
+
+// 完整签名（运行时源码）
 function cloneVNode<T extends VNode>(
   vnode: T,
-  extraProps?: object & VNodeProps,
-  mergeRef?: boolean
+  extraProps?: (object & VNodeProps) | null,
+  mergeRef?: boolean,
+  cloneTransition?: boolean
 ): T
 ```
 
@@ -24,9 +29,10 @@ function cloneVNode<T extends VNode>(
 |------|------|------|
 | `vnode` | `VNode` | 需要克隆的原始 VNode |
 | `extraProps` | `object` | 可选，要合并到克隆 VNode 上的额外 props |
-| `mergeRef` | `boolean` | 可选，是否合并 `ref`，默认为 `false`（新的 `ref` 会覆盖原始的） |
+| `mergeRef` | `boolean` | 可选（源码参数，官方文档未列出），是否合并 `ref`，默认为 `false`（新的 `ref` 会覆盖原始的） |
+| `cloneTransition` | `boolean` | 可选（源码参数，3.5+），克隆 Transition VNode 时是否保留其过渡相关的内部状态，一般不需要手动传 |
 
-**返回值：** 一个新的 VNode，与原始 VNode 具有相同的类型和子节点，但合并了额外的 props。
+**返回值：** 一个新的 VNode，与原始 VNode 具有相同的类型和子节点，但合并了额外的 props。VNode 带有特殊的内部属性，不能简单地用对象展开克隆，`cloneVNode()` 会处理这些内部逻辑。
 
 ## 基本用法
 
@@ -199,11 +205,11 @@ import { h, cloneVNode } from 'vue'
 export default {
   setup(props, { slots }) {
     return () => {
-      const items = [1, 2, 3]
       const children = slots.default ? slots.default() : []
 
-      return h('ul', items.map((item, index) =>
-        cloneVNode(children[0] || h('li'), { key: item })
+      // 逐个克隆插槽 VNode，并补上唯一的 key
+      return h('ul', children.map((child, index) =>
+        cloneVNode(child, { key: `item-${index}` })
       ))
     }
   }
@@ -240,6 +246,9 @@ import { h, cloneVNode } from 'vue'
 
 function withAccessibility(WrappedComponent) {
   return {
+    props: {
+      label: String
+    },
     setup(props, { slots, attrs }) {
       return () => {
         const vnode = h(WrappedComponent, { ...attrs, ...props })

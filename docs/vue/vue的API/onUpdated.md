@@ -2,7 +2,7 @@
 
 ## 作用
 
-📖 [Vue 官方文档 - onUpdated](https://cn.vuejs.org/api/composition-api-lifecycle#onupdated)
+📖 [Vue 官方文档 - onUpdated](https://cn.vuejs.org/api/composition-api-lifecycle.html#onupdated)
 
 `onUpdated()` 是 Vue 3 的生命周期钩子，在组件因响应式状态变化而更新其 DOM 树后调用。可以在此钩子中执行依赖于 DOM 更新后的操作。
 
@@ -122,10 +122,10 @@ import { ref, onUpdated, nextTick } from 'vue'
 const items = ref([])
 
 onUpdated(async () => {
-  // onUpdated 已经在 DOM 更新后执行
-  // 但如果需要等待所有子组件更新，可以使用 nextTick
+  // 触发时组件自身及其子组件的 DOM 都已更新
+  // （父组件的 updated 钩子总是在子组件的 updated 之后调用）
   await nextTick()
-  console.log('所有 DOM 更新已完成')
+  console.log('本轮 DOM 更新已完成')
 })
 
 function addItem() {
@@ -205,49 +205,29 @@ onUpdated(() => {
 ### 1. 执行时机
 
 ```javascript
-import { ref, onUpdated, onBeforeUpdate } from 'vue'
-
-const count = ref(0)
-
+// 组件更新流程：
 // 数据变化
-count.value = 1
-// ↓
-// onBeforeUpdate 执行
-onBeforeUpdate(() => {
-  console.log('DOM 即将更新')
-})
-// ↓
-// DOM 更新
-// ↓
-// onUpdated 执行
-onUpdated(() => {
-  console.log('DOM 已更新')
-})
+//   ↓
+// onBeforeUpdate 执行（DOM 还是旧的）
+//   ↓
+// 虚拟 DOM 重新渲染，DOM 更新
+//   ↓
+// onUpdated 执行（DOM 已是新的）
 ```
 
 ### 2. 不要在 onUpdated 中修改响应式状态
 
+官方文档明确警告：不要在 `updated` 钩子中更改组件的状态，这可能导致无限的更新循环。
+
 ```javascript
-// ❌ 错误：可能导致无限更新循环
-const count = ref(0)
-
+// ❌ 错误：修改状态会再次触发更新 → 可能无限循环
 onUpdated(() => {
-  count.value++ // 修改状态会再次触发更新
+  count.value++
 })
 
-// ✅ 正确：使用条件避免
-const count = ref(0)
-const maxCount = 10
-
-onUpdated(() => {
-  if (count.value < maxCount) {
-    count.value++
-  }
-})
-
-// ✅ 或者使用 watch
-watch(count, () => {
-  // 处理逻辑
+// ✅ 正确：对"状态变化"的反应逻辑应该放到 watch 里
+watch(count, (newVal) => {
+  console.log('count 变为', newVal)
 })
 ```
 
@@ -525,12 +505,12 @@ import { ref, onUpdated } from 'vue'
 
 const content = ref('')
 
+// DOM 更新后同步自定义滚动条
 onUpdated(() => {
-  // 更新自定义滚动条
   updateCustomScrollbar()
 })
 
-function updateCustomScrollbar() {
+function handleScroll() {
   const container = document.querySelector('.scroll-container')
   if (container) {
     const percentage = container.scrollTop /
@@ -538,10 +518,14 @@ function updateCustomScrollbar() {
     updateScrollbarThumb(percentage)
   }
 }
+
+function updateScrollbarThumb(percentage) {
+  // 更新滚动条滑块位置
+}
 </script>
 
 <template>
-  <div class="scroll-container" @scroll="onUpdated">
+  <div class="scroll-container" @scroll="handleScroll">
     {{ content }}
   </div>
 </template>
@@ -713,7 +697,7 @@ function autoResizeColumns() {
 
 ```vue
 <script setup>
-import { ref, onUpdated } from 'vue'
+import { ref, computed, onUpdated } from 'vue'
 
 const items = ref(Array.from({ length: 1000 }, (_, i) => i))
 const scrollTop = ref(0)

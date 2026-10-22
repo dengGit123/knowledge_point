@@ -171,7 +171,7 @@ EXPLAIN SELECT * FROM users WHERE email = 'a@x.com';
 -- 联合索引 idx_city_age_name (city, age, name)
 
 EXPLAIN SELECT * FROM users WHERE city = '北京';
--- key_len = 152（假设 city 是 varchar(50) utf8mb4：50*4+2=202，简化看大致值）
+-- key_len = 202（假设 city 是 varchar(50) utf8mb4 NOT NULL：50×4+2=202）
 -- 只用到第 1 列
 
 EXPLAIN SELECT * FROM users WHERE city = '北京' AND age = 20;

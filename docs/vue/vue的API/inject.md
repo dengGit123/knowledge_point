@@ -4,7 +4,7 @@
 
 `inject()` 用于注入由祖先组件提供的数据或方法。它是 Vue 3 依赖注入系统的接收端，配合 `provide()` 使用，实现跨层级组件通信。
 
-📖 [官方文档 - inject](https://cn.vuejs.org/api/composition-api-context#inject)
+📖 [官方文档 - inject](https://cn.vuejs.org/api/composition-api-dependency-injection.html#inject)
 
 ## 用法
 
@@ -61,7 +61,7 @@ const getConfig = inject('config', () => ({
 
 ```vue
 <script setup lang="ts">
-import { inject } from 'vue'
+import { inject, type InjectionKey, type Ref } from 'vue'
 
 // 使用类型注解
 interface User {
@@ -72,9 +72,10 @@ interface User {
 const user = inject<User>('user')
 const theme = inject<string>('theme', 'light')
 
-// 使用 Symbol key
-const ThemeKey = Symbol('theme')
-const currentTheme = inject<string>(ThemeKey, 'light')
+// ✅ 推荐：带类型的 Symbol key（InjectionKey<T>），inject 返回值自动获得正确类型
+// key 的定义应放在单独文件中导出，提供方和注入方导入同一份
+const UserKey: InjectionKey<Ref<User>> = Symbol('user')
+const currentUser = inject(UserKey) // 类型为 Ref<User> | undefined
 </script>
 ```
 
@@ -272,7 +273,7 @@ const message = inject('message', 'default')
 // 祖先 A: provide('key', 'value-a')
 // 祖先 B: provide('key', 'value-b')
 
-// 后代组件会使用最近的（层级最浅的）祖先提供的值
+// 后代组件会使用距离自己最近的那层祖先提供的值
 // 就近原则
 ```
 
@@ -291,13 +292,11 @@ import { ThemeKey } from './keys'
 const theme = inject(ThemeKey)
 ```
 
-### 6. 与 props 的优先级
+> 💡 在组合式函数中判断"当前是否存在可注入的上下文"，可以用 `hasInjectionContext()`（Vue 3.3+），避免在组件外调用 `inject` 时报错。
 
-```javascript
-// props 优先级更高
-// 如果组件既有 props 又 inject 了同名的 key
-// props 的值会覆盖 inject 的值
-```
+### 6. props 与 inject 是两套独立机制
+
+props 用于父子组件传值，inject 用于跨层级取值，两者同名并不会相互"覆盖"或冲突。一个值如果只在父子间传递，优先用 props；只有需要跨越多层组件共享时才用 provide / inject。
 
 ### 7. 应用级 inject
 

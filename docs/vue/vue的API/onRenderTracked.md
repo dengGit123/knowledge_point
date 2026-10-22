@@ -1,6 +1,6 @@
 ### onRenderTracked
 
-> 📖 [Vue 官方文档 - onRenderTracked](https://cn.vuejs.org/api/composition-api-lifecycle#onrendertracked)
+> 📖 [Vue 官方文档 - onRenderTracked](https://cn.vuejs.org/api/composition-api-lifecycle.html#onrendertracked)
 
 ---
 
@@ -330,14 +330,14 @@ function addHobby() {
 ┌─────────┬───────────┬──────────┬──────────────────────┐
 │ (index) │   type    │   key    │        value         │
 ├─────────┼───────────┼──────────┼──────────────────────┤
-│    0    │   'get'   │ 'value'  │          0           │  ← count.value 被读取
-│    1    │   'get'   │ 'value'  │          0           │  ← computed 读取 count.value
+│    0    │   'get'   │ 'value'  │          0           │  ← 模板读取 count
+│    1    │   'get'   │ 'value'  │          0           │  ← 模板读取 doubleCount（computed 依赖本身）
 │    2    │   'get'   │ 'name'   │        '张三'         │  ← user.name 被读取
 │    3    │   'get'   │  'age'   │          25          │  ← user.age 被读取
 └─────────┴───────────┴──────────┴──────────────────────┘
 ```
 
-> 💡 **提示：** 首次渲染完成后，如果没有新的响应式依赖被读取，`onRenderTracked` 不会再次触发。它只在**新的依赖被追踪**时才会被调用。
+> 💡 **提示：** 首次渲染完成后，如果没有新的响应式依赖被读取，`onRenderTracked` 不会再次触发。它只在**新的依赖被追踪**时才会被调用。另外它只报告**渲染 effect** 的依赖收集：模板读取 `doubleCount` 时，追踪到的是 computed 这个依赖本身（`key` 为 `'value'`）；computed 内部对 `count` 的追踪由 computed 自己的副作用完成，不会经过 `onRenderTracked` 上报。
 
 ---
 
@@ -368,16 +368,16 @@ onRenderTracked((event: DebuggerEvent) => {
 </template>
 ```
 
-#### 2. 性能优化——识别不必要的依赖
+#### 2. 性能优化——核对依赖是否多余
 
-当组件频繁重新渲染时，用 `onRenderTracked` 检查是否追踪了不必要的响应式数据。
+组件频繁重新渲染时，用 `onRenderTracked` 核对渲染到底依赖了哪些数据，排查是否有不必要的依赖。
 
 ```vue
 <script setup lang="ts">
 import { ref, reactive, onRenderTracked, onRenderTriggered } from 'vue'
 import type { DebuggerEvent } from 'vue'
 
-// 场景：一个大对象中只用了部分字段，但追踪了整个对象
+// 场景：大对象中只有部分字段被模板使用
 const formData = reactive({
   username: '',
   password: '',
@@ -386,12 +386,11 @@ const formData = reactive({
   phone: '',
 })
 
-// ❌ 问题：模板中只用到了 username，但可能追踪了其他字段
+// ✅ 用 onRenderTracked 验证：Vue 按属性粒度追踪，
+// 模板只读了 username，就只会追踪 username 这一个属性
 onRenderTracked((event: DebuggerEvent) => {
-  console.warn(
-    '组件追踪了新的依赖！检查是否需要此依赖：',
-    String(event.key)
-  )
+  console.log('渲染依赖：', String(event.key))
+  // 只有 username 出现，说明其他字段不会影响该组件的渲染
 })
 
 // ✅ 解决方案：配合 onRenderTriggered 定位导致重渲染的字段
@@ -410,30 +409,17 @@ onRenderTriggered((event: DebuggerEvent) => {
 </template>
 ```
 
-#### 3. 开发环境响应式依赖日志系统
+#### 3. 开发环境响应式依赖日志
 
-在开发环境中统一记录所有组件的响应式依赖追踪情况。
+把两个调试钩子封装成 composable，在开发环境中按组件记录依赖追踪与重渲染触发情况。
 
 ```ts
-// plugins/debugLogger.ts
-import type { App, Component } from 'vue'
+// composables/useDependencyLogger.ts
+import { onRenderTracked, onRenderTriggered } from 'vue'
 
-// ✅ 全局 mixin 方式注册调试钩子（仅开发环境）
-export function setupDebugLogger(app: App) {
-  if (import.meta.env.DEV) {
-    app.mixin({
-      beforeCreate() {
-        // 注意：mixin 方式属于选项式 API，这里仅为工具演示
-      },
-    })
-  }
-}
-
-// ✅ 推荐方式：封装为 composable 供组件按需使用
+// ✅ 封装为 composable，供组件在 setup 中按需调用（仅开发环境有意义）
 export function useDependencyLogger(componentName: string) {
   if (!import.meta.env.DEV) return
-
-  const { onRenderTracked, onRenderTriggered } = await import('vue')
 
   const dependencies = new Set<string>()
 
@@ -547,28 +533,27 @@ import type { DebuggerEvent } from 'vue'
 
 const firstName = ref('张')
 const lastName = ref('三')
-const age = ref(25)
 
 // computed 依赖了 firstName 和 lastName
 const fullName = computed(() => `${firstName.value} ${lastName.value}`)
 
-// 追踪渲染时的依赖，可以验证 computed 的依赖是否正确传播
+// 追踪渲染时的依赖，验证渲染 effect 追踪到的是什么
 onRenderTracked((event: DebuggerEvent) => {
   if (event.type === 'get') {
     console.log(
-      '[computed 依赖追踪]',
-      `渲染函数通过 computed 间接追踪了: key=${String(event.key)}`
+      '[渲染依赖追踪]',
+      `模板追踪到: key=${String(event.key)}`,
+      // target 是 computed 的内部对象，而不是 firstName/lastName 本身
+      '是否来自 computed:',
+      String(event.key) === 'value' && event.target === fullName
     )
   }
 })
 </script>
 
 <template>
-  <div>
-    <p>全名：{{ fullName }}</p>
-    <!-- age 的变化不会触发重渲染，因为 fullName 不依赖 age -->
-    <p>年龄：{{ age }}</p>
-  </div>
+  <!-- 模板只读取 fullName，渲染 effect 只会追踪 fullName 这一个依赖 -->
+  <p>全名：{{ fullName }}</p>
 </template>
 ```
 
@@ -793,21 +778,15 @@ onRenderTracked(() => { /* ... */ }) // 正确
    - 对于 `ref`：`event.target` 是 ref 的内部对象 `{ value: ... }`，`event.key` 通常是 `'value'`
    - 对于 `reactive`：`event.target` 是响应式 Proxy 的目标对象，`event.key` 是具体的属性名
 
-8. **多次注册会覆盖**：如果在同一个组件中多次调用 `onRenderTracked`，后面的注册会覆盖前面的，不会叠加执行。如果需要多个回调，需要在一个注册函数中处理。
+8. **多次注册不会覆盖**：同一个组件中多次调用 `onRenderTracked`，所有回调都会按注册顺序依次执行（Vue 3 的生命周期钩子是追加而非覆盖，这点与 Vue 2 不同）。
 
 ```ts
-// ❌ 只有第二个会生效
-onRenderTracked(() => console.log('第一个'))  // 被覆盖
-onRenderTracked(() => console.log('第二个'))  // 生效
-
-// ✅ 合并到一个回调中
-onRenderTracked((event) => {
-  console.log('第一个', event)
-  console.log('第二个', event)
-})
+// ✅ 两个回调都会执行
+onRenderTracked((event) => console.log('第一个', event))
+onRenderTracked((event) => console.log('第二个', event))
 ```
 
-9. **Computed 属性的依赖传播**：当模板使用 `computed` 时，追踪到的是 computed 内部的依赖，而不是 computed 本身。这有助于理解 computed 的依赖链。
+9. **Computed 属性的依赖传播**：当模板使用 `computed` 时，`onRenderTracked` 追踪到的是 computed 这个依赖本身（`target` 是 computed 内部对象、`key` 为 `'value'`），而 computed 内部读取的源数据（如 `firstName`、`lastName`）由 computed 自己的副作用追踪，不会在这里上报。
 
 10. **不影响响应式系统行为**：`onRenderTracked` 只是一个观察者，不会影响 Vue 响应式系统的正常运行。在回调中修改响应式数据是安全的（但通常没有意义）。
 

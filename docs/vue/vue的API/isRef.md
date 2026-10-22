@@ -98,7 +98,7 @@ function checkType(val) {
 
 ### TypeScript 类型守卫
 
-```javascript
+```typescript
 import { ref, isRef, type Ref } from 'vue'
 
 function getValue(val: number | Ref<number>): number {
@@ -168,15 +168,15 @@ const doubled = computed(() => count.value * 2)
 
 console.log(isRef(count))     // true
 console.log(isRef(state))     // false
-console.log(isRef(doubled))   // true
+console.log(isRef(doubled))   // true（computed 也是 ref）
 
 console.log(isReactive(count))   // false
 console.log(isReactive(state))   // true
-console.log(isReactive(doubled)) // true
+console.log(isReactive(doubled)) // false（computed 不是响应式代理）
 
-console.log(isProxy(count))   // true
+console.log(isProxy(count))   // false（ref 不是代理对象）
 console.log(isProxy(state))   // true
-console.log(isProxy(doubled)) // true
+console.log(isProxy(doubled)) // false
 ```
 
 ### 3. shallowRef 的检查
@@ -296,7 +296,7 @@ const ensuredNum = ensureRef(num) // 返回新 ref
 
 ### 4. 类型安全处理
 
-```javascript
+```typescript
 import { isRef, type Ref, type MaybeRef } from 'vue'
 
 function processValue<T>(value: MaybeRef<T>): T {
@@ -412,7 +412,7 @@ function getPropertyValue(obj, key) {
 
 ### 10. 类型推断辅助
 
-```javascript
+```typescript
 import { isRef, type Ref } from 'vue'
 
 function isRefOf<T>(val: unknown): val is Ref<T> {

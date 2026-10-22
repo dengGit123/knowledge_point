@@ -1,4 +1,4 @@
-### watchSyncEffect
+# watchSyncEffect
 
 > 📖 [Vue 官方文档 - watchSyncEffect](https://cn.vuejs.org/api/reactivity-core.html#watchsynceffect)
 
@@ -26,7 +26,7 @@ Vue 3 的响应式系统基于 Proxy 实现。当你访问响应式数据的 `.v
 - **`watchPostEffect`**（flush: 'post'）：像外卖送到后你才收到通知（在 DOM 更新后异步执行）
 - **`watchSyncEffect`**（flush: 'sync'）：像厨房刚出锅就直接端到你面前（同步、立即执行，不进入队列）
 
-```
+```text
 响应式数据变化
     │
     ├── watchEffect ──────► 放入队列，在 DOM 更新前异步执行
@@ -240,7 +240,7 @@ const updateValue = (): void => {
 
 运行后控制台输出：
 
-```
+```text
 [sync] 0   ← 创建时立即执行
 [async] 0  ← 创建时立即执行
 --- 点击按钮后 ---
@@ -693,21 +693,17 @@ onBeforeUnmount(() => {
 
 > 💡 **提示：** 在 `setup` 或 `<script setup>` 中创建的 `watchSyncEffect` 会自动绑定到当前组件实例，组件卸载时自动停止。但在独立函数或组合式函数中如果使用了组件外的生命周期，需要手动管理。
 
-#### 8. 组件更新期间避免使用
+#### 8. 避免同步回写共享状态引发级联更新
 
 ```ts
-// ❌ 不要在 created/mounted 等生命周期中同步修改被侦听的源
-import { onMounted } from 'vue'
-
-onMounted(() => {
-  watchSyncEffect(() => {
-    // 如果这里修改了父组件传递的 props，可能触发连锁更新
-    props.data.value = computed.value
-  })
+// ❌ 在 sync 回调中回写 props / store 等共享状态，
+// 依赖方的更新会立即连锁触发，难以排查
+watchSyncEffect(() => {
+  store.filter = route.query.tab // 每次路由变化都同步回写全局状态
 })
 
-// ✅ 使用 computed 或 watch 代替
-const derived = computed(() => transform(props.data))
+// ✅ 派生数据用 computed，只读不写
+const currentTab = computed(() => route.query.tab)
 ```
 
 #### 9. 慎用于批量操作场景
@@ -761,7 +757,7 @@ watchSyncEffect(() => {
 | flush 选项 | `'sync'` | `'pre'`（默认） | `'post'` | 可配置 |
 | 自动追踪依赖 | 是 | 是 | 是 | 否（显式指定） |
 | 获取旧值 | 否 | 否 | 否 | 是 |
-| 首次执行 | 立即执行 | 立即执行 | 立即执行 | 默认否（可配置 `immediate`） |
+| 首次执行 | 立即执行 | 立即执行 | 执行一次（首次渲染后） | 默认否（可配置 `immediate`） |
 | 性能影响 | 较高 | 中等 | 中等 | 较低 |
 | 适用场景 | 需要同步一致性 | 通用副作用 | DOM 依赖操作 | 精确侦听 |
 

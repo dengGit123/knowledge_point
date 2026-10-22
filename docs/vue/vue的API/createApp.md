@@ -3,7 +3,7 @@
 ## 作用
 `createApp()` 函数创建一个应用实例，这是使用 Vue 3 构建应用的第一步。每个 Vue 应用都通过创建一个应用实例开始。
 
-📖 [createApp](https://cn.vuejs.org/api/application#createapp)
+📖 [createApp](https://cn.vuejs.org/api/application.html#createapp)
 
 ## 用法
 
@@ -26,6 +26,7 @@ app.mount('#app')
 // main.js
 import { createApp } from 'vue'
 import App from './App.vue'
+import axios from 'axios'
 import router from './router'
 import store from './store'
 
@@ -63,9 +64,7 @@ const message = ref('Hello Vue 3!')
 </script>
 
 <template>
-  <div id="app">
-    <h1>{{ message }}</h1>
-  </div>
+  <h1>{{ message }}</h1>
 </template>
 ```
 
@@ -222,10 +221,9 @@ app.mount('#app')
 
 // 返回根组件实例
 const rootComponent = app.mount('#app')
-
-// 挂载后不能再使用应用实例 API
-app.component('NewComponent', NewComponent) // 警告
 ```
+
+> ⚠️ **注意：** 对于每个应用实例，`mount()` 仅能调用一次（官方文档明确说明）。需要挂载多个根组件时，应创建多个应用实例。
 
 ### app.unmount()
 
@@ -366,27 +364,29 @@ app.config.performance = true
 
 ### app.config.compilerOptions
 
-配置编译器选项。
+配置运行时编译器选项。各选项需逐个赋值，且仅在「完整构建版本」（可在浏览器中编译模板的 `vue.global.js`）中可用；使用构建工具时，编译器选项要通过 `@vitejs/plugin-vue` / `vue-loader` 的配置传递。
 
 ```javascript
 const app = createApp(App)
 
-app.config.compilerOptions = {
-  // 是否区分大小写
-  isCustomElement: (tag) => tag.startsWith('x-'),
+// 识别原生自定义元素（匹配的标签不会被当作 Vue 组件解析）
+app.config.compilerOptions.isCustomElement = (tag) => tag.startsWith('x-')
 
-  // 分隔符
-  delimiters: ['${', '}'],
+// 模板插值分隔符，默认 ['{{', '}}']
+app.config.compilerOptions.delimiters = ['${', '}']
 
-  // 是否在浏览器中编译模板
-  // (默认 false，生产环境中不需要模板编译器)
-  comments: true
-}
+// 是否在生产构建中保留模板内的 HTML 注释（默认 false）
+app.config.compilerOptions.comments = true
+
+// 空格处理策略：'condense'（默认）| 'preserve'
+app.config.compilerOptions.whitespace = 'preserve'
 ```
 
 ## 注意事项
 
 ### 1. 只在挂载前配置
+
+官方约定 `mount()` 是创建应用后的最后一步，所有配置都应在挂载前完成；挂载之后再注册的内容不会影响已经渲染出来的视图。
 
 ```javascript
 const app = createApp(App)
@@ -396,26 +396,29 @@ app.component('MyComponent', MyComponent)
 app.use(router)
 app.mount('#app')
 
-// ❌ 错误：挂载后配置无效
+// ❌ 错误：挂载之后再配置
 app.mount('#app')
-app.component('NewComponent', NewComponent) // 警告
+app.component('NewComponent', NewComponent) // 不生效于已挂载的视图
 ```
 
-### 2. 每个 mount 创建新实例
+### 2. mount 只能调用一次
 
 ```javascript
 const app = createApp(App)
 
-// ✅ 可以多次挂载
-app.mount('#app1')
-app.mount('#app2')
+app.mount('#app')
 
-// 但它们是不同的实例
+// ❌ 错误：同一个应用实例只能挂载一次
+app.mount('#other')
+
+// ✅ 需要多个挂载点时，创建多个应用实例
+const app2 = createApp(App)
+app2.mount('#other')
 ```
 
 ### 3. TypeScript 类型支持
 
-```javascript
+```ts
 import { createApp } from 'vue'
 import App from './App.vue'
 
@@ -427,8 +430,8 @@ interface GlobalProperties {
 // 创建类型安全的应用实例
 const app = createApp(App)
 
-// 扩展全局属性类型
-declare module '@vue/runtime-core' {
+// 扩展全局属性类型（Vue 3.3+ 推荐直接声明在 'vue' 模块上）
+declare module 'vue' {
   export interface ComponentCustomProperties {
     $http: typeof axios
     $VERSION: string
@@ -443,22 +446,24 @@ app.mount('#app')
 
 ### 4. SSR 注意事项
 
+服务端渲染必须用 `createSSRApp()`（而非 `createApp()`）创建应用：SSR 中每个请求都要一个全新的应用实例，`createSSRApp` 保证重复创建不会互相污染状态。
+
 ```javascript
 // 服务端渲染
-import { createApp } from 'vue'
+import { createSSRApp } from 'vue'
 import { renderToString } from '@vue/server-renderer'
 
-const app = createApp(App)
-
-// 渲染为字符串
-const html = await renderToString(app)
-
 // 每个请求创建新实例
-function createSSRApp() {
-  const app = createApp(App)
+function createAppInstance() {
+  const app = createSSRApp(App)
   // 配置应用
   return app
 }
+
+const app = createAppInstance()
+
+// 渲染为字符串
+const html = await renderToString(app)
 ```
 
 ### 5. 插件开发
@@ -653,6 +658,8 @@ export function registerDirectives(app) {
 
 ```javascript
 // plugins/theme.js
+import { ref, readonly } from 'vue'
+
 export default {
   install(app) {
     const theme = ref(localStorage.getItem('theme') || 'light')
@@ -715,7 +722,10 @@ export default {
 ## 最佳实践
 
 1. **单一应用实例**：大多数应用只需要一个应用实例
-2. **先配置后挂载**：在 mount() 之前完成所有配置
-3. **使用插件**：通过插件组织全局功能
-4. **类型安全**：TypeScript 中正确声明全局属性类型
-5. **错误处理**：设置全局错误处理器
+2. **先配置后挂载**：在 mount() 之前完成所有配置，mount() 只能调用一次
+3. **慎用全局注册**：`app.component()` 全局注册的组件无法被构建工具 tree-shaking 移除，未使用的组件也会进入产物；只在真正全局复用的少量组件（或插件内部）使用，业务组件优先局部注册
+4. **使用插件**：通过插件组织全局功能
+5. **类型安全**：TypeScript 中正确声明全局属性类型
+6. **错误处理**：设置全局错误处理器
+
+> 💡 **提示：** 链式写法 `app.component().directive().mount()` 是可行的（这些方法都返回应用实例），但每个应用的最后一步应该是 `mount()`，之后再注册任何内容都不会生效。

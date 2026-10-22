@@ -19,6 +19,8 @@ UPDATE users SET age = 21 WHERE id = 1;
 ```
 
 > ⚠️ **最高警告：和 DELETE 一样，UPDATE 一定要带 WHERE 条件！** 不带条件会把整张表每一行都改掉。
+>
+> 💡 **说明：** 为演示方便，部分示例会用到 `status`、`city`、`level` 等扩展字段，重点理解语法即可。
 
 ---
 

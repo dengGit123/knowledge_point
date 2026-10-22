@@ -231,7 +231,7 @@ Vue 官方文档原文：
 `<TransitionGroup>` 用于列表的进入/离开/移动过渡动画。它的**每个直接子元素都必须有唯一、稳定的 `key`**，否则会报错：
 
 ```
-[TransitionGroup] <TransitionGroup> children must be keyed.
+[Vue warn]: <TransitionGroup> children must be keyed.
 ```
 
 ```vue
@@ -496,7 +496,7 @@ Vue 官方明确：**`key` 绑定的值期望是一个基础类型的值，例�
 | `v-if`/`v-else` 分支 | 需手动加 key 防止复用 | **自动生成唯一 key**，无需手动加 |
 | 手动给分支加 key | 可用相同 key 强制复用 | **必须唯一**（破坏性变更） |
 | `<template v-for>` 的 key | 放在子元素上 | **放在 `<template>` 标签上**（破坏性变更） |
-| `v-for` 不写 key | 运行时会警告 | 不强制报错（官方"推荐"提供） |
+| `v-for` 不写 key | 编译时警告 + ESLint `vue/require-v-for-key` | 不强制报错（官方"推荐"提供） |
 | 组件生命周期钩子 | `mounted`/`destroyed` 等 | `onMounted`/`onUnmounted`（重建即重新触发） |
 
 > 来源：[Vue 3 迁移指南 · key Attribute](https://v3-migration.vuejs.org/breaking-changes/key-attribute.html)
@@ -564,7 +564,7 @@ Vue 官方明确：**`key` 绑定的值期望是一个基础类型的值，例�
 ### 陷阱 6：`<TransitionGroup>` 子元素没写 key
 
 ```vue
-<!-- ❌ 会报错 [TransitionGroup] children must be keyed -->
+<!-- ❌ 会警告 [Vue warn]: <TransitionGroup> children must be keyed. -->
 <TransitionGroup tag="ul">
   <li v-for="item in items">{{ item }}</li>
 </TransitionGroup>
@@ -616,7 +616,7 @@ const props = defineProps<{ /* 这里没有 key */ }>()
 
 ### Q4：key 应该用什么值？
 
-用**唯一且稳定**的**基础类型**（字符串 / number）：优先使用后端数据的 `id`（数据库主键）；没有 id 时在数据创建时生成唯一 id（如 `crypto.randomUUID()`）。要求是：兄弟节点间唯一、同一条数据多次渲染 key 不变。不能用 `Math.random()`、`Date.now()`（每次都变），也不能用对象本身（Vue 3 中按引用比较，列表替换后会全部失配重建）。
+用**唯一且稳定**的**基础类型**（字符串 / 数字）：优先使用后端数据的 `id`（数据库主键）；没有 id 时在数据创建时生成唯一 id（如 `crypto.randomUUID()`）。要求是：兄弟节点间唯一、同一条数据多次渲染 key 不变。不能用 `Math.random()`、`Date.now()`（每次都变），也不能用对象本身（Vue 3 中按引用比较，列表替换后会全部失配重建）。
 
 ### Q5：Vue 3 中对象做 key 会变成 "[object Object]" 吗？
 
@@ -666,7 +666,7 @@ Vue 会警告 `Duplicate keys detected`，并可能导致更新错误（Vue 无�
 **记住五句话**：
 
 1. **`key` 是 Vue 3 节点的身份证号，帮 Diff 算法区分"哪个是哪个"，正确高效地复用和更新 DOM。**
-2. **`key` 必须唯一且稳定，用基础类型（字符串/number）——优先数据的 `id`，绝不用 `index`（顺序变化时会状态错乱 + 性能浪费）。**
+2. **`key` 必须唯一且稳定，用基础类型（字符串 / 数字）——优先数据的 `id`，绝不用 `index`（顺序变化时会状态错乱 + 性能浪费）。**
 3. **没有 `key` 时 Vue 3 就地更新，容易出错；有 `key` 时走快速 Diff（最长递增子序列），最少 DOM 操作。**
 4. **Vue 3 用 `Map` 存 key、不字符串化——数字 `1` 与字符串 `"1"` 不再碰撞；对象 key 按引用比较，故不要用对象做 key。**
 5. **Vue 3 有破坏性变更：`<template v-for>` 的 key 放在 `<template>` 上；`v-if`/`v-else` 自动生成 key 无需手动加；`<TransitionGroup>` 子元素必须有 key。**

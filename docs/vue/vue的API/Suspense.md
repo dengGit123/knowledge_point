@@ -4,7 +4,7 @@
 
 `Suspense` 是一个用于处理异步组件的内置组件，它可以在等待异步组件加载时显示后备内容（fallback），提升用户体验。
 
-📖 [官方文档：Suspense](https://cn.vuejs.org/api/built-in-components#suspense)
+📖 [官方文档：Suspense](https://cn.vuejs.org/api/built-in-components.html#suspense)
 
 ## 用法
 
@@ -37,6 +37,8 @@ const AsyncComponent = defineAsyncComponent(() =>
 
 ### 多个异步组件
 
+`Suspense` 的 `default` 插槽要求**单一根节点**，多个异步组件要包在一个容器元素里，它们会作为同一个异步依赖一起解析：
+
 ```vue
 <script setup>
 import { defineAsyncComponent } from 'vue'
@@ -49,9 +51,12 @@ const Footer = defineAsyncComponent(() => import('./Footer.vue'))
 <template>
   <Suspense>
     <template #default>
-      <Header />
-      <Content />
-      <Footer />
+      <!-- ✅ 单一根节点：多个异步组件包在一个容器里 -->
+      <div>
+        <Header />
+        <Content />
+        <Footer />
+      </div>
     </template>
 
     <template #fallback>
@@ -60,6 +65,8 @@ const Footer = defineAsyncComponent(() => import('./Footer.vue'))
   </Suspense>
 </template>
 ```
+
+> ⚠️ **注意：** `default` 插槽里直接放多个平级节点时，开发环境会警告 `<Suspense> slots expect a single root node.`，且只有单个根节点会被当作异步内容处理。
 
 ### 嵌套 Suspense
 
@@ -118,36 +125,35 @@ posts.value = await fetch('/api/posts').then(r => r.json())
 
 ### 错误处理
 
+异步组件（或 `async setup()`）加载和执行过程中抛出的错误会被 `Suspense` 捕获并继续向父组件冒泡，用 `onErrorCaptured` 捕获后即可展示错误状态：
+
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref, onErrorCaptured } from 'vue'
 
 const error = ref(null)
 
-async function loadData() {
-  try {
-    // 加载数据
-  } catch (e) {
-    error.value = e
-  }
-}
+onErrorCaptured((err) => {
+  error.value = err
+  // 返回 false 阻止错误继续向上冒泡
+  return false
+})
 </script>
 
 <template>
-  <Suspense>
+  <div v-if="error" class="error">
+    加载失败：{{ error.message }}
+  </div>
+
+  <Suspense v-else>
     <template #default>
-      <AsyncComponent @error="error = $event" />
+      <AsyncComponent />
     </template>
 
     <template #fallback>
       <div>Loading...</div>
     </template>
   </Suspense>
-
-  <!-- 错误显示 -->
-  <div v-if="error" class="error">
-    {{ error.message }}
-  </div>
 </template>
 ```
 
@@ -230,38 +236,14 @@ const currentComponent = computed(() => views[currentView.value])
 
 ### 超时处理
 
+`Suspense` 内置 `timeout` 属性（毫秒）：替换新内容时如果渲染耗时超过该时间，会先回退显示 `fallback` 内容，就绪后再切换：
+
 ```vue
-<script setup>
-import { ref, onErrorCaptured } from 'vue'
-
-const timeout = ref(false)
-const error = ref(null)
-
-let timeoutId = null
-
-onErrorCaptured((err) => {
-  error.value = err
-  return true
-})
-
-function startTimeout() {
-  timeoutId = setTimeout(() => {
-    timeout.value = true
-  }, 5000)
-}
-
-function clearTimeout() {
-  if (timeoutId) {
-    clearTimeout(timeoutId)
-  }
-}
-</script>
-
 <template>
-  <Suspense @pending="startTimeout" @resolve="clearTimeout">
+  <!-- 3 秒内未就绪则先显示 Loading -->
+  <Suspense :timeout="3000">
     <template #default>
-      <AsyncComponent v-if="!timeout" />
-      <div v-else class="timeout">Loading timeout</div>
+      <AsyncComponent />
     </template>
 
     <template #fallback>
@@ -271,30 +253,33 @@ function clearTimeout() {
 </template>
 ```
 
+> 💡 **提示：** `timeout` 为 `0` 表示新默认内容开始渲染时立即显示 `fallback`。
+
 ## 注意事项
 
 ### 1. Suspense 是实验性的
 
 ```javascript
-// Vue 3.0-3.2.x 中 Suspense 是实验性功能
-// Vue 3.3+ 中仍然是实验性的
-// 使用时需要注意 API 可能变化
+// Suspense 自 Vue 3.0 引入至今仍标注为实验性功能
+// API 可能随版本调整，生产环境使用需留意版本变更
 ```
 
-### 2. 只能用于嵌套组件
+### 2. default 插槽要求单一根节点
 
 ```vue
 <template>
-  <!-- ✅ 正确：Suspense 包裹子组件 -->
+  <!-- ✅ 正确：Suspense 包裹单个子组件 -->
   <Suspense>
     <ChildComponent />
   </Suspense>
 
-  <!-- ❌ 错误：根组件不能是 Suspense -->
-  <!-- 在 main.js 中 -->
-  <!-- <Suspense>
-    <App />
-  </Suspense> -->
+  <!-- ✅ 正确：多个子节点包在一个容器元素里 -->
+  <Suspense>
+    <div>
+      <ChildA />
+      <ChildB />
+    </div>
+  </Suspense>
 </template>
 ```
 
@@ -676,16 +661,16 @@ const AuxiliaryContent = defineAsyncComponent(() =>
 </template>
 ```
 
-## Suspense 生命周期
+## Suspense 事件
+
+`Suspense` 通过 `@pending`、`@fallback`、`@resolve` 三个事件暴露状态流转：
 
 ```text
-pending (异步操作进行中)
+@pending (异步依赖开始加载)
     ↓
-fallback (显示后备内容)
+@fallback (fallback 内容开始显示)
     ↓
-resolve (异步操作完成)
-    ↓
-default (显示实际内容)
+@resolve (所有异步依赖就绪，显示实际内容)
 ```
 
 ## 最佳实践

@@ -2,9 +2,15 @@
 
 ## 作用
 
-`nextTick()` 是一个实例方法，用于在下次 DOM 更新循环结束之后执行延迟回调。在修改数据之后立即使用这个方法，获取更新后的 DOM。
+`nextTick()` 是一个全局 API，用于等待下一次 DOM 更新刷新（flush）后再执行代码。修改响应式状态后，Vue 不会同步更新 DOM，而是把更新缓冲到「下一个时钟周期」，保证无论修改多少次状态，每个组件只更新一次。在修改状态之后立即调用 `nextTick()`，就可以等到 DOM 更新完成——可以传入回调，也可以 `await` 返回的 Promise。选项式 API 中也可以用实例方法 `this.$nextTick()`，行为一致。
 
-📖 [官方文档 - nextTick](https://cn.vuejs.org/api/general#nexttick)
+📖 [官方文档 - nextTick](https://cn.vuejs.org/api/general.html#nexttick)
+
+## 函数签名
+
+```typescript
+function nextTick(callback?: (...args: any[]) => void): Promise<void>
+```
 
 ## 用法
 
@@ -220,33 +226,43 @@ onMounted(async () => {
 ### 1. nextTick 的执行时机
 
 ```javascript
-import { nextTick, watchEffect } from 'vue'
+import { ref, nextTick, watchEffect } from 'vue'
+
+const data = ref('old')
+
+watchEffect(() => {
+  // 默认 flush: 'pre'，在组件重新渲染【之前】执行
+  console.log('watchEffect:', data.value)
+})
 
 data.value = 'new value'
 
-// watchEffect 比 nextTick 更早执行
-watchEffect(() => {
-  console.log('watchEffect') // 1
-})
+console.log('同步代码')
 
 nextTick(() => {
-  console.log('nextTick') // 2
+  console.log('DOM 已更新') // 此时 DOM 已经完成更新
 })
 
-// DOM 更新后
-console.log('sync') // 0
+// 实际执行顺序：
+// 1. 同步代码（立即执行，此时 DOM 还是旧的）
+// 2. watchEffect: new value（同一轮更新中，先于 DOM 更新执行）
+// 3. DOM 更新完成
+// 4. nextTick 回调
 ```
 
-### 2. 多次调用合并
+> 💡 简单记：**同步代码 → 更新前（watcher / watchEffect）→ DOM 更新 → nextTick**。
+
+### 2. 多次调用不会被合并
 
 ```javascript
-// 多次调用 nextTick 会被合并为一次
 nextTick(() => console.log(1))
 nextTick(() => console.log(2))
 nextTick(() => console.log(3))
 
-// 输出顺序: 1, 2, 3（在同一个微任务中）
+// 三个回调都会执行，按注册顺序在同一个微任务中依次输出: 1, 2, 3
 ```
+
+> 💡 **提示：** 被合并去重的是 **DOM 更新本身**——同一轮中的多次状态修改只会触发一次组件重新渲染；而每次 `nextTick()` 注册的回调都会保留并依次执行。
 
 ### 3. 与 setTimeout 的区别
 
@@ -320,12 +336,10 @@ onBeforeUnmount(async () => {
 ### 8. 服务端渲染
 
 ```javascript
-// SSR 中 nextTick 立即执行
-if (import.meta.env.SSR) {
-  await nextTick() // 立即解决，没有 DOM
-} else {
-  await nextTick() // 等待 DOM 更新
-}
+// SSR 中没有真实 DOM，渲染在服务器上是同步完成的，
+// 因此不需要（也没意义）用 nextTick 等待「DOM 更新」。
+// 调用本身仍然合法，返回的 Promise 会正常 resolve。
+await nextTick()
 ```
 
 ## 使用场景
@@ -693,12 +707,12 @@ async function openDialog() {
 
 ## nextTick 与其他 API 的对比
 
-| API | 时机 | 用途 |
+| API | 执行时机 | 用途 |
 |-----|------|------|
-| nextTick | DOM 更新后 | 需要访问更新后的 DOM |
-| watchEffect | 副作用函数中 | 自动追踪依赖 |
-| watch | 指定数据变化 | 监听特定数据 |
-| setTimeout | 事件循环下一轮 | 延迟执行 |
+| nextTick | DOM 更新之后 | 需要访问更新后的 DOM |
+| watchEffect（默认 pre） | 组件更新之前 | 自动追踪依赖的副作用 |
+| watch（`flush: 'post'`） | DOM 更新之后 | 监听特定数据并访问新 DOM |
+| setTimeout | 事件循环下一轮（宏任务） | 延迟执行 |
 
 ## 最佳实践
 

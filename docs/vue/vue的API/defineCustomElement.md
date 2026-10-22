@@ -6,7 +6,7 @@
 
 将 Vue 组件编译为标准的 Web Components（自定义元素），可以在任何框架或纯 HTML 项目中使用。
 
-📖 [defineCustomElement](https://cn.vuejs.org/api/general#definecustomelement)
+📖 [defineCustomElement](https://cn.vuejs.org/api/custom-elements.html#definecustomelement)
 
 ## 语法
 
@@ -20,11 +20,16 @@ customElements.define('my-element', defineCustomElement({
 
 ## 参数
 
-与 Vue 组件选项相同，但有一些特殊规则
+与 Vue 组件选项相同，另支持几个自定义元素专属选项：
+
+- `styles`：`string[]`，要注入到 Shadow Root 的内联 CSS 字符串数组
+- `configureApp`：`3.5+`，用于配置元素内部 Vue 应用实例的函数
+- `shadowRoot`：`3.5+`，`boolean`，默认 `true`；设为 `false` 时不使用 Shadow Root 渲染
+- `nonce`：`3.5+`，注入到 Shadow Root 的 `<style>` 上的 nonce 属性
 
 ## 返回值
 
-返回一个自定义元素类
+返回一个继承自 `HTMLElement` 的自定义元素类构造器
 
 ## 基础用法
 
@@ -38,15 +43,18 @@ const MyElement = defineCustomElement({
   template: `
     <div>{{ message }}</div>
   `,
-  styles: `
-    div { color: red; }
-  `
+  // 注意是字符串数组
+  styles: [
+    `div { color: red; }`
+  ]
 })
 
 customElements.define('my-element', MyElement)
 ```
 
 ## 在 SFC 中使用
+
+以 `.ce.vue` 结尾的 SFC 会被以「自定义元素模式」加载：`<style>` 会被内联为 CSS 字符串并挂到组件的 `styles` 选项上，由 `defineCustomElement` 注入 Shadow Root（也可以通过 `@vitejs/plugin-vue` 的 `customElement` 选项自定义匹配规则）。
 
 ```vue
 <!-- MyElement.vue -->
@@ -77,7 +85,7 @@ defineProps({
 ```javascript
 // main.js
 import { defineCustomElement } from 'vue'
-import MyElement from './MyElement.vue'
+import MyElement from './MyElement.ce.vue'
 
 const MyCustomElement = defineCustomElement(MyElement)
 customElements.define('my-element', MyCustomElement)
@@ -150,12 +158,15 @@ customElements.define('my-element', MyElement)
 
 <script>
 document.querySelector('my-element').addEventListener('update', (e) => {
-  console.log(e.detail) // { value: 123 }
+  // payload 以数组形式存放在 detail 中，取第一个参数
+  console.log(e.detail[0]) // { value: 123 }
 })
 </script>
 ```
 
 ## 插槽支持
+
+> ⚠️ **注意：** 自定义元素的插槽基于原生 `slot` 行为解析：**不支持作用域插槽**；具名插槽消费时用 `slot` attribute 而不是 `v-slot` 指令。
 
 ```javascript
 const MyElement = defineCustomElement({
@@ -205,6 +216,8 @@ const MyElement = defineCustomElement({
 ## 提供方法
 
 ```javascript
+import { ref, defineExpose } from 'vue'
+
 const MyElement = defineCustomElement({
   setup() {
     const count = ref(0)
@@ -253,7 +266,9 @@ const MyElement = defineCustomElement({
       <p class="text">样式隔离</p>
     </div>
   `,
-  styles: `
+  // 注意 styles 必须是字符串数组
+  styles: [
+    `
     .container {
       border: 2px solid blue;
       padding: 10px;
@@ -262,12 +277,15 @@ const MyElement = defineCustomElement({
       color: red;
     }
   `
+  ]
 })
 ```
 
 ## 响应式属性
 
 ```javascript
+import { watch } from 'vue'
+
 const MyElement = defineCustomElement({
   props: {
     data: Object
@@ -286,17 +304,17 @@ const MyElement = defineCustomElement({
 ## 与 TypeScript 结合
 
 ```typescript
-import { defineCustomElement } from 'vue'
+import { defineCustomElement, type PropType } from 'vue'
 
 interface MyProps {
   title: string
   count?: number
 }
 
-const MyElement = defineCustomElement<MyProps>({
+const MyElement = defineCustomElement({
   props: {
-    title: String,
-    count: Number
+    title: { type: String, required: true },
+    count: Number as PropType<number>
   },
   setup(props) {
     console.log(props.title) // 类型安全
@@ -340,22 +358,24 @@ export default defineConfig({
 
 2. **命名规则**：自定义元素名称必须包含连字符
 
-3. **Props 限制**：
-   - 只支持 `String`、`Number`、`Boolean` 类型
-   - 复杂类型需要作为 JSON 字符串传递
+3. **Props 行为**：
+   - `props` 选项声明的属性会定义为元素上的 property，attribute 与 property 会自动双向映射
+   - 基本类型值（`string` / `boolean` / `number`）会反射为 attribute；设置 attribute 时，声明为 `Boolean` / `Number` 的 prop 会自动做类型转换
+   - 对象、数组等复杂类型只能通过 JS 设置 property 传入（attribute 只支持字符串）
 
-4. **样式隔离**：默认使用 Shadow DOM 进行样式隔离
+4. **样式隔离**：默认使用 Shadow DOM 进行样式隔离（3.5+ 可用 `shadowRoot: false` 关闭）
 
-5. **不支持的功能**：
-   - 不支持 `app.context`
-   - 不支持 `inheritAttrs`
-   - 不支持 `Transition` 组件
+5. **功能限制**：
+   - 不支持作用域插槽
+   - provide / inject 只在 Vue 定义的自定义元素之间生效，无法注入普通 Vue 组件提供的值
 
 6. **事件差异**：
-   - 事件通过 `CustomEvent` 发射
-   - 数据在 `detail` 属性中
+   - 事件通过原生 `CustomEvent` 派发
+   - 额外参数（payload）以数组形式放在 `detail` 属性中
 
-7. **最佳实践**：
+7. **生命周期**：元素首次连接到文档时挂载内部 Vue 实例；断开连接后经过一个微任务检查，确认已脱离文档才卸载
+
+8. **最佳实践**：
    - 用于跨框架组件
    - 用于独立组件分发
    - 不需要在 Vue 应用中使用

@@ -108,13 +108,7 @@ console.log(state.isUnmounting) // false（初始值），卸载前变为 true
 </template>
 
 <script setup lang="ts">
-import {
-  useTransitionState,
-  getCurrentInstance,
-  type ComponentInternalInstance,
-  type VNode,
-  onUpdated,
-} from 'vue'
+import { useTransitionState, onUpdated } from 'vue'
 
 const props = defineProps<{
   name?: string
@@ -122,14 +116,11 @@ const props = defineProps<{
   mode?: 'in-out' | 'out-in' | 'default'
 }>()
 
-// 获取过渡状态
+// 获取过渡状态（内部会注册 onMounted / onBeforeUnmount 钩子）
 const state = useTransitionState()
 
-const instance = getCurrentInstance()!
-
-// 在渲染函数中根据状态决定过渡行为
+// 在组件更新后，根据状态做额外处理
 onUpdated(() => {
-  // 如果组件正在执行离开过渡，可以在这里做额外处理
   if (state.isLeaving) {
     console.log('过渡正在进行中...')
   }
@@ -144,6 +135,7 @@ onUpdated(() => {
 ```ts
 import { useTransitionState, type VNode } from 'vue'
 
+// ⚠️ 以下代码需在组件 setup 上下文中执行，不能放在模块顶层
 const state = useTransitionState()
 
 // 获取指定类型的正在离开的节点缓存
@@ -209,6 +201,8 @@ watch(currentView, (newVal, oldVal) => {
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | *(无参数)* | — | — | `useTransitionState()` 不接受任何参数 |
+
+**版本说明：** 该函数自 Vue 3.0 起就存在于 `@vue/runtime-core` 中并随 `vue` 包导出（`TransitionState` 类型同样被导出），但从未列入官方公开 API 文档。
 
 **返回值：`TransitionState` 对象**
 
@@ -425,17 +419,11 @@ function removeItem(id: string) {
 
 #### 3. 构建动画库的基础设施
 
-开发 Vue 3 动画库（如 `@vueuse/motion` 的底层）时，需要精确控制过渡状态：
+开发 Vue 3 动画库、过渡库（比如封装 `gsap`、`anime.js` 等动画引擎）时，需要精确控制过渡状态：
 
 ```ts
 // animation-engine.ts
-import {
-  useTransitionState,
-  type TransitionState,
-  onMounted,
-  onBeforeUnmount,
-  getCurrentInstance,
-} from 'vue'
+import { useTransitionState, type TransitionState } from 'vue'
 
 export interface AnimationEngine {
   state: TransitionState
@@ -443,6 +431,8 @@ export interface AnimationEngine {
   leave: (el: Element, done: () => void) => void
 }
 
+// ⚠️ useAnimationEngine() 内部调用了 useTransitionState()，
+// 因此它必须在组件的 setup() / <script setup> 中同步调用
 export function useAnimationEngine(): AnimationEngine {
   const state = useTransitionState()
 
@@ -886,6 +876,8 @@ const state = useTransitionState()
 
    ```ts
    // ✅ 在动画库中合理使用
+   // ⚠️ createTransitionLibrary() 内部调用了 useTransitionState()，
+   // 因此它也必须在组件的 setup() 中被调用
    export function createTransitionLibrary() {
      const state = useTransitionState()
 
@@ -924,7 +916,7 @@ const state = useTransitionState()
 
 `<Transition>` 组件是 `useTransitionState` 的"上层封装"。`<Transition>` 内部通过 `BaseTransition` 调用 `useTransitionState()` 来创建过渡状态，然后在渲染过程中利用这个状态来控制 CSS 类名的添加/移除和 JavaScript 钩子的调用时机。
 
-```
+```text
 <Transition>（用户层）
     ↓ 基于
 BaseTransition（核心层）

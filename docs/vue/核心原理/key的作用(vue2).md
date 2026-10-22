@@ -1,8 +1,6 @@
 # Vue 2 中 key 的作用完全指南
 
-> 本文档**专注讲解 Vue 2** 中 `key` 属性的作用、底层双端 Diff 原理、使用场景与最佳实践，并与 Vue 3 做系统对比。
->
-> 它是 [《Vue 3 中 key 的作用完全指南》](./key的作用(vue3).md) 的姊妹篇。如果你在用 **Vue 2（选项式 API）**，请以本文为准；两份文档的最后一节都附有 Vue 2 / Vue 3 差异对比表。
+> 本文档**专注讲解 Vue 2** 中 `key` 属性的作用、底层双端 Diff 原理、使用场景与最佳实践，并在第八节附上 Vue 2 / Vue 3 差异对比表。如果你在用 **Vue 2（选项式 API）**，请以本文为准。
 
 > 📖 **官方文档（Vue 2）**
 > - [列表渲染 · 用 key 维护状态](https://v2.cn.vuejs.org/v2/guide/list.html#%E7%BB%B4%E6%8C%A4%E7%8A%B6%E6%80%81)
@@ -70,15 +68,15 @@ patch 算法：新 VNode 与旧 VNode 比对（patchVnode / updateChildren）
 在 Vue 2 源码中，每个 VNode 对象都有 `key` 属性（即 `vnode.key`）。patch 时，Vue 2 用 `sameVnode(a, b)` 判断**新旧两个节点是不是"同一个节点"**：
 
 ```js
-// Vue 2 源码（core/vdom/patch.js）简化版
+// Vue 2 源码（core/vdom/patch.js）简化版（略去异步组件的 asyncFactory 分支）
 function sameVnode(a, b) {
   return (
-    a.key === b.key &&        // ① key 相同（严格相等 ===）
-    a.asyncFactory === b.asyncFactory && (
-      a.tag === b.tag &&       // ② 标签名相同
+    a.key === b.key &&            // ① key 相同（严格相等 ===）
+    (
+      a.tag === b.tag &&          // ② 标签名相同
       a.isComment === b.isComment &&
       isDef(a.data) === isDef(b.data) &&
-      sameInputType(a, b)      // ③ input 的 type 相同
+      sameInputType(a, b)         // ③ input 的 type 相同
     )
   )
 }
@@ -117,9 +115,9 @@ Vue 2 判断"同一个节点"（sameVnode）的核心条件：
 
 > 官方文档原文（Vue 2）：默认模式下，Vue 会"就地复用"已有元素而非从头渲染。默认策略是高效的，但**只适用于列表渲染输出的结果不依赖子组件状态或临时 DOM 状态（如表单输入值）**。
 
-### 特性 2：有 key 时走双端 Diff
+### 特性 2：有 key 时双端 Diff 才能正确匹配
 
-写了 `key`，Vue 2 才会启用完整的双端 Diff（见第五节），根据 `key` 匹配新旧节点、最小化 DOM 移动，并保证组件状态正确跟随数据。
+双端 Diff（见第五节）本身始终在运行；只有写了 `key`，它才能按 `key` 匹配新旧节点、最小化 DOM 移动，并保证组件状态正确跟随数据。没有 `key` 时，`sameVnode` 只能靠"位置 + tag"命中，效果退化成就地复用。
 
 ### 特性 3：Vue 2 的 key 会被"字符串化"（与 Vue 3 的核心差异）⭐
 
@@ -586,8 +584,6 @@ Vue 2 中 `key` 应使用**字符串或数字**等原始类型。不要用对象
 
 ## 八、Vue 2 与 Vue 3 的 key 差异（对比）
 
-> 姊妹篇：[《Vue 3 中 key 的作用完全指南》](./key的作用(vue3).md)
-
 | 维度 | **Vue 2** | Vue 3 |
 |------|----------|------|
 | key 存储结构（兜底查找） | 普通对象 `{}` | **`Map`**（`keyToNewIndexMap`） |
@@ -772,7 +768,7 @@ Vue 运行时警告 `Duplicate keys detected`，并可能导致更新错误（Vu
 **记住五句话**：
 
 1. **`key` 是 Vue 2 节点的身份证号，帮双端 Diff 算法区分"哪个是哪个"，正确高效地复用和更新 DOM。**
-2. **`key` 必须唯一且稳定，用原始类型（字符串/number）——优先数据的 `id`，绝不用 `index`（顺序变化时会状态错乱 + 性能浪费）。**
+2. **`key` 必须唯一且稳定，用原始类型（字符串 / 数字）——优先数据的 `id`，绝不用 `index`（顺序变化时会状态错乱 + 性能浪费）。**
 3. **没有 `key` 时 Vue 2 就地复用，容易出错；有 `key` 时走双端 Diff（头尾比较 + key map 兜底），最少 DOM 操作。**
 4. **Vue 2 的 key 在兜底查找 `map[key]=i` 时会被字符串化——对象变 `[object Object]`、数字 `1` 与字符串 `"1"` 碰撞；所以 key 只能用原始类型，绝不能用对象。**
 5. **Vue 2 升级 Vue 3 要注意：双端 Diff 换成快速 Diff（LIS）；`v-if`/`v-else` 改为自动生成 key；`<template v-for>` 的 key 从子元素移到 `<template>` 上。**

@@ -2,9 +2,11 @@
 
 ## 作用
 
-`provide()` 用于提供一个值，可以被后代组件注入。它是 Vue 3 依赖注入系统的一部分，用于跨层级组件通信，避免 props 逐层传递。
+`provide()` 用于提供一个值，可以被后代组件注入。它是 Vue 3 依赖注入系统的一部分，用于跨层级组件通信，避免 props 逐层传递。注入端配套 API 是 `inject()`。
 
-📖 [官方文档 - provide](https://cn.vuejs.org/api/composition-api-context#provide)
+📖 [官方文档 - provide](https://cn.vuejs.org/api/composition-api-dependency-injection.html#provide)
+
+> 💡 `provide()` 必须在 `setup()` 或 `<script setup>` 的**同步执行阶段**调用（与生命周期钩子同样的限制）。
 
 ## 用法
 
@@ -91,19 +93,21 @@ provide('hide', () => {
 
 ### 提供 Symbol key
 
+`<script setup>` 中不能写 `export` 语句，所以 Symbol key 要放在单独的文件里导出，提供方和注入方各自导入同一份：
+
+```javascript
+// keys.js —— key 的唯一定义处
+export const ThemeKey = Symbol('theme')
+export const LocaleKey = Symbol('locale')
+```
+
 ```vue
 <script setup>
 import { provide } from 'vue'
-
-// 使用 Symbol 避免命名冲突
-const ThemeKey = Symbol('theme')
-const LocaleKey = Symbol('locale')
+import { ThemeKey, LocaleKey } from './keys'
 
 provide(ThemeKey, 'dark')
 provide(LocaleKey, 'zh-CN')
-
-// 可以导出 key 供后代组件使用
-export { ThemeKey, LocaleKey }
 </script>
 ```
 
@@ -148,28 +152,24 @@ export default {
 
 ### TypeScript 支持
 
+推荐用 `InjectionKey<T>` 类型的 Symbol 作为 key，把值的类型绑定在 key 上，注入方 `inject(UserKey)` 会自动获得正确类型：
+
 ```vue
 <script setup lang="ts">
-import { provide, ref } from 'vue'
+import { provide, ref, type InjectionKey, type Ref } from 'vue'
 
 interface User {
   name: string
   age: number
 }
 
-const user = ref<User>({
-  name: 'Vue',
-  age: 3
-})
+// 定义带类型的 key（实际项目中放在 keys.ts 里导出）
+const UserKey: InjectionKey<Ref<User>> = Symbol('user')
 
-// 使用类型断言
-provide<User>('user', user.value)
+const user = ref<User>({ name: 'Vue', age: 3 })
 
-// 使用 Symbol 作为 key
-const UserKey = Symbol('user')
+// value 的类型必须与 key 声明的类型匹配，否则 TS 报错
 provide(UserKey, user)
-
-export { UserKey }
 </script>
 ```
 
@@ -281,12 +281,14 @@ original.value = 'World' // 所有使用该值的地方都会更新
 
 ### 3. 避免命名冲突
 
-```javascript
-// ⚠️ 可能冲突
-provide('data', someData) // 祖先组件A
-provide('data', otherData) // 祖先组件B - 会覆盖
+多个祖先组件用字符串 key 提供同名数据时，后代注入到的是**距离最近**的那个祖先的值（就近原则）。若只想区分不同的数据，用不同的 Symbol：
 
-// ✅ 使用 Symbol
+```javascript
+// ⚠️ 同名字符串 key：后代拿到的是最近祖先的值
+provide('data', someData) // 祖先组件A
+provide('data', otherData) // 更近的祖先组件B
+
+// ✅ 使用 Symbol 区分不同的数据
 const DataKeyA = Symbol('data-a')
 const DataKeyB = Symbol('data-b')
 
@@ -319,16 +321,16 @@ const props = defineProps(['data']) // 父组件通过 props 传递
 provide('data', data) // 任何后代组件都可以注入
 ```
 
-### 6. 组件卸载时的处理
+### 6. 提供方卸载后数据仍然存在
+
+组件卸载并不会"回收"它 provide 过的值。如果注入方还持有引用（比如一个 `ref`），数据依然可访问、可修改。需要停止相关副作用时，要在提供方自己的卸载钩子里处理：
 
 ```javascript
-// ⚠️ 组件卸载后，provide 的值不再可用
 const timer = ref(null)
 
 provide('timer', timer)
 
-// 组件卸载时，注入的组件仍然可能持有引用
-// 需要手动清理
+// ⚠️ 提供方卸载时自己负责清理数据，注入方不会自动感知
 onUnmounted(() => {
   timer.value = null
 })
@@ -340,23 +342,10 @@ onUnmounted(() => {
 // 应用级
 app.provide('config', { theme: 'light' })
 
-// 组件级（优先级更高）
+// 组件级（对后代组件优先级更高）
 provide('config', { theme: 'dark' })
 
 // 后代组件会使用组件级的值
-```
-
-### 8. provide 的值不是响应式代理
-
-```javascript
-const obj = { count: 0 }
-
-// ❌ 不是响应式的
-provide('obj', obj)
-
-// ✅ 使用 reactive
-const state = reactive({ count: 0 })
-provide('state', state)
 ```
 
 ## 使用场景

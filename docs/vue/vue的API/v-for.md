@@ -2,7 +2,7 @@
 
 ## 作用
 
-`v-for` 是 Vue 的列表渲染指令，基于数组或对象来渲染列表或重复元素。它需要使用 `key` 来帮助 Vue 跟踪每个节点的身份。
+`v-for` 是 Vue 的列表渲染指令，基于数组或对象来渲染列表或重复元素。官方推荐在任何可行的时候为 `v-for` 提供一个 `key`，帮助 Vue 跟踪每个节点的身份。
 
 📖 [官方文档：v-for](https://cn.vuejs.org/api/built-in-directives#v-for)
 
@@ -188,26 +188,18 @@ const todos = ref([
 
 ## 注意事项
 
-### 1. 必须使用 key
+### 1. 为 v-for 提供 key
 
 ```vue
 <template>
-  <!-- ✅ 正确：使用唯一的 key -->
+  <!-- ✅ 推荐：使用唯一且稳定的 key（如数据自带的 id） -->
   <li v-for="item in items" :key="item.id">
-    {{ item.name }}
-  </li>
-
-  <!-- ❌ 错误：不使用 key -->
-  <li v-for="item in items">
-    {{ item.name }}
-  </li>
-
-  <!-- ❌ 错误：使用索引作为 key -->
-  <li v-for="(item, index) in items" :key="index">
     {{ item.name }}
   </li>
 </template>
 ```
+
+> ⚠️ **注意：** 不写 `key` 时 Vue 会采用「就地更新」策略：数据顺序变化时不移动 DOM 元素，而是就地复用并更新内容，可能导致输入框等带有内部状态的元素错位。使用索引作为 `key` 在列表发生插入、删除、排序时也会出现同样的问题；只有列表完全静态、不会重排时才可以接受。另外 key 必须是字符串或数字等原始值，不要用对象作为 key。
 
 ### 2. key 的唯一性
 
@@ -234,24 +226,24 @@ const items = ref([
 
 ### 3. 避免在模板中修改数组
 
+模板表达式应当只负责读取，把修改数组的逻辑放到事件处理函数中，并使用数组方法来操作：
+
 ```vue
 <script setup>
 import { ref } from 'vue'
 
 const items = ref([1, 2, 3])
 
-// ❌ 错误：在模板中直接修改
-function addNewItem() {
-  // items.value.push(4) // 如果在模板中使用会有问题
-}
-
-// ✅ 正确：使用数组方法
-function addNewItem() {
+// ✅ 在事件处理函数中用数组方法修改
+function addItem() {
   items.value.push(4)
 }
 </script>
 
 <template>
+  <button @click="addItem">添加一项</button>
+
+  <!-- 模板中只负责展示 -->
   <div v-for="item in items" :key="item">
     {{ item }}
   </div>
@@ -260,48 +252,52 @@ function addNewItem() {
 
 ### 4. 响应式更新数组
 
+Vue 3 的响应式系统基于 Proxy，**直接通过索引赋值、修改 `length` 也能被检测到**：
+
 ```vue
 <script setup>
 import { ref } from 'vue'
 
 const items = ref([1, 2, 3])
 
-// Vue 能检测到的数组方法
-items.value.push(4)           // 添加
-items.value.pop()             // 移除最后一个
-items.value.shift()           // 移除第一个
-items.value.unshift(0)        // 添加到开头
-items.value.splice(1, 1)      // 替换/删除
-items.value.sort()            // 排序
-items.value.reverse()         // 反转
-
-// ⚠️ 直接赋值索引不是响应式的
-items.value[0] = 99           // 不会触发更新
-
-// ✅ 正确方式
-items.value.splice(0, 1, 99)  // 会触发更新
+// ✅ Vue 3 中这些都是响应式的
+items.value[0] = 99     // 触发更新
+items.value.length = 2  // 触发更新
+items.value.push(4)     // 触发更新
+items.value.sort()      // 触发更新
 </script>
 ```
 
+> ⚠️ **注意：** 「索引赋值不会触发更新，要改用 `splice` 或 `Vue.set`」是 Vue 2 的限制（`Object.defineProperty` 无法侦测索引变化），Vue 3 中已不存在。另外，用 `filter`、`map`、`slice` 等方法生成新数组后整体替换（如 `items.value = items.value.filter(...)`）语义更清晰，也是官方推荐的方式。
+
 ### 5. v-for 和 v-if 的优先级
+
+Vue 3 中，当 `v-if` 和 `v-for` 同时存在于一个元素上时，**`v-if` 会首先执行**（Vue 2 相反，`v-for` 优先级更高）。因此 `v-if` 的条件无法访问 `v-for` 作用域内的变量：
 
 ```vue
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const items = ref([
   { id: 1, name: 'Item 1', visible: true },
   { id: 2, name: 'Item 2', visible: false }
 ])
+
+const visibleItems = computed(() => items.value.filter(item => item.visible))
 </script>
 
 <template>
-  <!-- Vue 3: v-if 优先级更高，只渲染可见项 -->
+  <!-- ❌ Vue 3 中会报错：v-if 先执行，此时 item 还不存在 -->
   <li v-for="item in items" v-if="item.visible" :key="item.id">
     {{ item.name }}
   </li>
 
-  <!-- 推荐使用计算属性过滤 -->
+  <!-- ✅ 用 template 包裹 v-for，把 v-if 放在内层元素上 -->
+  <template v-for="item in items" :key="item.id">
+    <li v-if="item.visible">{{ item.name }}</li>
+  </template>
+
+  <!-- ✅ 过滤场景推荐直接用计算属性 -->
   <li v-for="item in visibleItems" :key="item.id">
     {{ item.name }}
   </li>
@@ -354,6 +350,8 @@ onMounted(() => {
 
 ### 8. 对象遍历的顺序
 
+官方文档明确：遍历对象时，**顺序会基于对该对象调用 `Object.values()` 的返回值来决定**。即整数类键（如 `0`、`1`）按数值升序排在前面，其余字符串键按插入顺序排列：
+
 ```vue
 <script setup>
 import { reactive } from 'vue'
@@ -364,8 +362,7 @@ const obj = reactive({
   b: 2
 })
 
-// Object.keys() 的顺序不一定
-// 在大多数现代浏览器中会按插入顺序
+// Object.keys(obj) → ['c', 'a', 'b']，v-for 按此顺序遍历
 </script>
 
 <template>
@@ -716,9 +713,9 @@ const totalPages = computed(() => Math.ceil(items.value.length / pageSize))
 
 ## v-for 最佳实践
 
-1. **始终使用 key**：使用唯一且稳定的 key
-2. **避免使用索引作为 key**：除非列表是静态的
+1. **尽可能提供 key**：使用唯一且稳定的 key（如数据自带的 id）
+2. **谨慎使用索引作为 key**：仅当列表不会重排时才可接受
 3. **使用计算属性过滤**：而不是 v-if 和 v-for 混用
 4. **大列表考虑虚拟滚动**：提高性能
 5. **保持 key 简单**：使用原始值而不是对象
-6. **数组更新使用正确方法**：使用 Vue 能检测到的数组方法
+6. **合理更新数组**：Vue 3 中索引赋值也能触发更新；用 `filter`/`map` 生成新数组整体替换往往更清晰

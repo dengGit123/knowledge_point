@@ -1,13 +1,13 @@
 # watch
 
-📖 [Vue 官方文档 - watch](https://cn.vuejs.org/api/reactivity-core#watch)
+📖 [Vue 官方文档 - watch](https://cn.vuejs.org/api/reactivity-core.html#watch)
 
-## 作用
+### 作用
 `watch()` 用于侦听响应式数据的变化，并在变化时执行副作用。与 computed 不同，watch 不返回值，而是执行回调函数。
 
-## 用法
+### 用法
 
-### 基本用法
+#### 基本用法
 
 ```javascript
 import { ref, watch } from 'vue'
@@ -22,24 +22,26 @@ watch(count, (newValue, oldValue) => {
 count.value = 1 // 输出: count 从 0 变为 1
 ```
 
-### 侦听 getter 函数
+#### 侦听 getter 函数
 
 ```javascript
+import { ref, computed, watch } from 'vue'
+
 const count = ref(0)
 const doubled = computed(() => count.value * 2)
 
-// 使用 getter 函数
+// getter 函数：返回值变化时触发
 watch(() => count.value, (newVal, oldVal) => {
   console.log('count 变化:', newVal)
 })
 
-// 侦听计算属性
+// 侦听计算属性（也是 getter 形式）
 watch(() => doubled.value, (newVal) => {
   console.log('doubled 变化:', newVal)
 })
 ```
 
-### 侦听多个来源
+#### 侦听多个来源
 
 ```javascript
 const firstName = ref('Vue')
@@ -55,7 +57,7 @@ lastName.value = 'Native'
 // 输出: Vue JS -> React Native
 ```
 
-### 侦听 reactive 对象
+#### 侦听 reactive 对象
 
 ```javascript
 import { reactive, watch } from 'vue'
@@ -65,13 +67,13 @@ const state = reactive({
   message: 'Hello'
 })
 
-// ⚠️ 默认深层侦听
-watch(() => state, (newState, oldState) => {
-  // newState 和 oldState 是同一个对象引用
+// ⚠️ 直接传 reactive 对象：自动开启深层侦听，
+// 且新旧值是同一个对象引用
+watch(state, () => {
   console.log('state 变化')
 })
 
-// 推荐使用 getter
+// ✅ 推荐使用 getter 侦听具体属性，能拿到不同的新旧值
 watch(() => state.count, (newVal, oldVal) => {
   console.log(`count: ${oldVal} -> ${newVal}`)
 })
@@ -79,7 +81,7 @@ watch(() => state.count, (newVal, oldVal) => {
 state.count++ // 触发 watch
 ```
 
-### deep 选项（深层侦听）
+#### deep 选项（深层侦听）
 
 ```javascript
 const state = reactive({
@@ -91,18 +93,20 @@ const state = reactive({
   }
 })
 
-// 启用深层侦听
+// getter 返回响应式对象时默认是浅层的，
+// 只有对象被整体替换才触发，需要显式开启 deep
 watch(() => state, (newVal, oldVal) => {
   console.log('深层变化')
+  // 深层级变更触发时，newVal === oldVal
 }, { deep: true })
 
-// 或者直接侦听对象（reactive 默认 deep）
+// 直接传 reactive 对象则自动深层侦听，无需写 deep
 watch(state, () => {
   console.log('变化了')
 })
 ```
 
-### immediate 选项（立即执行）
+#### immediate 选项（立即执行）
 
 ```javascript
 const count = ref(0)
@@ -115,7 +119,7 @@ watch(count, (newVal, oldVal) => {
 count.value = 1 // 输出: count: 0 -> 1
 ```
 
-### once 选项（只执行一次）
+#### once 选项（只执行一次，Vue 3.4+）
 
 ```javascript
 const count = ref(0)
@@ -124,12 +128,12 @@ watch(count, (newVal) => {
   console.log('count 变化:', newVal)
 }, { once: true })
 
-count.value = 1 // 输出: count 变化: 1
+count.value = 1 // 输出: count 变化: 1，随后侦听器自动停止
 count.value = 2 // 不再触发
 count.value = 3 // 不再触发
 ```
 
-### flush 选项（回调时机）
+#### flush 选项（回调时机）
 
 ```javascript
 const count = ref(0)
@@ -150,7 +154,7 @@ watch(count, () => {
 }, { flush: 'post' })
 ```
 
-### 停止侦听器
+#### 停止侦听器
 
 ```javascript
 const count = ref(0)
@@ -166,7 +170,9 @@ stop() // 停止侦听
 count.value = 2 // 不再触发
 ```
 
-### 副作用清理
+💡 Vue 3.5+ 起返回的句柄（`WatchHandle`）还支持 `pause()` 暂停和 `resume()` 恢复。
+
+#### 副作用清理
 
 ```javascript
 const id = ref(0)
@@ -196,7 +202,9 @@ function doAsyncWork(id) {
 }
 ```
 
-### 在 setup 中使用
+💡 Vue 3.5+ 也可以使用独立的 `onWatcherCleanup()` 注册清理函数，但必须在回调的同步执行期间调用（不能在 `await` 之后）。
+
+#### 在 setup 中使用
 
 ```javascript
 import { ref, watch, onUnmounted } from 'vue'
@@ -214,7 +222,9 @@ export default {
 }
 ```
 
-### 在 `<script setup>` 中使用
+> 💡 在 `setup()` 或 `<script setup>` 中用同步语句创建的侦听器，会自动绑定到宿主组件实例，组件卸载时自动停止。
+
+#### 在 `<script setup>` 中使用
 
 ```vue
 <script setup>
@@ -236,7 +246,7 @@ function increment() {
 </template>
 ```
 
-### 选项式 API 中使用
+#### 选项式 API 中使用
 
 ```javascript
 export default {
@@ -271,32 +281,29 @@ export default {
 }
 ```
 
-## 注意事项
+### 注意事项
 
-### 1. 侦听 ref 需要 .value
+#### 1. 侦听 ref 直接传即可，无需 .value
 
 ```javascript
 const count = ref(0)
 
-// ✅ 正确
-watch(() => count.value, (newVal) => {})
-
-// ❌ 错误
-watch(count, (newVal) => {}) // 这其实是正确的，直接传 ref
-
-// ✅ 也可以直接传 ref
+// ✅ 直接传 ref，自动解包 .value
 watch(count, (newVal) => {
   console.log(newVal)
 })
+
+// ✅ getter 形式，适合侦听派生值或对象属性
+watch(() => count.value, (newVal) => {})
 ```
 
-### 2. 侦听 reactive 对象的问题
+#### 2. 侦听 reactive 对象的问题
 
 ```javascript
 const state = reactive({ count: 0 })
 
-// ⚠️ newState 和 oldVal 是同一个对象
-watch(() => state, (newState, oldState) => {
+// ⚠️ 直接传 reactive 对象：新旧值是同一个对象
+watch(state, (newState, oldState) => {
   console.log(newState === oldState) // true
 })
 
@@ -306,19 +313,19 @@ watch(() => state.count, (newVal, oldVal) => {
 })
 ```
 
-### 3. deep 的性能影响
+#### 3. deep 的性能影响
 
 ```javascript
 const bigData = reactive({ /* 大量嵌套数据 */ })
 
-// ⚠️ deep 会有性能开销
-watch(bigData, () => {}, { deep: true })
+// ⚠️ 直接侦听 reactive 对象会递归遍历所有嵌套属性，大对象开销大
+watch(bigData, () => {})
 
 // ✅ 侦听具体属性更高效
 watch(() => bigData.specificProp, () => {})
 ```
 
-### 4. 在 watch 中修改依赖
+#### 4. 在 watch 中修改依赖
 
 ```javascript
 const count = ref(0)
@@ -338,7 +345,7 @@ watch(count, (newVal) => {
 })
 ```
 
-### 5. watch vs watchEffect
+#### 5. watch vs watchEffect
 
 ```javascript
 // watch: 明确指定依赖
@@ -358,7 +365,7 @@ watchEffect(() => {
 // 3. watch 可以访问旧值，watchEffect 不行
 ```
 
-### 6. 异步操作的竞态问题
+#### 6. 异步操作的竞态问题
 
 ```javascript
 const id = ref(1)
@@ -385,7 +392,7 @@ watch(id, async (newId, oldId, onCleanup) => {
 })
 ```
 
-### 7. flush 时机选择
+#### 7. flush 时机选择
 
 ```javascript
 const count = ref(0)
@@ -407,27 +414,28 @@ watch(count, () => {
 }, { flush: 'post' })
 ```
 
-### 8. TypeScript 类型支持
+#### 8. TypeScript 类型支持
 
 ```typescript
-import { Ref, WatchSource } from 'vue'
+import { ref, type Ref } from 'vue'
 
 const count: Ref<number> = ref(0)
+const another: Ref<string> = ref('')
 
 // 单个来源
 watch(count, (newVal: number, oldVal: number) => {
   // ...
 })
 
-// 多个来源
-watch([count, another] as WatchSource[], ([newCount, newAnother]) => {
+// 多个来源：回调参数类型自动推断，无需手动断言
+watch([count, another], ([newCount, newAnother]) => {
   // ...
 })
 ```
 
-## 使用场景
+### 使用场景
 
-### 1. 数据变化时发送请求
+#### 1. 数据变化时发送请求
 
 ```vue
 <script setup>
@@ -470,7 +478,7 @@ watch(searchQuery, async (newQuery) => {
 </template>
 ```
 
-### 2. 表单验证
+#### 2. 表单验证
 
 ```vue
 <script setup>
@@ -508,11 +516,11 @@ function onBlur() {
 </template>
 ```
 
-### 3. 路由变化时重新加载数据
+#### 3. 路由变化时重新加载数据
 
 ```vue
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
@@ -542,7 +550,7 @@ watch(userId, async (newId) => {
 </template>
 ```
 
-### 4. 本地存储同步
+#### 4. 本地存储同步
 
 ```vue
 <script setup>
@@ -567,7 +575,7 @@ watch(settings, (newSettings) => {
 </script>
 ```
 
-### 5. 防抖输入
+#### 5. 防抖输入
 
 ```vue
 <script setup>
@@ -606,11 +614,11 @@ watch(searchQuery, debouncedSearch)
 </template>
 ```
 
-### 6. 监听窗口大小变化
+#### 6. 监听窗口大小变化
 
 ```vue
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
 const windowSize = ref({
   width: window.innerWidth,
@@ -647,7 +655,7 @@ const isMobile = computed(() => windowSize.value.width < 768)
 </template>
 ```
 
-### 7. 文件上传进度
+#### 7. 文件上传进度
 
 ```vue
 <script setup>
@@ -696,11 +704,11 @@ watch(file, async (newFile) => {
 </template>
 ```
 
-### 8. WebSocket 消息处理
+#### 8. WebSocket 消息处理
 
 ```vue
 <script setup>
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 
 const messages = ref([])
 const socket = ref(null)
@@ -742,7 +750,7 @@ onUnmounted(disconnect)
 </script>
 ```
 
-### 9. 权限变化时的界面更新
+#### 9. 权限变化时的界面更新
 
 ```vue
 <script setup>
@@ -774,7 +782,7 @@ watch([user, permissions], ([newUser, newPerms]) => {
 </template>
 ```
 
-### 10. 动画/过渡控制
+#### 10. 动画/过渡控制
 
 ```vue
 <script setup>
@@ -830,16 +838,18 @@ async function animateOut() {
 </template>
 ```
 
-## watch 选项总结
+### watch 选项总结
 
 | 选项 | 类型 | 默认值 | 说明 |
 |-----|------|--------|------|
-| deep | boolean | false | 深层侦听对象 |
-| immediate | boolean | false | 立即执行回调 |
+| deep | boolean \| number | false | 深层侦听对象；3.5+ 支持数字，限制最大遍历深度 |
+| immediate | boolean | false | 创建时立即执行回调，首次旧值为 undefined |
 | flush | 'pre' \| 'sync' \| 'post' | 'pre' | 回调执行时机 |
-| once | boolean | false | 只执行一次 |
+| once | boolean（3.4+） | false | 回调只执行一次，随后侦听器自动停止 |
 
-## 最佳实践
+> 💡 直接传 reactive 对象作侦听源时，深层侦听会自动开启。
+
+### 最佳实践
 
 1. **明确侦听源**：使用 watch 时明确指定要侦听的数据
 2. **避免深度侦听**：对于大对象，侦听具体属性而非整个对象

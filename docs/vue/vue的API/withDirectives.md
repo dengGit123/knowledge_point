@@ -4,21 +4,23 @@
 
 `withDirectives()` 用于在渲染函数中将**一个或多个指令**应用到 VNode 上。这是在 `h()` 渲染函数中使用指令的唯一方式（模板中可以直接用 `v-xxx`）。
 
-📖 [Vue 官方文档 - withDirectives](https://cn.vuejs.org/api/render-function#withdirectives)
+📖 [Vue 官方文档 - withDirectives](https://cn.vuejs.org/api/render-function.html#withdirectives)
 
 ## 函数签名
 
 ```typescript
 function withDirectives(
   vnode: VNode,
-  directives: DirectiveBinding[]
+  directives: DirectiveArguments
 ): VNode
 
-// DirectiveBinding 数组格式：
-// [directive]                             - 无值
-// [directive, value]                      - 有值
-// [directive, value, argument]            - 有值 + 参数
-// [directive, value, argument, modifiers] // 完整格式
+// 官方类型定义
+type DirectiveArguments = Array<
+  | [Directive]                                  // 仅指令
+  | [Directive, any]                             // 指令 + 绑定值
+  | [Directive, any, string]                     // + 参数
+  | [Directive, any, string, DirectiveModifiers] // + 修饰符
+>
 ```
 
 **参数说明：**
@@ -28,7 +30,7 @@ function withDirectives(
 | `vnode` | `VNode` | 要应用指令的 VNode |
 | `directives` | `Array` | 指令绑定数组 |
 
-**返回值：** 传入的 VNode（已附加指令信息）。
+**返回值：** 传入的 VNode（已附加指令信息）。另外，指令位置也可以直接给一个函数，Vue 会把它等价为 `{ mounted: fn, updated: fn }`；若在渲染函数之外调用，开发环境会警告 `withDirectives can only be used inside render functions.` 并原样返回 VNode。
 
 ## 基本用法
 
@@ -81,9 +83,9 @@ withDirectives(h('div'), [
 
 // 4. 带修饰符的指令
 withDirectives(h('div'), [
-  [vTooltip, '提示内容', 'top', { delay: 500 }]
+  [vTooltip, '提示内容', 'top', { delay: true }]
 ])
-// 等同于模板中: <div v-tooltip:top.delay="500"></div>
+// 等同于模板中: <div v-tooltip:top.delay="'提示内容'"></div>
 
 // 5. 完整格式
 withDirectives(h('button'), [
@@ -345,7 +347,7 @@ export default {
 
 ```javascript
 // 等价的渲染函数写法
-import { h, withDirectives, resolveDirective } from 'vue'
+import { h, withDirectives, resolveDirective, ref } from 'vue'
 
 export default {
   setup() {
@@ -360,7 +362,7 @@ export default {
       return withDirectives(h('input'), [
         [vFocus],
         [vLoading, isLoading.value],
-        [vTooltip, '500', 'top', { delay: true }],
+        [vTooltip, 500, 'top', { delay: true }],
         [vPermission, 'admin', 'role', { exact: true }]
       ])
     }

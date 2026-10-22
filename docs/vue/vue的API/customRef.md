@@ -1,3 +1,5 @@
+# customRef
+
 ### 一、概述
 
 `customRef()` 是 Vue 3 响应式系统中的一个高级 API，它允许开发者**完全自定义**一个 ref 的依赖追踪和触发更新行为。简单来说，普通的 `ref()` 是"全自动"的 —— 读取时自动追踪依赖，修改时自动触发视图更新；而 `customRef()` 则把这两个关键环节的控制权交给了你，让你可以精确地决定**何时追踪**、**何时更新**。
@@ -543,15 +545,16 @@ function useConvertedRef<R, S>(
   }))
 }
 
-// ✅ 使用：温度单位换算（内部存储摄氏度，外部使用华氏度）
-const temperature = useConvertedRef(25, {
-  toStorage: (celsius: number) => celsius, // 内部存摄氏度
-  toRaw: (celsius: number) => celsius * 9 / 5 + 32 // 对外返回华氏度
+// ✅ 使用：温度单位换算（外部读写华氏度，内部存储摄氏度）
+// toStorage：把外部值(R)转为内部存储值(S)；toRaw：把内部存储值(S)转回外部值(R)
+const temperature = useConvertedRef(77, {
+  toStorage: (fahrenheit: number) => ((fahrenheit - 32) * 5) / 9, // 华氏度 → 摄氏度
+  toRaw: (celsius: number) => (celsius * 9) / 5 + 32 // 摄氏度 → 华氏度
 })
 
-console.log(temperature.value) // 77 (华氏度)
+console.log(temperature.value) // 77（华氏度）
 temperature.value = 100 // 设置华氏度 100
-// 内部自动转换为摄氏度 37.78 存储
+// 内部自动转换为约 37.78 摄氏度存储
 ```
 
 #### 场景 8：带条件触发的 Ref（权限控制）
@@ -777,7 +780,7 @@ const cnyAmount = useCurrencyRef(100, () => exchangeRate.value)
 
 8. **`trigger()` 可以多次调用**：在某些场景中，`set()` 可能需要在不同时机多次触发更新（例如先触发一次显示新值，再延迟触发一次重置）。
 
-9. **`customRef` 返回的是只读的 `Ref`**：返回的 ref 的 `.value` 属性是响应式的，但不要尝试解构它。
+9. **不要解构 `customRef` 返回的 ref**：返回的是标准的、可写的 `Ref`，直接解构会丢失响应性。
 
    ```ts
    // ❌ 错误：解构会丢失响应性
@@ -797,6 +800,8 @@ const cnyAmount = useCurrencyRef(100, () => exchangeRate.value)
       console.log('值变化了:', newVal)
     })
     ```
+
+11. **谨慎在 `get()` 中返回新对象**：如果每次读取都返回一个新对象（如对象字面量），当该 ref 作为 prop 传给子组件时，父组件重新渲染会生成新对象并与上一次的值比较，两者引用不同，会触发子组件不必要的更新。
 
 ### 七、相关 API 对比
 

@@ -4,7 +4,7 @@
 
 在当前作用域被销毁时注册一个回调函数。通常用于在可组合函数中清理副作用。
 
-📖 [官方文档：onScopeDispose](https://cn.vuejs.org/api/reactivity-advanced#onscopedispose)
+📖 [官方文档：onScopeDispose](https://cn.vuejs.org/api/reactivity-advanced.html#onscopedispose)
 
 ## 语法
 
@@ -14,12 +14,15 @@ import { onScopeDispose } from 'vue'
 onScopeDispose(() => {
   // 清理逻辑
 })
+
+// Vue 3.4+：在没有活跃作用域时静默跳过，不报警告
+onScopeDispose(() => {}, true)
 ```
 
 ## 参数
 
 - `callback`: 要在作用域销毁时执行的回调函数
-- `cleanupKey` (可选): 用于调试的清理键
+- `failSilently` (可选，默认 `false`，Vue 3.4+): 默认情况下，在没有活跃 `effectScope` 的上下文中调用会触发开发环境警告；传 `true` 则静默跳过（不注册、不警告）
 
 ## 返回值
 
@@ -305,7 +308,7 @@ export function useResource() {
 
 1. **必须在作用域内调用**：只能在 `effectScope().run()` 或组件的 `setup()` 中调用
 
-2. **调用顺序**：回调会按照注册的相反顺序执行（类似 onUnmounted）
+2. **调用顺序**：回调按照**注册顺序**依次执行（先注册的先执行），不是相反顺序
 
 3. **条件调用**：如果在条件语句中调用，确保逻辑正确
 
@@ -335,5 +338,5 @@ onScopeDispose(() => {
 onScopeDispose(() => console.log('清理1'))
 onScopeDispose(() => console.log('清理2'))
 onScopeDispose(() => console.log('清理3'))
-// 输出顺序: 清理3, 清理2, 清理1
+// 输出顺序: 清理1, 清理2, 清理3（与注册顺序一致）
 ```

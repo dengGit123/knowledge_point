@@ -1,6 +1,6 @@
 ### KeepAlive
 
-> 📖 [官方文档 - KeepAlive](https://cn.vuejs.org/api/built-in-components#keepalive)
+> 📖 [官方文档 - KeepAlive](https://cn.vuejs.org/api/built-in-components.html#keepalive)
 
 ---
 
@@ -336,45 +336,62 @@ const currentView = ref<'editor' | 'preview'>('editor')
 ```vue
 <!-- KeepAliveDemo.vue -->
 <script setup lang="ts">
-import { ref, onMounted, onActivated, onDeactivated } from 'vue'
+import { ref } from 'vue'
+import FormTab from './FormTab.vue'
+import CounterTab from './CounterTab.vue'
+import ListTab from './ListTab.vue'
 
-const currentTab = ref<'form' | 'counter' | 'list'>('form')
+type TabKey = 'form' | 'counter' | 'list'
 
-// ---- 表单组件 ----
-const FormTab = {
-  name: 'FormTab',
-  setup() {
-    const inputText = ref('')
-    const selectedOption = ref('option1')
+const currentTab = ref<TabKey>('form')
 
-    onActivated(() => {
-      console.log('[FormTab] 已激活 —— 输入内容完好保留')
-    })
-
-    onDeactivated(() => {
-      console.log('[FormTab] 已停用 —— 输入内容已缓存')
-    })
-
-    return () => (
-      // 此处用模板替代，实际项目中使用 template
-      null
-    )
-  }
+const tabs: Record<TabKey, Component> = {
+  form: FormTab,
+  counter: CounterTab,
+  list: ListTab
 }
 </script>
 
 <template>
   <div class="demo">
     <div class="tabs">
-      <button @click="currentTab = 'form'">表单</button>
-      <button @click="currentTab = 'counter'">计数器</button>
-      <button @click="currentTab = 'list'">列表</button>
+      <button
+        v-for="(comp, key) in tabs"
+        :key="key"
+        :class="{ active: currentTab === key }"
+        @click="currentTab = key"
+      >
+        {{ key }}
+      </button>
     </div>
 
     <KeepAlive>
-      <component :is="currentTab === 'form' ? FormTab : currentTab === 'counter' ? CounterTab : ListTab" />
+      <component :is="tabs[currentTab]" />
     </KeepAlive>
   </div>
+</template>
+```
+
+被缓存的子组件（以 FormTab.vue 为例）中通过 `onActivated` / `onDeactivated` 观察缓存行为：
+
+```vue
+<!-- FormTab.vue -->
+<script setup lang="ts">
+import { ref, onActivated, onDeactivated } from 'vue'
+
+const inputText = ref('')
+
+onActivated(() => {
+  console.log('[FormTab] 已激活 —— 输入内容完好保留')
+})
+
+onDeactivated(() => {
+  console.log('[FormTab] 已停用 —— 输入内容已缓存')
+})
+</script>
+
+<template>
+  <input v-model="inputText" placeholder="输入一些内容" />
 </template>
 ```
 

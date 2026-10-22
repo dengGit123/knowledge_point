@@ -63,7 +63,7 @@ function directiveText(el: HTMLElement, binding: DirectiveBinding) {
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const message: string = ref<string>('Hello Vue 3!')
+const message = ref<string>('Hello Vue 3!')
 </script>
 ```
 
@@ -223,11 +223,16 @@ async function handleSubmit(): Promise<void> {
 
 **在组件上使用 v-text：**
 
+`v-text` 是元素级指令，并不是为组件设计的。用在单根组件上时，它会随 attribute 透传落到组件根元素上；组件有多个根节点时会失效。**不推荐这样用**，需要设置组件文本时应使用默认插槽（见下方注意事项 9）。
+
 ```vue
 <template>
   <div>
-    <!-- ✅ v-text 可以用在组件根元素上（组件只有一个根元素时） -->
+    <!-- ⚠️ 能透传到单根组件的根元素，但不是 v-text 的设计用途，不推荐 -->
     <CustomButton v-text="buttonText" />
+
+    <!-- ✅ 推荐：用默认插槽传递内容 -->
+    <CustomButton>{{ buttonText }}</CustomButton>
   </div>
 </template>
 
@@ -949,13 +954,15 @@ const activeItemNames = computed<string>(() => {
 
 #### 9. 在组件上使用时的行为
 
-`v-text` 用在组件标签上时，会将文本内容传递给组件的默认插槽（`slot`）。
+`v-text` 不是为组件设计的指令。用在单根组件上时，它只会随 attribute 透传机制落到组件的根元素上；多根组件则会失效，并不会把内容传给插槽。
 
 ```vue
 <template>
-  <!-- v-text 传递文本给组件的默认插槽 -->
+  <!-- ⚠️ 仅透传到 MyButton 的根元素，不是官方推荐用法 -->
   <MyButton v-text="buttonText" />
-  <!-- 等价于：<MyButton>{{ buttonText }}</MyButton> -->
+
+  <!-- ✅ 需要给组件传内容时，使用默认插槽 -->
+  <MyButton>{{ buttonText }}</MyButton>
 </template>
 
 <script setup lang="ts">
@@ -966,7 +973,7 @@ const buttonText = ref<string>('提交')
 </script>
 ```
 
-> 💡 **提示：** 如果组件没有默认插槽，`v-text` 传递的内容将被忽略。
+> 💡 **提示：** `v-text` 的官方定义只针对元素的 `textContent` 更新，给组件传内容请使用插槽。
 
 #### 10. 与其他指令的优先级
 

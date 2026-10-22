@@ -1,6 +1,6 @@
 # useTemplateRef
 
-> 📖 [官方文档 - useTemplateRef](https://cn.vuejs.org/api/composition-api-helpers#usetemplateref)
+> 📖 [官方文档 - useTemplateRef](https://cn.vuejs.org/api/composition-api-helpers.html#usetemplateref)
 
 ### 一、概述
 
@@ -22,7 +22,7 @@
 4. **生命周期绑定**：在 `onMounted` 之前，ref 的 `.value` 为 `null`；挂载完成后才可访问到真实的 DOM 元素或组件实例
 5. **更新同步**：当模板重新渲染导致引用的元素发生变化时，ref 的 `.value` 会自动更新
 
-```
+```text
 模板中 ref="inputEl"  <------字符串匹配------>  useTemplateRef('inputEl')
           |                                              |
     DOM 元素 / 组件实例  --------自动赋值-------->  shallowRef.value
@@ -55,10 +55,10 @@ function handleFocus() {
 </script>
 ```
 
-**等价的传统写法对比**
+**与 Vue 3.5 之前传统写法的对比**
 
 ```vue
-<!-- ❌ Vue 3.5 之前：使用 ref()，语义不明确 -->
+<!-- ⚠️ 传统写法（Vue 3.5 前唯一选择，目前仍可用）：语义不明确 -->
 <template>
   <input ref="inputEl" type="text" />
 </template>
@@ -234,7 +234,7 @@ onMounted(() => {
 
 | 返回值 | 类型 | 说明 |
 |--------|------|------|
-| 返回值 | `ShallowRef<T | null>` | 返回一个只读的浅层 ref，其 `.value` 在挂载前为 `null`，挂载后为对应的 DOM 元素或组件实例 |
+| 返回值 | `Readonly<ShallowRef<T \| null>>` | 返回一个只读的浅层 ref，其 `.value` 在挂载前为 `null`，挂载后为对应的 DOM 元素或组件实例 |
 
 > 💡 **提示：** `useTemplateRef` 返回的 ref 是**只读的**（readonly），你不应该手动修改它的 `.value`，Vue 会在内部自动管理。
 
@@ -994,17 +994,21 @@ inputEl.value = document.createElement('input')
 // 在模板渲染时，Vue 会自动将 DOM 元素赋值给 inputEl.value
 ```
 
-#### 6. v-for 中需要使用函数 ref
+#### 6. v-for 中的模板引用是数组
 
-当在 `v-for` 中获取多个元素引用时，不能直接使用 `useTemplateRef`，需要使用**函数 ref** 的方式手动收集。
+在 `v-for` 中使用 `ref` attribute 时，Vue 会把引用收集成**数组**赋给对应的 ref（官方文档也说明了这一点）。因此 `useTemplateRef` 在 `v-for` 中拿到的 `.value` 是一个元素数组，但**不保证与源数组的顺序一致**。如果需要让引用和数据项精确对应，应使用**函数 ref** 手动收集。
 
 ```vue
-<!-- ❌ v-for 中直接使用 ref 字符串只能获取最后一个元素 -->
+<!-- 方式一：字符串 ref，itemRef.value 是数组，顺序不保证 -->
 <template>
   <div v-for="item in items" :key="item.id" ref="itemRef">{{ item.name }}</div>
 </template>
+<script setup>
+import { useTemplateRef } from 'vue'
+const itemRef = useTemplateRef('itemRef') // Ref<(Element | ComponentPublicInstance)[] | null>
+</script>
 
-<!-- ✅ 使用函数 ref 收集所有元素 -->
+<!-- ✅ 方式二：函数 ref，按数据 id 精确收集 -->
 <template>
   <div v-for="item in items" :key="item.id" :ref="(el) => collectRef(el, item.id)">
     {{ item.name }}
@@ -1109,7 +1113,7 @@ function switchComponent() {
 </script>
 ```
 
-> ⚠️ **注意：** `useTemplateRef` 只能在 `<script setup>` 或 `setup()` 函数中使用，不能在普通的生命周期钩子外部或其他非组件上下文中调用。
+> ⚠️ **注意：** `useTemplateRef` 只能在 `<script setup>` 或 `setup()` 函数中同步调用，不能放在生命周期钩子回调、事件处理函数、`setTimeout` 等异步上下文中调用，否则拿不到当前组件实例并触发警告。
 
 ---
 
@@ -1147,4 +1151,4 @@ const inputEl = useTemplateRef<HTMLInputElement>('inputEl') // 更简洁的类�
 3. **使用简单**：只需传入与模板 `ref` attribute 一致的字符串即可，无需手动初始化 `null`
 4. **响应式更新**：当元素因条件渲染、动态组件等原因变化时，ref 会自动同步更新
 
-在实际开发中，`useTemplateRef` 适用于需要直接操作 DOM 元素的场景（如聚焦、滚动、Canvas 绑定）以及需要访问子组件实例的场景（如调用子组件方法）。结合 `onMounted`、`nextTick`、`watch` 等API 使用，可以安全高效地管理模板引用的整个生命周期。
+在实际开发中，`useTemplateRef` 适用于需要直接操作 DOM 元素的场景（如聚焦、滚动、Canvas 绑定）以及需要访问子组件实例的场景（如调用子组件方法）。结合 `onMounted`、`nextTick`、`watch` 等 API 使用，可以安全高效地管理模板引用的整个生命周期。

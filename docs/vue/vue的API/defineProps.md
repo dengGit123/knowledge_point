@@ -4,7 +4,7 @@
 
 `defineProps()` 是 `<script setup>` 中用于声明 props 的编译器宏。它不需要显式导入，可以在 `<script setup>` 中直接使用。用于接收从父组件传递过来的数据。
 
-📖 [官方文档 - defineProps / defineEmits](https://cn.vuejs.org/api/sfc-script-setup#defineprops-defineemits)
+📖 [官方文档 - defineProps / defineEmits](https://cn.vuejs.org/api/sfc-script-setup.html#defineprops-defineemits)
 
 ## 用法
 
@@ -138,8 +138,22 @@ watch(() => props.modelValue, (newVal) => {
 })
 
 // ✅ 可以直接在模板中使用
-// ❌ 但不要解构 props
-const { modelValue } = props // 会失去响应性
+// ❌ 二次解构 props 对象会失去响应性
+const { modelValue } = props // 之后 props.modelValue 再变化，modelValue 不会更新
+</script>
+```
+
+> 💡 **提示：** Vue 3.5+ 起，**直接**解构 `defineProps()` 的返回值是响应式的（编译器会把 `modelValue` 转换为 `props.modelValue` 的访问），还可以在解构时写默认值：
+
+```vue
+<script setup lang="ts">
+interface Props {
+  title: string
+  count?: number
+}
+
+// ✅ Vue 3.5+：直接解构保持响应性，默认值写在解构里（可替代 withDefaults）
+const { title, count = 0 } = defineProps<Props>()
 </script>
 ```
 
@@ -203,6 +217,8 @@ const props = defineProps({
 ```
 
 ### 与 v-model 配合
+
+> 💡 **提示：** 下面是 v-model 的传统实现方式。Vue 3.4+ 可以用 `defineModel()` 一行代替（见 defineModel 的说明）。
 
 ```vue
 <!-- 父组件 -->
@@ -274,7 +290,7 @@ const localCount = ref(props.count)
 </script>
 ```
 
-### 2. 解构会失去响应性
+### 2. 二次解构 props 对象会失去响应性
 
 ```vue
 <script setup>
@@ -283,12 +299,14 @@ const props = defineProps({
   message: String
 })
 
-// ❌ 解构会失去响应性
+// ❌ 二次解构 props 对象：count/message 是普通值，之后不再随 props 更新
 const { count, message } = props
 
-// ✅ 使用 toRefs 保持响应性
+// ✅ 方式一：始终通过 props.xxx 访问
+// ✅ 方式二：使用 toRefs 保持响应性
 import { toRefs } from 'vue'
 const { count, message } = toRefs(props)
+// ✅ 方式三（Vue 3.5+）：直接解构 defineProps() 的返回值（见上文"响应式 props"）
 </script>
 ```
 
@@ -368,26 +386,29 @@ defineProps({
 </script>
 ```
 
-### 7. TypeScript 类型限制
+### 7. 两种声明方式二选一
+
+`defineProps` 要么传**运行时声明**（对象/数组），要么传**类型参数**，不能同时使用：
 
 ```vue
 <script setup lang="ts">
-// ✅ 只能使用类型或构造函数
-defineProps<{
+// ✅ 方式一：运行时声明
+const props = defineProps({
+  title: String,
+  count: Number
+})
+
+// ✅ 方式二：类型声明（编译时推导出运行时 props）
+const props2 = defineProps<{
   title: string
   count: number
 }>()
 
-// ❌ 不能混合使用运行时声明
-defineProps<{
-  title: string
-  count: number
-} & {
-  // 类型声明和运行时声明不能混用
-  count: Number
-}>()
+// ❌ 错误：类型参数和运行时参数不能同时传
 </script>
 ```
+
+> 💡 **提示：** 类型声明由编译器静态分析，因此支持的字面量类型有限。Vue 3.3+ 起支持从其他文件**导入**的类型、接口 `extends` 以及有限的复杂类型（如索引访问）；依赖完整类型求值的高级类型（如条件类型）无法解析，会报 `Unresolvable type reference` 错误。此时应改用运行时声明配合 `PropType`。
 
 ### 8. 使用 PropType
 

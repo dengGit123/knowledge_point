@@ -21,10 +21,10 @@
 具体来说：
 
 1. **根级属性追踪**：当你读取或修改 `state.foo` 这样的根级属性时，Vue 会正常触发依赖收集（getter）和派发更新（setter），与 `reactive()` 行为一致。
-2. **嵌套对象不追踪**：当你读取 `state.nested` 时，返回的是原始的普通对象，而不是一个 Proxy。因此对 `state.nested.bar` 的任何修改都不会触发响应式更新。
+2. **嵌套对象不追踪**：当你读取 `state.nested` 时，返回的是存储的原始对象本身（若该属性原本就是一个响应式代理，则原样返回），不会再包一层 Proxy。因此对普通嵌套对象 `state.nested.bar` 的任何修改都不会触发响应式更新。
 3. **替换嵌套对象可追踪**：当你将 `state.nested` 整体替换为一个新对象时（`state.nested = { bar: 3 }`），这个操作发生在根级属性的 setter 上，所以**会触发响应式更新**。
 
-```
+```text
 shallowReactive({ foo: 1, nested: { bar: 2 } })
 
 结构示意：
@@ -71,7 +71,7 @@ state.nested = { bar: 3 }
 
 ##### 2.1 搭配 `ref` 实现选择性深层响应
 
-当你希望大部分嵌套数据不需要响应式追踪，但某个特定属性又需要深层响应时，可以将该属性声明为 `ref`。
+当你希望大部分嵌套数据不需要响应式追踪，但某个特定属性又需要深层响应时，可以将该属性声明为 `ref`。注意：与 `reactive()` 不同，`shallowReactive()` 不会自动解包 ref，所以要通过 `.value` 访问。
 
 ```typescript
 import { shallowReactive, ref } from 'vue'
@@ -683,19 +683,19 @@ const state = shallowReactive({
 </script>
 ```
 
-#### 4. 不要在 `shallowReactive` 中嵌套 `reactive` 对象
+#### 4. 浅层结构只作为根级状态，避免与深层响应式对象互相嵌套
 
-将 `reactive()` 创建的对象作为 `shallowReactive()` 的嵌套属性，会导致行为混乱，且 `reactive` 对象在赋值给 `shallowReactive` 时会被自动解包。
+官方建议：浅层数据结构应该只用于组件中的根级状态，避免将其嵌套在深层次的响应式对象中，否则会形成响应行为不一致的树，难以理解和调试。反过来，把 `reactive()` 对象作为 `shallowReactive()` 的嵌套属性时，该属性自身仍然是响应式的（不会失效），但混用会让响应式规则变得混乱，同样不推荐。
 
 ```typescript
-import { shallowReactive, reactive } from 'vue'
+import { shallowReactive, reactive, ref } from 'vue'
 
-// ❌ 不推荐：行为不可预测
+// ⚠️ 嵌套的 reactive 对象自身仍能正常触发更新，但混合使用风格混乱，不推荐
 const state = shallowReactive({
   nested: reactive({ count: 0 })
 })
 
-// ✅ 方案一：统一使用 reactive（需要深层响应时）
+// ✅ 方案一：需要深层响应时，统一使用 reactive
 const state1 = reactive({ nested: { count: 0 } })
 
 // ✅ 方案二：统一使用 shallowReactive + 替换引用
@@ -703,7 +703,7 @@ const state2 = shallowReactive({ nested: { count: 0 } })
 state2.nested = { count: 1 }
 
 // ✅ 方案三：shallowReactive + ref（需要特定属性深层响应时）
-import { ref } from 'vue'
+// 注意 shallowReactive 不会解包 ref，要通过 .value 访问
 const state3 = shallowReactive({
   nested: ref({ count: 0 })
 })
@@ -846,7 +846,7 @@ state.nested = { ...state.nested, count: 1 } // 触发
 | 嵌套对象响应式 | ✅ 递归代理 | ❌ 原始对象 | ❌ 原始对象 | ✅ 递归代理 |
 | 性能开销 | 较高 | 较低 | 最低 | 中等 |
 | 手动触发更新 | 不需要 | 需替换引用 | `triggerRef()` | 不需要 |
-| 适用数据类型 | 对象 | 对象 | 任意类型 | 任意类型 |
+| 适用数据类型 | 对象 / 数组 / 集合 | 对象 / 数组 / 集合 | 任意类型 | 任意类型 |
 | 解构丢失响应式 | ✅ 会丢失 | ✅ 会丢失 | ✅ 会丢失 | ✅ 会丢失 |
 | 典型场景 | 通用响应式 | 大型数据性能优化 | 大型数据性能优化 | 基础响应式值 |
 

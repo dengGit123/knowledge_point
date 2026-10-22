@@ -90,7 +90,7 @@ nextTick（微任务）flush 队列
 组件重新渲染 → 生成新 vnode → patch 比对 → 更新 DOM
 ```
 
-> 这部分原理详见 [Vue 3 响应式原理](./vue3的响应式原理.md)。
+> 补充一句原理：trigger 找到的是依赖该数据的组件 render effect；Vue 把它交给**调度器**放进微任务队列异步批处理（这也是 `nextTick` 的由来），而不是同步操作 DOM。
 
 ---
 
@@ -218,103 +218,83 @@ const total = computed(() => props.price * props.count)
 
 ### 3. 引用类型 props 的更新检测（重点）
 
-这是最容易踩坑的地方。Vue 在判断 props 是否变化时，用的是**浅比较（引用比较）**，即 `Object.is(oldProp, newProp)`。
+这是最容易踩坑的地方。先分清两个层面，很多"子组件没更新"的困惑都源于把它们混为一谈：
+
+- **props 层面**：父组件重渲染后，Vue 用**浅比较**（`Object.is`）对比新旧 props，决定是否触发子组件更新——基本类型比值，引用类型比引用。
+- **响应式层面**：如果传的是被 `ref` / `reactive` 包装的对象，父子组件拿到的是**同一个 Proxy**，深层属性修改会**直接**触发子组件更新，**不需要换引用**。
 
 #### 基本类型：值变了就更新
 
 ```vue
-<!-- 父组件传基本类型 -->
-<Child :count="0" />   <!-- 引用 1 -->
-<Child :count="0" />   <!-- 引用 2，但值相等，不更新 -->
+<Child :count="count" />  <!-- count 从 0 变 1，浅比较发现不同 → 子组件更新 -->
 ```
 
-#### 引用类型：必须「引用」变了才更新
+#### 引用类型：响应式对象的深层修改，同样会更新
 
 ```vue
 <!-- Parent.vue -->
 <script setup>
 import { ref } from 'vue'
 
-// 用 ref 包裹一个对象
+// 用 ref 包裹对象，user.value 是响应式代理
 const user = ref({ name: 'Tom', age: 18 })
 
-// ❌ 直接修改对象的属性：引用没变！
+// ✅ 只改内部属性：引用没变，但 user 是响应式代理，深层修改会直接触发子组件更新
 function updateAge() {
   user.value.age = 20
 }
-
-// ✅ 替换整个对象：引用变了！
-function replaceUser() {
-  user.value = { name: 'Tom', age: 20 }
-}
 </script>
 
 <template>
-  <Child :user="user" @update="updateAge" />
-  <button @click="replaceUser">替换整个对象</button>
+  <Child :user="user" />
 </template>
 ```
 
-#### 但是！reactive 对象作为 props 传递时，深层修改是响应式的
-
-这里有个重要的细节：如果父组件传给子组件的是一个 `reactive` 对象（或 `ref` 包裹的对象的 `.value`），那么**子组件直接使用这个对象的属性时，深层修改也是响应式的**——因为父子组件拿到的是**同一个响应式代理（Proxy）对象**。
-
-```vue
-<!-- Parent.vue -->
-<script setup>
-import { reactive } from 'vue'
-import Child from './Child.vue'
-
-const state = reactive({ count: 0 })
-
-function increment() {
-  state.count++  // 修改内部属性，引用没变
-}
-</script>
-
-<template>
-  <button @click="increment">+1</button>
-  <!-- 把 reactive 对象传给子组件 -->
-  <Child :data="state" />
-</template>
-
-<!-- Child.vue -->
-<script setup>
-defineProps<{ data: { count: number } }>()
-</script>
-
-<template>
-  <!-- ✅ 这里能响应式更新！因为 data 就是父组件的 state（同一个 Proxy） -->
-  <p>{{ data.count }}</p>
-</template>
-```
-
-**为什么会这样？**
+能更新的原因——父子共享同一个 Proxy：
 
 ```
-父组件的 state（Proxy 代理对象）
+父组件的 user（Proxy 代理对象）
         │
         │  传递给子组件时，传的是同一个对象引用
         ▼
-子组件的 props.data  ──→  指向同一个 Proxy
+子组件的 props.user  ──→  指向同一个 Proxy
 ```
 
-由于 `state` 是响应式代理，无论在父组件还是子组件中访问 `state.count`，都会触发依赖收集。父组件修改 `state.count` 时，所有依赖（包括子组件的 render effect）都会被触发。
+子组件模板里读取 `props.user.age` 时，子组件的 render effect 被收集为 `age` 的依赖；父组件修改 `user.value.age` 时，这个依赖被**直接触发**——整条链路不经过 props 浅比较。
 
-> ⚠️ **注意**：虽然这种写法"能工作"，但**违反了单向数据流的最佳实践**！因为子组件也能直接改 `props.data.count`，导致数据来源混乱。**推荐做法**：父组件传基本类型，子组件需要修改时通过 `emit` 通知父组件。
+#### 什么时候才需要「替换整个引用」
+
+只有当传的是**非响应式对象**（未经 `ref` / `reactive` 包装的普通对象、`markRaw` 标记的、`Object.freeze` 冻结的）时，深层修改才不会触发任何更新：
+
+```js
+// ❌ 普通对象：改属性不触发任何更新
+const user = { name: 'Tom' }
+user.name = 'Jerry'
+
+// ✅ 包上响应式，深层修改即可触发（推荐）
+const user1 = reactive({ name: 'Tom' })
+user1.name = 'Jerry'
+
+// ✅ 或整体替换引用（ref 对 .value 赋值本身是响应式的）
+const user2 = ref({ name: 'Tom' })
+user2.value = { name: 'Jerry' }
+```
+
+> ⚠️ **注意**：虽然"子组件直接用 / 改对象 props"能工作，但**违反了单向数据流的最佳实践**！因为子组件也能直接改 `props.user.name`，导致数据来源混乱。**推荐做法**：父组件传基本类型，子组件需要修改时通过 `emit` 通知父组件。
 
 ### 4. props 解构的响应式问题（Vue 3.5+ 已修复）
 
 ```vue
 <script setup>
-// ❌ Vue 3.4 及更早版本：解构后会丢失响应式
+// ❌ Vue 3.4 及更早版本：解构后拿到的是当时的普通值，后续更新会丢失
 const { count } = defineProps<{ count: number }>()
-// 这里 count 是一个普通值，父组件更新时这里不会变
 
 // ✅ Vue 3.5+：响应式 props 解构（Reactive Props Destructure）正式稳定
-// 解构出的变量默认保持响应式，可以直接在 watch / computed 中使用
+// 编译器会把解构变量重写为 props.keyword，模板 / computed / watchEffect 中都保持响应式
 const { keyword } = defineProps<{ keyword: string }>()
-watch(keyword, (val) => {  // Vue 3.5+ 可直接监听解构变量
+
+// ⚠️ watch 必须传 getter，不能直接传解构变量（它在 setup 时只求值一次）
+watch(() => keyword, (val) => {
   console.log(val)
 })
 </script>
@@ -323,7 +303,7 @@ watch(keyword, (val) => {  // Vue 3.5+ 可直接监听解构变量
 | 版本 | 解构 props 的响应式 | 处理方式 |
 |------|---------------------|---------|
 | Vue 3.0 ~ 3.4 | ❌ 解构后丢失响应式 | 用 `props.xxx` 访问，或 `toRefs` 转换 |
-| Vue 3.5+ | ✅ 默认保持响应式 | 可直接解构使用 |
+| Vue 3.5+ | ✅ 默认保持响应式 | 可直接解构使用；`watch` 仍需传 getter（`() => keyword`） |
 
 > 💡 **建议**：为了兼容性，**始终通过 `props.xxx` 的方式访问**，避免解构带来的歧义。
 
@@ -585,43 +565,33 @@ onUpdated(() => {
 
 ### 陷阱 1：父组件数据变了，子组件没更新
 
-#### 原因一：传递的是引用类型，但只改了内部属性
+#### 原因一：传的是非响应式对象，只改了内部属性
 
 ```vue
 <!-- Parent.vue -->
 <script setup>
-import { ref } from 'vue'
-
-// ❌ ref 包裹对象，修改内部属性，引用没变
-const info = ref({ name: 'Tom' })
+// ❌ 普通（非响应式）对象：深层修改不会触发任何更新
+const info = { name: 'Tom' }
 
 function changeName() {
-  info.value.name = 'Jerry'  // 引用没变！
+  info.name = 'Jerry'  // 改了，但没人知道
 }
 </script>
 
 <template>
-  <!-- 如果子组件用 Object.is 判断，可能不更新（取决于子组件如何使用） -->
-  <Child :info="info" />
+  <Child :info="info" />  <!-- 子组件不更新 -->
 </template>
 ```
 
 **解决方案**：
 
-```vue
-<script setup>
-import { ref } from 'vue'
-
+```js
+// ✅ 方案一：用 ref / reactive 包装，深层修改直接响应（推荐）
 const info = ref({ name: 'Tom' })
+info.value.name = 'Jerry'  // 子组件更新
 
-function changeName() {
-  // ✅ 方案一：替换整个对象
-  info.value = { name: 'Jerry' }
-
-  // ✅ 方案二：用 reactive，深层修改自动响应
-  // （见下文）
-}
-</script>
+// ✅ 方案二：整体替换引用（ref 对 .value 赋值本身是响应式的）
+info.value = { name: 'Jerry' }
 ```
 
 #### 原因二：使用了 `v-once` 或 `v-memo`
@@ -751,23 +721,25 @@ function handleClick() {
 </script>
 ```
 
-### 陷阱 5：computed 缓存导致的"不更新"
+### 陷阱 5：误以为 computed"不更新"
+
+`computed` 依赖不变时返回缓存，这是正常行为，不是 bug：
 
 ```vue
 <script setup>
 import { ref, computed } from 'vue'
 
 const list = ref([1, 2, 3])
-
-// ❌ computed 有缓存，依赖不变就不重算
 const summary = computed(() => list.value.join(','))
 
 function addItem() {
-  // 直接改 length 不会触发响应式（数组也有限制）
-  list.value.push(4)  // ✅ push 是响应式的
+  list.value.push(4)  // ✅ push 是响应式的，summary 会重算
+  // Vue 3 中 list.value.length = 4 同样能触发更新（Proxy 拦截，Vue 2 才有此限制）
 }
 </script>
 ```
+
+如果 `summary` 真的"没更新"，排查依赖是否真的变化，或依赖是否因解构丢失了响应性。
 
 ---
 
@@ -827,7 +799,7 @@ function forceUpdate() {
 │  ① 父组件修改响应式数据（如 count.value++）                     │
 │           │                                                    │
 │           ▼                                                    │
-│  ② Proxy 的 set 拦截 → trigger(count, 'value')                 │
+│  ② count（ref）的 setter 触发 trigger；reactive 则是 Proxy set  │
 │           │                                                    │
 │           ▼                                                    │
 │  ③ 找到依赖该数据的 effect（父组件 render effect）              │
@@ -873,18 +845,17 @@ function forceUpdate() {
 
 从以下几个方向排查：
 
-1. **引用类型 props**：是否只改了内部属性而没换引用？用 `reactive` 或替换整个对象。
+1. **数据是否响应式**：传的对象是否被 `ref` / `reactive` 包装？非响应式对象（含 `markRaw`、`Object.freeze`）的深层修改不触发更新。
 2. **是否用了 `v-once` / `v-memo`**：检查模板里是否禁用了更新。
-3. **数据是否响应式**：是否用了 `markRaw` / `Object.freeze`，或数据来自非响应式源。
-4. **解构问题（Vue 3.4 及以下）**：解构 props 是否丢失了响应式。
-5. **`computed` 缓存**：依赖是否真的变化了。
+3. **解构问题（Vue 3.4 及以下）**：解构 props 是否丢失了响应式。
+4. **`computed` 缓存**：依赖是否真的变化了。
 
 ### Q2：子组件怎么监听 props 的变化？
 
 - 用 `watch(() => props.xxx, callback)` 监听具体属性
 - 用 `watchEffect` 自动追踪
 - 监听对象内部变化要加 `{ deep: true }`，或只监听具体子属性
-- Vue 3.5+ 可以直接解构 props 后监听
+- Vue 3.5+ 解构 props 保持响应式，但 `watch` 要用 getter（`() => keyword`）
 
 ### Q3：父子组件更新的执行顺序是怎样的？
 
@@ -920,8 +891,8 @@ function forceUpdate() {
 |------|---------|
 | **数据流向** | 单向：父 → 子（props），子 → 父（emit） |
 | **子组件更新的根本原因** | 父组件重新渲染，把新值作为 props 传下来 |
-| **props 变化检测** | 浅比较（`Object.is`），引用类型需换引用才更新 |
-| **reactive 对象作 props** | 深层修改也响应式（同一 Proxy），但不推荐 |
+| **props 变化检测** | props 层面浅比较（`Object.is`）；响应式对象深层修改直接触发，无需换引用 |
+| **reactive 对象作 props** | 深层修改也响应式（同一 Proxy），但子组件直接改它违反单向数据流 |
 | **监听 props 变化** | `watch` / `watchEffect` / `computed` |
 | **更新顺序** | 由内向外：子组件先 updated，父组件最后 updated |
 | **更新时机** | 异步批处理，用 `nextTick` 等待 DOM 更新 |

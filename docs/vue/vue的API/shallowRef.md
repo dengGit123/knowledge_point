@@ -11,7 +11,7 @@
 ### 基本用法
 
 ```javascript
-import { shallowRef, triggerRef } from 'vue'
+import { shallowRef } from 'vue'
 
 const state = shallowRef({
   count: 0,
@@ -30,6 +30,8 @@ state.value = {
 state.value.count++ // 不会触发更新
 state.value.nested.value = 'changed' // 不会触发更新
 ```
+
+💡 与 ref() 不同：shallowRef 的内部值会原样存储和暴露，即使整体替换 `.value`，新对象也不会被深层转为响应式。
 
 ### 触发更新
 
@@ -288,16 +290,16 @@ const state = shallowRef({
   count: 0
 })
 
-// ❌ 深层 watch 不会工作
+// ⚠️ getter 只在 .value 被替换时才会重新执行
 watch(
   () => state.value.count,
   (val) => console.log('count changed:', val)
 )
 
-state.value.count++ // 不触发
+state.value.count++ // 不触发（内部修改不会让浅层 ref 触发）
 
-// ✅ 需要替换整个值
-state.value = { count: 1 } // 触发
+// ✅ 替换整个值后触发，输出 count changed: 1
+state.value = { count: 1 }
 ```
 
 ### 5. 在模板中使用
@@ -463,7 +465,7 @@ function deleteUser(id) {
 
 ```vue
 <script setup>
-import { shallowRef } from 'vue'
+import { shallowRef, onMounted } from 'vue'
 
 // 初始值（不需要深层响应式）
 const initialValues = shallowRef({
@@ -688,7 +690,7 @@ function switchRenderer(newRenderer) {
 
 ```vue
 <script setup>
-import { shallowRef } from 'vue'
+import { shallowRef, onMounted } from 'vue'
 
 // 对于 DOM 引用，shallowRef 比 ref 更高效
 const canvasRef = shallowRef(null)

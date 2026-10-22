@@ -1,6 +1,6 @@
 ### markRaw
 
-> 📖 [官方文档 - markRaw](https://cn.vuejs.org/api/reactivity-advanced#markraw)
+> 📖 [官方文档 - markRaw](https://cn.vuejs.org/api/reactivity-advanced.html#markraw)
 
 ---
 
@@ -12,7 +12,7 @@
 
 ### 二、核心原理
 
-Vue 3 的响应式系统基于 `Proxy` 代理实现。当你把一个普通对象传给 `reactive()` 时，Vue 会递归地遍历对象的所有嵌套属性，将它们全部包装成响应式代理。这个过程会带来两方面的代价：
+Vue 3 的响应式系统基于 `Proxy` 代理实现。当你把一个普通对象传给 `reactive()` 时，Vue 会把它包装成 Proxy 代理，嵌套对象在被访问时也会逐层转为代理。这个过程会带来两方面的代价：
 
 1. **性能开销**：深层嵌套的对象需要递归代理，大量数据时会产生明显的性能损耗
 2. **功能冲突**：某些对象（如 DOM 元素、第三方库实例）本身不适合被代理，代理后可能导致功能异常
@@ -723,12 +723,12 @@ const newObj = { ...obj }
 const state2 = reactive({ obj: newObj }) // newObj 是响应式的
 ```
 
-2. **标记仅影响对象本身**
+2. **标记仅作用于传入的对象**
 
-> ⚠️ **注意：** `markRaw()` 只标记传入的那个对象引用，**不会递归标记其内部嵌套的对象**。
+> ⚠️ **注意：** `markRaw()` 只给传入的那个对象加标记，不会给它的嵌套对象加标记。不过由于该对象自身不会被转成代理，通过它访问到的嵌套对象也**不会被代理**，整个子树都保持非响应式。
 
 ```ts
-import { reactive, markRaw } from 'vue'
+import { reactive, markRaw, isReactive } from 'vue'
 
 const outer = markRaw({
   inner: { count: 0 }
@@ -736,16 +736,22 @@ const outer = markRaw({
 
 const state = reactive({ data: outer })
 
-// outer 没有被代理
+// outer 没有被代理，state.data 就是 outer 本身
 console.log(state.data === outer) // true
 
-// ❌ 但 inner 会被代理！
-state.data.inner.count++ // 会触发响应式更新
+// ✅ 通过 outer 访问到的 inner 同样没有被代理
+console.log(isReactive(state.data.inner)) // false
+state.data.inner.count++ // 不会触发视图更新
+
+// ⚠️ 但如果同一个 inner 又被一个「未标记」的对象引用，
+// 在那条访问路径上它仍会被代理
+const other = reactive({ inner: outer.inner })
+console.log(isReactive(other.inner)) // true
 ```
 
-3. **不要在响应式对象内部调用 markRaw**
+3. **不要对代理对象调用 markRaw**
 
-> ⚠️ **注意：** 如果在 `reactive()` 返回的对象上直接调用 `markRaw()`，它会静默失效。这是因为 `markRaw` 应该作用于原始对象，而非已经被代理的对象。
+> ⚠️ **注意：** 如果在 `reactive()` 返回的代理对象上直接调用 `markRaw()`，它不会让对象「变回」原始对象，已经存在的代理依然保持响应式。`markRaw` 应该在对象进入响应式系统**之前**调用。
 
 ```ts
 import { reactive, markRaw } from 'vue'
@@ -753,13 +759,13 @@ import { reactive, markRaw } from 'vue'
 const state = reactive({ count: 0 })
 
 // ❌ 在代理对象上调用 markRaw 无实际意义
-// state 已经是 Proxy，markRaw 标记的是 Proxy 而非原始对象
-markRaw(state) // 不推荐，效果不可靠
+// state 已经是 Proxy，代理不会因此消失
+markRaw(state) // 不推荐
 ```
 
 4. **只适用于引用类型**
 
-> ⚠️ **注意：** `markRaw()` 只接收对象类型参数。传入原始值（`string`、`number`、`boolean`、`null`、`undefined`）虽然不会报错，但没有实际意义。
+> ⚠️ **注意：** `markRaw()` 的类型签名要求对象类型（`T extends object`）。运行时即使传入原始值（`string`、`number`、`boolean` 等）也不会报错，只是原样返回——但原始值本身就不参与响应式代理，这样做没有意义。
 
 ```ts
 import { markRaw } from 'vue'

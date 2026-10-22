@@ -336,8 +336,8 @@ function handleScroll(e) {
   <!-- ❌ 不推荐：简单内容不需要 v-memo -->
   <div v-memo="[count]">{{ count }}</div>
 
-  <!-- ✅ 推荐：只在渲染开销大的场景使用 -->
-  <ComplexChart v-memo="[chartConfig]" :config="chartConfig" />
+  <!-- ✅ 推荐：只在渲染开销大的场景使用，依赖用原始值 -->
+  <ComplexChart v-memo="[chartType, datasetId]" :config="chartConfig" />
 </template>
 ```
 
@@ -368,6 +368,29 @@ function handleScroll(e) {
   </div>
 </template>
 ```
+
+### 5. 与 v-for 一起使用
+
+官方明确警告：**当搭配 `v-for` 使用 `v-memo` 时，确保两者都绑定在同一个元素上**，`v-memo` 不能用在 `v-for` 内部：
+
+```vue
+<template>
+  <!-- ✅ v-memo 和 v-for 绑定在同一个元素上 -->
+  <div v-for="item in list" :key="item.id" v-memo="[item.selected]">
+    {{ item.name }}
+  </div>
+
+  <!-- ❌ v-memo 用在 v-for 内部的元素上 -->
+  <div v-for="item in list" :key="item.id">
+    <span v-memo="[item.selected]">{{ item.name }}</span>
+  </div>
+</template>
+```
+
+另外两点：
+
+- 依赖数组不需要包含 `item.id`，Vue 会根据 `:key` 进行判断，官方示例正是 `v-memo="[item.id === selected]"`
+- 依赖数组必须正确覆盖子树中所有的动态绑定，如果子树中有其他会变化的数据没有进入依赖数组，它们的变化会被跳过，造成「该更新不更新」的 bug
 
 ## 最佳实践
 

@@ -2,7 +2,7 @@
 
 > 本文档全面介绍 Vue 3 中 h 函数和 render 函数的使用，帮助你深入理解 Vue 的渲染机制。
 
-## 目录
+### 目录
 
 - [一、基础概念](#一基础概念)
 - [二、h 函数详解](#二h-函数详解)
@@ -16,13 +16,13 @@
 
 ---
 
-## 一、基础概念
+### 一、基础概念
 
-### 1.1 什么是虚拟 DOM（Virtual DOM）
+#### 1.1 什么是虚拟 DOM（Virtual DOM）
 
 虚拟 DOM（Virtual DOM）是真实 DOM 的 JavaScript 对象表示，它是 Vue 渲染机制的核心。
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                         渲染流程                              │
 ├─────────────────────────────────────────────────────────────┤
@@ -86,7 +86,7 @@
 | **批量更新** | 合并多次操作 | 一次性更新 DOM |
 | **可测试性** | 纯 JavaScript 对象 | 易于测试和调试 |
 
-### 1.2 什么是 h 函数
+#### 1.2 什么是 h 函数
 
 **h** 是 **hyperscript** 的缩写，意思是"能生成 HTML 的 JavaScript"。h 函数是 Vue 提供的工具函数，用于创建虚拟节点（VNode）。
 
@@ -102,7 +102,7 @@ h(type, props, children)
 
 **命名由来**：
 
-```
+```text
 HyperScript
     ↓
     能生成 HTML 的脚本
@@ -110,7 +110,7 @@ HyperScript
     简写为 "h"
 ```
 
-### 1.3 什么是 render 函数
+#### 1.3 什么是 render 函数
 
 render 函数是 Vue 组件的一个选项，它返回虚拟 DOM 树。Vue 渲染组件时会优先使用 render 函数，如果没有 render 函数才会将 template 编译后执行。
 
@@ -122,9 +122,9 @@ export default {
 }
 ```
 
-### 1.4 为什么需要学习 h 函数和 render 函数？
+#### 1.4 为什么需要学习 h 函数和 render 函数？
 
-```
+```text
 学习 h 函数和 render 函数的价值：
 
 ┌────────────────────────────────────────────────────────┐
@@ -138,9 +138,9 @@ export default {
 
 ---
 
-## 二、h 函数详解
+### 二、h 函数详解
 
-### 2.1 基本语法
+#### 2.1 基本语法
 
 ```javascript
 import { h } from 'vue'
@@ -154,7 +154,7 @@ h(type, props?, children?)
 // children → string | array | object | null（可选）
 ```
 
-### 2.2 type 参数（类型参数）
+#### 2.2 type 参数（类型参数）
 
 type 参数决定了创建什么类型的虚拟节点。
 
@@ -205,16 +205,13 @@ h(Suspense, {}, {
   default: () => h(AsyncComp),
   fallback: () => h('div', '加载中...')
 })
-
-// ========== 9. null（空节点） ==========
-h(null)  // 不渲染任何内容
 ```
 
-### 2.3 props 参数（属性参数）- 完整指南
+#### 2.3 props 参数（属性参数）- 完整指南
 
 props 参数是 h 函数的第二个参数，用于设置元素或组件的各种属性。
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      props 对象结构                          │
 ├─────────────────────────────────────────────────────────────┤
@@ -234,7 +231,7 @@ props 参数是 h 函数的第二个参数，用于设置元素或组件的各�
 │                                                             │
 │    // 事件监听（on 前缀）                                    │
 │    onClick: () => {},                                       │
-│    onKeyupEnter: () => {},                                  │
+│    onKeyup: () => {},                                       │
 │                                                             │
 │    // 组件 props                                            │
 │    title: '标题',                                           │
@@ -250,7 +247,7 @@ props 参数是 h 函数的第二个参数，用于设置元素或组件的各�
 └─────────────────────────────────────────────────────────────┘
 ```
 
-#### 2.3.1 Props 参数分类表
+##### 2.3.1 Props 参数分类表
 
 | 类别 | 前缀/格式 | 说明 | 示例 |
 |------|----------|------|------|
@@ -262,7 +259,7 @@ props 参数是 h 函数的第二个参数，用于设置元素或组件的各�
 | **组件 props** | 无 | 传递给组件的数据 | `title`, `count` |
 | **特殊属性** | 无 | Vue 特殊属性 | `key`, `ref`, `slot` |
 
-#### 2.3.2 DOM 属性
+##### 2.3.2 DOM 属性
 
 ```javascript
 import { h } from 'vue'
@@ -325,30 +322,21 @@ h('div', {
 })
 ```
 
-#### 2.3.3 布尔属性
+##### 2.3.3 布尔属性
 
 布尔属性的值若为 `false`，该属性会被移除；若为 `true`，属性会被保留。
 
 ```javascript
 import { h } from 'vue'
 
-// 布尔属性列表
-h('button', {
-  disabled: false,    // 属性不存在（等价于不设置）
-  disabled: true,     // 属性存在（<button disabled>）
-  hidden: false,      // 元素可见
-  hidden: true,       // 元素隐藏
-  readonly: true,     // 只读
-  checked: true,      // 选中
-  selected: true,     // 选中
-  multiple: true,     // 多选
-  autoplay: true,     // 自动播放
-  controls: true,     // 显示控件
-  loop: true,         // 循环播放
-  muted: true,        // 静音
-  required: true,     // 必填
-  allowfullscreen: true  // 允许全屏
-})
+// disabled: false → 属性被移除；disabled: true → 属性存在（<button disabled>）
+h('button', { disabled: false })
+h('button', { disabled: true })
+
+// 常见布尔属性：hidden / readonly / checked / selected / multiple /
+// autoplay / controls / loop / muted / required / allowfullscreen
+h('input', { readonly: true, required: true })
+h('video', { controls: true, loop: true, muted: true, autoplay: true })
 
 // 动态布尔属性示例
 export default {
@@ -375,7 +363,7 @@ export default {
 }
 ```
 
-#### 2.3.4 class 属性
+##### 2.3.4 class 属性
 
 class 属性支持字符串、数组、对象三种形式，以及它们的混合使用。
 
@@ -456,7 +444,7 @@ export default {
 }
 ```
 
-#### 2.3.5 style 属性
+##### 2.3.5 style 属性
 
 style 属性支持对象和数组形式，使用驼峰命名法。
 
@@ -554,12 +542,12 @@ export default {
 }
 ```
 
-#### 2.3.6 事件属性
+##### 2.3.6 事件属性
 
 事件属性以 `on` 开头，后跟事件名（首字母大写）。
 
 ```javascript
-import { h } from 'vue'
+import { h, withModifiers } from 'vue'
 
 // ========== 基本事件 ==========
 h('button', {
@@ -583,9 +571,8 @@ h('input', {
 })
 
 // ========== 事件修饰符规则 ==========
-// 格式：on + 事件名 + 修饰符
-// 链式：on + 事件名 + 修饰符1 + 修饰符2 + ...
-
+// 只有 .capture / .once / .passive 可以驼峰拼进事件名（运行时转成
+// addEventListener 的 capture / once / passive 选项）
 h('div', {
   // 捕获模式（在捕获阶段触发，而非冒泡阶段）
   onClickCapture: () => console.log('捕获阶段点击'),
@@ -595,29 +582,27 @@ h('div', {
 
   // 被动模式（提升滚动性能，不能调用 preventDefault）
   onWheelPassive: () => {},
-  onTouchstartPassive: () => {},
-
-  // 按键修饰符
-  onKeyupEnter: () => console.log('回车键'),
-  onKeyupEscape: () => console.log('ESC 键'),
-  onKeyupSpace: () => console.log('空格键'),
-  onKeyupTab: () => console.log('Tab 键'),
-  onKeyupDelete: () => console.log('Delete/Backspace 键'),
-
-  // 组合按键
-  onKeyupCtrlEnter: () => console.log('Ctrl + Enter'),
-  onKeyupShiftEscape: () => console.log('Shift + ESC'),
-  onKeyupAltS: () => console.log('Alt + S'),
-
-  // 鼠标修饰符
-  onClickLeft: () => console.log('左键'),
-  onClickRight: () => console.log('右键'),
-  onClickMiddle: () => console.log('中键'),
-
-  // 精确修饰符（只按下该按键，无其他组合）
-  onClickCtrlExact: () => console.log('只按 Ctrl，没按其他键'),
-  onKeyupShiftExact: () => console.log('只按 Shift')
+  onTouchstartPassive: () => {}
 })
+
+// ========== 其它修饰符：必须用 withModifiers 包装 ==========
+// 按键、鼠标按键、组合键、精确修饰符都没有命名规则，
+// 模板里 @keyup.enter 也是编译器帮你转成 withModifiers 的
+
+// @keyup.enter
+h('input', { onKeyup: withModifiers(() => console.log('回车键'), ['enter']) })
+
+// @keyup.ctrl.enter —— 修饰符依次列出
+h('input', { onKeyup: withModifiers(() => console.log('Ctrl + Enter'), ['ctrl', 'enter']) })
+
+// @click.right（鼠标右键）
+h('button', { onClick: withModifiers(() => console.log('右键'), ['right']) })
+
+// @click.ctrl.exact（只按下 Ctrl，无其它组合键）
+h('button', { onClick: withModifiers(() => console.log('只按 Ctrl'), ['ctrl', 'exact']) })
+
+// ❌ 不存在 onKeyupEnter 这种写法：事件名会被转成 keyupenter，永远不会触发
+h('input', { onKeyupEnter: handler })
 
 // ========== 常用事件列表 ==========
 const mouseEvents = {
@@ -694,8 +679,11 @@ export default {
         onInput: (e) => {
           this.formData.password = e.target.value
         },
-        onKeyupEnter: () => {
-          this.handleSubmit()
+        onKeyup: (e) => {
+          // 回车提交（渲染函数没有 onKeyupEnter 的命名规则）
+          if (e.key === 'Enter') {
+            this.handleSubmit()
+          }
         }
       }),
       h('button', { type: 'submit' }, '登录')
@@ -704,7 +692,7 @@ export default {
 }
 ```
 
-#### 2.3.7 组件 Props
+##### 2.3.7 组件 Props
 
 传递给组件的属性直接写在 props 对象中。
 
@@ -798,7 +786,7 @@ h(MyButton, {
 })
 ```
 
-#### 2.3.8 组件事件（emits）
+##### 2.3.8 组件事件（emits）
 
 组件事件使用 `on` + 事件名的形式。
 
@@ -898,8 +886,10 @@ export default {
         onInput: (e) => {
           this.$emit('update:modelValue', e.target.value)
         },
-        onKeyupEnter: () => {
-          this.$emit('search')
+        onKeyup: (e) => {
+          if (e.key === 'Enter') {
+            this.$emit('search')
+          }
         }
       }),
       h('button', {
@@ -912,7 +902,7 @@ export default {
 }
 ```
 
-#### 2.3.9 特殊属性
+##### 2.3.9 特殊属性
 
 Vue 有一些特殊属性，用于控制组件行为。
 
@@ -949,19 +939,21 @@ export default {
         }
       }, '聚焦输入框'),
 
-      // ref_for（配合 v-for 使用）
+      // ref 函数形式：每次挂载/更新都会用元素调用一次
       ...items.map((item, index) =>
         h('div', {
-          ref: (el) => { console.log('元素:', el, '索引:', index) },
-          ref_for: true
+          ref: (el) => { console.log('元素:', el, '索引:', index) }
         })
       ),
 
-      // ========== slot ==========
-      // 指定插槽名称
-      h(MyComponent, {
-        slot: 'header'
-      }, '头部内容'),
+      // ========== 具名插槽 ==========
+      // ❌ Vue 3 没有 Vue 2 的 slot 属性，这样写只会变成一个普通 attr
+      // h(MyComponent, { slot: 'header' }, '头部内容')
+
+      // ✅ 具名插槽通过第三个参数的插槽对象传递
+      h(MyComponent, null, {
+        header: () => h('div', '头部内容')
+      }),
 
       // ========== 生命周期钩子 ==========
       h('div', {
@@ -977,10 +969,10 @@ export default {
 }
 ```
 
-#### 2.3.10 Props 参数速查表
+##### 2.3.10 Props 参数速查表
 
 ```javascript
-import { h } from 'vue'
+import { h, withModifiers } from 'vue'
 
 // ========== 完整的 props 对象示例 ==========
 const props = {
@@ -1023,7 +1015,7 @@ const props = {
   // ========== 事件 ==========
   onClick: handleClick,
   onInput: handleInput,
-  onKeyupEnter: handleSubmit,
+  onKeyup: withModifiers(handleEnter, ['enter']),  // 按键修饰符用 withModifiers
   onClickOnce: handleOnce,
   onClickCapture: handleCapture,
 
@@ -1039,15 +1031,14 @@ const props = {
 
   // ========== 特殊属性 ==========
   key: 'unique-key',
-  ref: elementRef,
-  slot: 'header'
+  ref: elementRef
 }
 
 // 使用
 h('div', props, '内容')
 ```
 
-### 2.4 children 参数（子节点参数）
+#### 2.4 children 参数（子节点参数）
 
 children 参数是 h 函数的第三个参数，用于定义节点的子内容。
 
@@ -1102,7 +1093,7 @@ h('ul', [
 // 渲染：<ul><li>Item 1</li><li>Item 2</li></ul>
 ```
 
-#### 2.4.1 插槽（Slots）
+##### 2.4.1 插槽（Slots）
 
 在 render 函数中使用插槽需要通过上下文对象访问。
 
@@ -1169,7 +1160,7 @@ export default {
 }
 ```
 
-#### 2.4.2 children 参数详细用法
+##### 2.4.2 children 参数详细用法
 
 ```javascript
 import { h } from 'vue'
@@ -1258,9 +1249,9 @@ export default {
 }
 ```
 
-### 2.5 h 函数使用示例
+#### 2.5 h 函数使用示例
 
-#### 示例 1：基本元素创建
+##### 示例 1：基本元素创建
 
 ```javascript
 import { h } from 'vue'
@@ -1275,7 +1266,7 @@ export default {
 }
 ```
 
-#### 示例 2：创建带属性的元素
+##### 示例 2：创建带属性的元素
 
 ```javascript
 import { h } from 'vue'
@@ -1300,7 +1291,7 @@ export default {
 }
 ```
 
-#### 示例 3：创建复杂表单
+##### 示例 3：创建复杂表单
 
 ```javascript
 import { h } from 'vue'
@@ -1392,7 +1383,7 @@ export default {
 }
 ```
 
-#### 示例 4：使用组件
+##### 示例 4：使用组件
 
 ```javascript
 import { h } from 'vue'
@@ -1452,9 +1443,9 @@ export default {
 
 ---
 
-## 三、render 函数详解
+### 三、render 函数详解
 
-### 3.1 render 函数基础
+#### 3.1 render 函数基础
 
 render 函数是 Vue 组件的一个选项，用于返回虚拟 DOM 树。
 
@@ -1467,9 +1458,9 @@ export default {
 }
 ```
 
-### 3.2 render 函数签名与参数
+#### 3.2 render 函数签名与参数
 
-#### Vue 2 的 render 函数
+##### Vue 2 的 render 函数
 
 ```javascript
 // Vue 2
@@ -1480,17 +1471,18 @@ export default {
   }
 }
 
-// Vue 2 render 函数接收上下文参数
-export default {
+// Vue 2 只有函数式组件（functional: true）的 render 才接收第二个参数 context
+// context 包含 props, children, slots, data, parent, listeners 等信息
+Vue.component('my-functional-comp', {
+  functional: true,
+  props: ['message'],
   render(h, context) {
-    // h: createElement 函数
-    // context: 包含 props, slots, data, parent, root 等信息
     return h('div', context.props.message)
   }
-}
+})
 ```
 
-#### Vue 3 的 render 函数
+##### Vue 3 的 render 函数
 
 ```javascript
 // Vue 3 - Options API
@@ -1515,7 +1507,7 @@ export default {
 }
 ```
 
-### 3.3 Options API 的 render 函数
+#### 3.3 Options API 的 render 函数
 
 ```javascript
 import { h } from 'vue'
@@ -1557,7 +1549,7 @@ export default {
 }
 ```
 
-### 3.4 Composition API 的 render 函数
+#### 3.4 Composition API 的 render 函数
 
 ```javascript
 import { h, ref, computed, watch, onMounted } from 'vue'
@@ -1612,9 +1604,9 @@ export default {
 }
 ```
 
-### 3.5 render 函数完整示例
+#### 3.5 render 函数完整示例
 
-#### 示例 1：动态列表组件
+##### 示例 1：动态列表组件
 
 ```javascript
 import { h, ref, computed } from 'vue'
@@ -1691,7 +1683,7 @@ export default {
 }
 ```
 
-#### 示例 2：模态框组件
+##### 示例 2：模态框组件
 
 ```javascript
 import { h, ref, watch, Transition } from 'vue'
@@ -1726,7 +1718,7 @@ export default {
     }
   },
   emits: ['update:modelValue', 'confirm', 'cancel', 'close'],
-  setup(props, { emit }) {
+  setup(props, { emit, slots }) {
     const isVisible = ref(props.modelValue)
 
     watch(() => props.modelValue, (val) => {
@@ -1770,11 +1762,10 @@ export default {
           el.style.opacity = '0'
           el.style.transform = 'scale(0.9)'
         }
-      }, () => [
-        h('div', {
-          class: 'modal-overlay',
-          onClick: handleOverlayClick
-        }, [
+      }, () => h('div', {
+        class: 'modal-overlay',
+        onClick: handleOverlayClick
+      }, [
           h('div', {
             class: 'modal',
             style: { width: props.width },
@@ -1808,13 +1799,13 @@ export default {
             ])
           ])
         ])
-      ])
+      )
       : null
   }
 }
 ```
 
-#### 示例 3：虚拟滚动列表
+##### 示例 3：虚拟滚动列表
 
 ```javascript
 import { h, ref, computed, onMounted, onUnmounted } from 'vue'
@@ -1910,9 +1901,9 @@ export default {
 
 ---
 
-## 四、VNode 深入理解
+### 四、VNode 深入理解
 
-### 4.1 VNode 结构
+#### 4.1 VNode 结构
 
 VNode（Virtual Node）是虚拟 DOM 的基本单位。
 
@@ -1949,7 +1940,7 @@ const vnode = {
 }
 ```
 
-### 4.2 VNode 类型
+#### 4.2 VNode 类型
 
 ```javascript
 import { h, Fragment, Text, Comment, Static } from 'vue'
@@ -1973,7 +1964,7 @@ const fragmentVNode = h(Fragment, [
 ])
 
 // ========== 6. 静态 VNode ==========
-const staticVNode = h(Static, h('div', '静态内容'))
+const staticVNode = h(Static, [h('div', '静态内容')])
 
 // ========== 7. Teleport VNode ==========
 const teleportVNode = h(Teleport, { to: 'body' }, [
@@ -1981,7 +1972,7 @@ const teleportVNode = h(Teleport, { to: 'body' }, [
 ])
 ```
 
-### 4.3 VNode 的 ShapeFlag
+#### 4.3 VNode 的 ShapeFlag
 
 ShapeFlag 用于标识 VNode 的类型，Vue 内部使用它来优化渲染。
 
@@ -2013,7 +2004,7 @@ const componentVNode = {
 }
 ```
 
-### 4.4 VNode 的 PatchFlag
+#### 4.4 VNode 的 PatchFlag
 
 PatchFlag 用于标识哪些属性是动态的，Vue 使用它来优化更新。
 
@@ -2046,7 +2037,7 @@ const dynamicTextVNode = h('div', message)
 // patchFlag: 1 (TEXT)
 ```
 
-### 4.5 手动创建 VNode
+#### 4.5 手动创建 VNode
 
 ```javascript
 import { createVNode, Text, Fragment } from 'vue'
@@ -2063,8 +2054,8 @@ const fragment = createVNode(Fragment, null, [
   createVNode('p', '段落')
 ])
 
-// 创建注释 VNode
-const comment = createVNode('注释内容', null, Comment)
+// 创建注释 VNode（type 是 Comment，children 是注释内容）
+const comment = createVNode(Comment, null, '注释内容')
 
 // 合并 VNode
 import { mergeProps } from 'vue'
@@ -2078,11 +2069,11 @@ const mergedProps = mergeProps(
 
 ---
 
-## 五、两者关系与对比
+### 五、两者关系与对比
 
-### 5.1 本质关系
+#### 5.1 本质关系
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      Vue 渲染流程                            │
 ├─────────────────────────────────────────────────────────────┤
@@ -2110,7 +2101,7 @@ const mergedProps = mergeProps(
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 5.2 编译过程对比
+#### 5.2 编译过程对比
 
 ```javascript
 // ========== 1. 模板写法 ==========
@@ -2145,12 +2136,12 @@ export default {
 }
 
 // ========== 4. 查看编译结果 ==========
-// 在浏览器控制台
+// 在浏览器控制台（仅开发模式可用）
 const component = document.querySelector('#app').__vueParentComponent
 console.log(component.$.render)
 ```
 
-### 5.3 语法对比
+#### 5.3 语法对比
 
 | 特性 | template | render + h | JSX |
 |------|----------|-----------|-----|
@@ -2162,7 +2153,7 @@ console.log(component.$.render)
 | **类型推导** | 弱 | 强 | 强 |
 | **调试难度** | 易 | 难 | 中 |
 
-### 5.4 使用方式对比
+#### 5.4 使用方式对比
 
 ```javascript
 // ========== template 写法 ==========
@@ -2247,11 +2238,11 @@ export default defineComponent({
 
 ---
 
-## 六、使用场景
+### 六、使用场景
 
-### 6.1 推荐使用 render 函数的场景
+#### 6.1 推荐使用 render 函数的场景
 
-#### 场景 1：动态组件生成
+##### 场景 1：动态组件生成
 
 根据配置动态生成表单、表格等组件。
 
@@ -2348,7 +2339,7 @@ export default {
 }
 ```
 
-#### 场景 2：组件包装/高阶组件
+##### 场景 2：组件包装/高阶组件
 
 包装现有组件，添加额外功能。
 
@@ -2407,7 +2398,7 @@ export default {
 </loading-wrapper>
 ```
 
-#### 场景 3：函数式组件
+##### 场景 3：函数式组件
 
 无状态、无实例的轻量级组件。
 
@@ -2450,7 +2441,7 @@ SmartButton.emits = ['click']
 export default SmartButton
 ```
 
-#### 场景 4：过渡动画控制
+##### 场景 4：过渡动画控制
 
 精确控制动画的各个阶段。
 
@@ -2478,9 +2469,9 @@ export default {
       },
       onEnter: (el, done) => {
         console.log('enter', el)
-        // 使用 requestAnimationFrame 确保 DOM 更新
+        // 使用 requestAnimationFrame 确保 DOM 已更新后再结束过渡
         requestAnimationFrame(() => {
-          requestAnimationFrame(done))
+          requestAnimationFrame(done)
         })
       },
       onAfterEnter: (el) => {
@@ -2503,7 +2494,7 @@ export default {
 }
 ```
 
-#### 场景 5：性能优化（虚拟滚动）
+##### 场景 5：性能优化（虚拟滚动）
 
 ```javascript
 import { h, ref, computed, onMounted, onUnmounted } from 'vue'
@@ -2596,7 +2587,7 @@ export default {
 }
 ```
 
-### 6.2 不推荐使用 render 函数的场景
+#### 6.2 不推荐使用 render 函数的场景
 
 | 场景 | 原因 | 推荐 |
 |------|------|------|
@@ -2608,22 +2599,21 @@ export default {
 
 ---
 
-## 七、最佳实践
+### 七、最佳实践
 
-### 7.1 性能优化
+#### 7.1 性能优化
 
 ```javascript
 import { h } from 'vue'
 
+// ✅ 推荐：把不变的属性对象提到 render 外部，只创建一次、每次渲染复用
+const staticStyle = { color: 'red', fontSize: '16px' }
+
 export default {
   render() {
-    // ❌ 不推荐：每次渲染创建新对象
-    return h('div', {
-      style: { color: 'red', fontSize: '16px' }
-    }, '内容')
+    // ❌ 不推荐：在 render 内部写字面量，每次渲染都会创建新对象
+    // return h('div', { style: { color: 'red', fontSize: '16px' } }, '内容')
 
-    // ✅ 推荐：缓存静态属性
-    const staticStyle = { color: 'red', fontSize: '16px' }
     return h('div', { style: staticStyle }, '内容')
   }
 }
@@ -2646,7 +2636,7 @@ export default {
 }
 ```
 
-### 7.2 可读性优化
+#### 7.2 可读性优化
 
 ```javascript
 import { h } from 'vue'
@@ -2698,7 +2688,7 @@ export default {
 }
 ```
 
-### 7.3 TypeScript 类型安全
+#### 7.3 TypeScript 类型安全
 
 ```typescript
 import { h, VNode, FunctionalComponent, PropType } from 'vue'
@@ -2771,7 +2761,7 @@ export default defineComponent({
 })
 ```
 
-### 7.4 辅助函数封装
+#### 7.4 辅助函数封装
 
 ```javascript
 import { h } from 'vue'
@@ -2842,11 +2832,11 @@ export default {
 
 ---
 
-## 八、常见问题与调试
+### 八、常见问题与调试
 
-### 8.1 常见错误
+#### 8.1 常见错误
 
-#### 错误 1：事件名称格式错误
+##### 错误 1：事件名称格式错误
 
 ```javascript
 // ❌ 错误：忘记 on 前缀
@@ -2860,31 +2850,24 @@ h('button', {
 })
 ```
 
-#### 错误 2：class 和 style 格式错误
+##### 常见误解：class 和 style 格式（其实都合法）
 
 ```javascript
-// ❌ 错误：class 不能是字符串数组
-h('div', {
-  class: ['active', 'disabled']  // 错误！这是 template 写法
-})
-
-// ✅ 正确：直接传递数组
+// ✅ class 支持字符串 / 数组 / 对象
 h('div', {
   class: ['active', 'disabled']
 })
+h('div', { class: { active: isActive } })
 
-// ❌ 错误：style 不能是字符串
-h('div', {
-  style: 'color: red;'  // 错误！
-})
-
-// ✅ 正确：使用对象
+// ✅ style 支持对象（推荐）/ 数组 / 字符串（内部转成 cssText）
 h('div', {
   style: { color: 'red' }
 })
+h('div', { style: 'color: red;' })
+h('div', { style: [{ color: 'red' }, { fontSize: '16px' }] })
 ```
 
-#### 错误 3：v-model 实现错误
+##### 错误 3：v-model 实现错误
 
 ```javascript
 // ❌ 错误：忘记传递更新事件
@@ -2901,7 +2884,7 @@ h(MyInput, {
 })
 ```
 
-#### 错误 4：忘记 key
+##### 错误 4：忘记 key
 
 ```javascript
 // ❌ 错误：列表渲染没有 key
@@ -2915,9 +2898,9 @@ h('ul', items.map(item =>
 ))
 ```
 
-### 8.2 调试技巧
+#### 8.2 调试技巧
 
-#### 查看 VNode
+##### 查看 VNode
 
 ```javascript
 // 在 render 函数中
@@ -2935,28 +2918,17 @@ export default {
 }
 ```
 
-#### 使用 Vue DevTools
+> ⚠️ **注意**：vnode 不可变，不要为了调试去修改 vnode 的属性（如 `vnode.__DEBUG__ = true`），改完可能引发渲染异常。
+
+##### 使用 Vue DevTools
 
 ```javascript
-// 在组件中导出 render 函数用于调试
-export default {
-  render() {
-    const vnode = h('div', { class: 'debug' }, '内容')
-
-    // 添加调试标记
-    vnode.__DEBUG__ = true
-    vnode.__DEBUG_SOURCE__ = 'MyComponent.render'
-
-    return vnode
-  }
-}
-
-// 在浏览器控制台
+// 在浏览器控制台（开发模式）查看组件当前使用的 render 函数
 const vm = document.querySelector('#app').__vueParentComponent
 console.log(vm.$.render.toString())
 ```
 
-#### 性能分析
+##### 性能分析
 
 ```javascript
 import { h, onMounted, onUpdated } from 'vue'
@@ -2992,7 +2964,7 @@ export default {
 }
 ```
 
-### 8.3 问题排查清单
+#### 8.3 问题排查清单
 
 ```markdown
 ## render 函数问题排查清单
@@ -3011,19 +2983,19 @@ export default {
 
 ---
 
-## 九、Vue 2 vs Vue 3 对比
+### 九、Vue 2 vs Vue 3 对比
 
-### 9.1 render 函数对比
+#### 9.1 render 函数对比
 
 | 特性 | Vue 2 | Vue 3 |
 |------|-------|-------|
 | **参数** | `render(h)` 或 `render(h, context)` | `render()` 或 `setup()` 返回 render |
 | **h 函数** | 作为参数传入 | 需要手动导入 |
-| **context** | 有独立的 context 对象 | 通过 setup 第二个参数获取 |
-| **VNode** | 扁平结构 | 扁平结构 + 优化标记 |
+| **context** | 函数式组件有 context 参数 | 通过 setup 第二个参数获取 |
+| **VNode** | 无优化标记 | 带 shapeFlag / patchFlag 等优化标记 |
 | **函数式组件** | `functional: true` | 普通函数即可 |
 
-### 9.2 代码对比
+#### 9.2 代码对比
 
 ```javascript
 // ========== Vue 2 ==========
@@ -3087,9 +3059,9 @@ export default {
 
 ---
 
-## 总结
+### 总结
 
-### h 函数与 render 函数对比
+#### h 函数与 render 函数对比
 
 | 特性 | h 函数 | render 函数 |
 |------|--------|-------------|
@@ -3098,7 +3070,7 @@ export default {
 | **参数** | type, props, children | 无参数或上下文对象 |
 | **返回值** | VNode | VNode |
 
-### 选择建议
+#### 选择建议
 
 **使用 template 的场景**：
 - 大多数业务开发
@@ -3120,7 +3092,7 @@ export default {
 - 需要 render 函数的灵活性
 - 更好的 TypeScript 支持
 
-### 关键要点
+#### 关键要点
 
 1. **template 本质**会被编译成 render 函数
 2. **h 函数**是创建虚拟 DOM 的工具函数
@@ -3129,8 +3101,8 @@ export default {
 5. **性能**：render ≈ JSX > template（编译优化后差异不大）
 6. **学习路径**：template → render + h → JSX
 
-### 参考资源
+#### 参考资源
 
-- [Vue 3 渲染函数 API](https://cn.vuejs.org/guide/extras/rendering-function.html)
+- [Vue 3 渲染函数 API](https://cn.vuejs.org/api/render-function.html)
 - [Vue 3 渲染机制](https://cn.vuejs.org/guide/extras/rendering-mechanism.html)
 - [Vue 2 渲染函数](https://v2.cn.vuejs.org/v2/guide/render-function.html)

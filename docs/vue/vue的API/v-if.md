@@ -206,19 +206,28 @@ const user = ref({
 
 ### 7. 与 v-for 优先级
 
+Vue 3 中，当 `v-if` 和 `v-for` 同时存在于一个元素上时，**`v-if` 会首先执行**（Vue 2 相反，`v-for` 优先级更高）。这意味着 `v-if` 的条件无法访问 `v-for` 作用域内的变量：
+
 ```vue
 <template>
-  <!-- Vue 3 中 v-if 优先级高于 v-for -->
+  <!-- ❌ Vue 3 中会报错：v-if 先执行，此时 item 还不存在 -->
+  <li v-for="item in items" v-if="item.visible" :key="item.id">
+    {{ item.name }}
+  </li>
+
+  <!-- ✅ 用 template 包裹 v-for，把 v-if 放在内层元素上 -->
   <template v-for="item in items" :key="item.id">
     <div v-if="item.visible">{{ item.name }}</div>
   </template>
 
-  <!-- 或者使用 template 包裹 -->
-  <template v-for="item in items" :key="item.id">
-    <div v-if="item.visible">{{ item.name }}</div>
-  </template>
+  <!-- ✅ 过滤场景推荐直接用计算属性 -->
+  <li v-for="item in visibleItems" :key="item.id">
+    {{ item.name }}
+  </li>
 </template>
 ```
+
+> ⚠️ **注意：** 官方不推荐在同一元素上同时使用 `v-if` 和 `v-for`，因为两者的优先级不够直观。过滤列表用计算属性，按条件隐藏整个列表则把 `v-if` 移到容器元素上。
 
 ## 使用场景
 
@@ -585,10 +594,12 @@ const features = ref({
 
 | 特性 | v-if | v-show |
 |-----|------|--------|
-| 初始渲染开销 | 较高（需要编译） | 较低（只切换 CSS） |
+| 初始渲染开销 | 较低（惰性渲染，条件为 false 时不渲染） | 较高（无论条件真假都渲染） |
 | 切换开销 | 高（销毁/重建） | 低（只切换 display） |
 | 条件为假时 | 完全从 DOM 移除 | 仍保留在 DOM 中 |
 | 生命周期 | 会触发组件生命周期 | 不会触发 |
+| 支持 `<template>` | 支持 | 不支持 |
+| 配合 v-else / v-else-if | 支持 | 不支持 |
 | 适用场景 | 条件很少改变 | 频繁切换 |
 
 ## 最佳实践

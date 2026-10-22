@@ -68,8 +68,8 @@ function trackClick() {
 </script>
 
 <template>
-  <!-- 多个处理函数 -->
-  <button @click="handleClick(); trackClick()">
+  <!-- 多个处理函数：用逗号分隔的内联表达式 -->
+  <button @click="handleClick(), trackClick()">
     Click
   </button>
 </template>
@@ -332,15 +332,10 @@ const count = ref(0)
   <form @submit.prevent.stop="handleSubmit">
     <button type="submit">Submit</button>
   </form>
-
-  <!-- 顺序很重要 -->
-  <input @keyup.ctrl.enter="submit" />
-  <!-- Ctrl + Enter 才会触发 -->
-
-  <input @keyup.enter.ctrl="submit" />
-  <!-- 先检查 Enter，再检查 Ctrl -->
 </template>
 ```
+
+> 💡 **提示：** 使用修饰符时要注意顺序，不同的顺序会产生不同的效果。`@click.prevent.self` 会阻止元素**及其子元素**的所有点击的默认行为，而 `@click.self.prevent` 只会阻止元素**自身**点击的默认行为。
 
 ### 3. 原生事件 vs 自定义事件
 
@@ -384,6 +379,19 @@ function handleKeyEvent(event) {
 
 ### 5. 组件事件
 
+Vue 3 移除了 `.native` 修饰符：在组件上监听的事件，若子组件没有通过 `defineEmits` 声明，会作为「透传的属性」挂到子组件根元素上，成为原生监听器；声明了则视为自定义事件：
+
+```vue
+<!-- 子组件：声明了 click -->
+<script setup>
+const emit = defineEmits(['click'])
+
+function trigger() {
+  emit('click', '来自子组件')
+}
+</script>
+```
+
 ```vue
 <!-- 父组件 -->
 <script setup>
@@ -395,9 +403,9 @@ function handleEvent(data) {
 </script>
 
 <template>
-  <!-- 自定义事件不会触发原生事件 -->
+  <!-- 子组件声明了 emits 时：监听子组件 emit 的自定义 click 事件 -->
   <ChildComponent @click="handleEvent" />
-  <!-- 这里监听的是子组件通过 emit 触发的 click 事件 -->
+  <!-- 子组件未声明 emits 时：@click 透传到其根元素上，监听原生 click -->
 </template>
 ```
 
@@ -803,18 +811,17 @@ function handleListClick(event) {
 | .capture | 添加事件捕获 |
 | .self | 只当事件从元素本身触发时触发 |
 | .once | 只触发一次 |
-| .passive | 滚动事件的默认行为立即发生 |
-| .native | 监听原生事件（Vue 2）|
+| .passive | 提升滚动性能（滚动事件的默认行为立即发生） |
 | .left | 只触发左键事件 |
 | .right | 只触发右键事件 |
 | .middle | 只触发中键事件 |
-| .passive | 提升滚动性能 |
 | .ctrl | Ctrl 键按下时触发 |
 | .alt | Alt 键按下时触发 |
 | .shift | Shift 键按下时触发 |
 | .meta | Meta 键按下时触发 |
 | .exact | 精确匹配修饰键 |
-| .keyCode | 指定按键码 |
+
+> ⚠️ **注意：** Vue 3 已移除 `.native` 修饰符（未在子组件 `emits` 中声明的事件监听器会自动透传为根元素上的原生监听器），也不再支持用 keyCode 数字作为修饰符（如 `@keyup.13`），请改用按键别名（如 `.enter`）。
 
 ## 最佳实践
 

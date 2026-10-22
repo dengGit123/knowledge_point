@@ -97,34 +97,36 @@ export default {
 
 // ❌ 避免
 export default {
-  name: 'user-profile',     // 蛇形命名
+  name: 'user-profile',     // 短横线命名，应为 PascalCase
   components: {
-    'settings-panel': SettingsPanel  // 字符串形式
+    'settings-panel': SettingsPanel  // 字符串形式，应直接写组件名
   }
 }
 ```
 
 #### 模板中使用组件
 
-**规则**：在模板中推荐使用 kebab-case（短横线命名）引用组件。
+**规则**：SFC 和字符串模板中推荐 PascalCase；DOM 模板（直接写在 HTML 里的模板）必须用 kebab-case，因为 HTML 对标签大小写不敏感。
 
 ```vue
 <template>
-  <!-- ✅ 推荐：kebab-case -->
-  <user-profile />
-  <settings-panel />
-  <data-table />
-
-  <!-- ⚠️ 允许但不推荐：PascalCase -->
+  <!-- ✅ SFC / 字符串模板：PascalCase -->
   <UserProfile />
   <SettingsPanel />
+  <DataTable />
+
+  <!-- ✅ DOM 模板：必须 kebab-case -->
+  <user-profile />
 </template>
 ```
 
+💡 Vue 2 时代流行 kebab-case 写法；Vue 3 官方风格指南已改为推荐 SFC 中使用 PascalCase，便于与原生 HTML 元素明显区分。详见 [Vue 官方风格指南](https://cn.vuejs.org/style-guide/)。
+
 **选择建议**：
-- **JS/JSX 中**：使用 PascalCase（与 JS 类命名一致）
-- **模板中**：推荐 kebab-case（符合 HTML 规范）
-- **自闭合组件**：使用 `<component />` 而非 `<component></component>`
+- **JS/JSX 中**：PascalCase（与 JS 类命名一致）
+- **SFC / 字符串模板**：PascalCase
+- **DOM 模板**：kebab-case
+- **自闭合组件**：无内容时使用 `<MyComponent />` 而非 `<MyComponent></MyComponent>`
 
 ### 1.3 变量命名规范
 
@@ -142,13 +144,12 @@ data() {
 const API_BASE_URL = 'https://api.example.com'
 const MAX_RETRY_COUNT = 3
 
-// ✅ 私有变量（内部使用）：下划线前缀
-data() {
-  return {
-    _internalState: null,
-    _cache: new Map()
-  }
-}
+// ✅ 私有变量：下划线前缀（仅用于模块作用域，不放 data）
+const _cache = new Map()
+function _normalize(list) { /* ... */ }
+
+// ⚠️ data 中不要用 _ 或 $ 开头的属性名：Vue 不会把它们代理到 this，
+// this._cache 将是 undefined（只能通过 this.$data._cache 访问）
 
 // ✅ 布尔值：is/has/can 前缀
 data() {
@@ -183,20 +184,20 @@ this.$emit('item-click')
 
 // ❌ 避免
 this.$emit('updateValue')     // 应该使用 kebab-case
-this.$emit('valueUpdated')    // 应该使用主动语态
+this.$emit('value-updated')   // 应该使用动词开头（主动语态）
 this.$emit('click')           // 过于通用，容易冲突
 ```
 
 **常用事件动词**：
 | 动词 | 含义 | 示例 |
 |------|------|------|
-| `update` | 更新数据 | `update:user` |
-| `submit` | 提交表单 | `submit:form` |
-| `cancel` | 取消操作 | `cancel:edit` |
-| `delete` | 删除项目 | `delete:item` |
-| `select` | 选择项目 | `select:option` |
-| `change` | 状态改变 | `change:status` |
-| `close` | 关闭弹窗 | `close:modal` |
+| `update` | 更新数据 | `update-user` |
+| `submit` | 提交表单 | `submit-form` |
+| `cancel` | 取消操作 | `cancel-edit` |
+| `delete` | 删除项目 | `delete-item` |
+| `select` | 选择项目 | `select-option` |
+| `change` | 状态改变 | `change-status` |
+| `close` | 关闭弹窗 | `close-modal` |
 
 ### 1.5 CSS 类名规范
 
@@ -215,8 +216,11 @@ this.$emit('click')           // 过于通用，容易冲突
 .button--primary { }           /* Modifier */
 .button--large { }             /* Modifier */
 .button--disabled { }          /* Modifier */
+```
 
-/* 实际应用 */
+实际应用：
+
+```vue
 <template>
   <button class="button button--primary button--large">
     <span class="button__icon">🔍</span>
@@ -280,18 +284,22 @@ export default {
   // 5. Props 定义
   props: {},
 
-  // 6. 数据
+  // 6. 事件声明（Vue 3 必须显式声明，放在 props 之后）
+  emits: [],
+
+  // 7. 数据
   data() {
     return {}
   },
 
-  // 7. 计算属性
+  // 8. 计算属性
   computed: {},
 
-  // 8. 侦听器
+  // 9. 侦听器
   watch: {},
 
-  // 9. 生命周期钩子（按执行顺序）
+  // 10. 生命周期钩子（按执行顺序）
+  // ⚠️ Vue 2 用 beforeDestroy / destroyed，Vue 3 改为 beforeUnmount / unmounted
   beforeCreate() {},
   created() {},
   beforeMount() {},
@@ -303,10 +311,10 @@ export default {
   beforeUnmount() {},
   unmounted() {},
 
-  // 10. 方法
+  // 11. 方法
   methods: {},
 
-  // 11. 模板相关
+  // 12. 模板相关
   template: '',
   render() {}
 }
@@ -483,13 +491,8 @@ export default {
       <h1>页面标题</h1>
     </template>
 
-    <!-- 默认插槽 -->
+    <!-- 默认插槽（一个插槽只能有一份内容） -->
     <p>主要内容</p>
-
-    <!-- 作用域插槽 -->
-    <template #default="{ item, index }">
-      <span>{{ index }}: {{ item.name }}</span>
-    </template>
 
     <template #footer>
       <p>页脚信息</p>
@@ -514,6 +517,30 @@ export default {
       <slot name="footer"></slot>
     </footer>
   </div>
+</template>
+```
+
+**作用域插槽**：子组件把内部数据传给插槽内容使用。
+
+```vue
+<!-- 父组件 -->
+<template>
+  <user-list :items="users">
+    <template #item="{ item, index }">
+      <span>{{ index }}: {{ item.name }}</span>
+    </template>
+  </user-list>
+</template>
+
+<!-- 子组件 UserList.vue -->
+<template>
+  <ul>
+    <li v-for="(item, index) in items" :key="item.id">
+      <slot name="item" :item="item" :index="index">
+        {{ item.name }}  <!-- 后备内容 -->
+      </slot>
+    </li>
+  </ul>
 </template>
 ```
 
@@ -734,17 +761,17 @@ export default {
     {{ user.name }}
   </li>
 
-  <!-- ✅ 方案1：使用计算属性过滤 -->
-  <template v-for="user in activeUsers" :key="user.id">
-    <li>{{ user.name }}</li>
-  </template>
+  <!-- ✅ 方案1：用计算属性先过滤，再遍历 -->
+  <li v-for="user in activeUsers" :key="user.id">
+    {{ user.name }}
+  </li>
 
-  <!-- ✅ 方案2：使用 template 标签 -->
+  <!-- ✅ 方案2：v-if 移到内层元素（Vue 3 下 v-if 在外层会拿不到 user） -->
   <template v-for="user in users" :key="user.id">
     <li v-if="user.isActive">{{ user.name }}</li>
   </template>
 
-  <!-- ✅ 方案3：在外层包裹 -->
+  <!-- ✅ 方案3：只是控制显示/隐藏时，改用 v-show -->
   <template v-for="user in users" :key="user.id">
     <li v-show="user.isActive">{{ user.name }}</li>
   </template>
@@ -761,6 +788,8 @@ export default {
 }
 </script>
 ```
+
+💡 key 放在 `<template v-for>` 上是 Vue 3 写法；Vue 2 不支持在 template 上声明 key，需把 key 移到内层的 `<li>` 上。
 
 ### 3.3 属性绑定规范
 
@@ -826,7 +855,8 @@ export default {
     内容
   </div>
 
-  <!-- 自动添加前缀 -->
+  <!-- ⚠️ 数组多值前缀（自动添加前缀）是 Vue 2 特性，Vue 3 已移除；
+       Vue 3 请交给构建工具（autoprefixer）处理前缀 -->
   <div :style="{ display: ['-webkit-box', '-ms-flexbox', 'flex'] }">
     内容
   </div>
@@ -855,6 +885,8 @@ export default {
 </script>
 ```
 
+💡 class/style 绑定详见官方文档 [Class 与 Style 绑定](https://cn.vuejs.org/guide/essentials/class-and-style)。
+
 ### 3.4 事件绑定规范
 
 #### 事件修饰符
@@ -874,6 +906,17 @@ export default {
   <!-- 只触发一次 -->
   <button @click.once="handleClick">点击</button>
 
+  <!-- 捕获模式：事件在捕获阶段触发 -->
+  <div @click.capture="handleClick">捕获模式点击</div>
+
+  <!-- .self：仅事件目标是元素本身时触发（子元素冒泡不触发） -->
+  <div @click.self="handleClick">
+    <span>内容</span>
+  </div>
+
+  <!-- .passive：不阻止默认行为，用于提升滚动性能 -->
+  <div @scroll.passive="onScroll">...</div>
+
   <!-- 按键修饰符 -->
   <input @keyup.enter="submit" />
   <input @keyup.ctrl.enter="submit" />
@@ -884,9 +927,11 @@ export default {
   <!-- 鼠标修饰符 -->
   <div @click.left="handleLeftClick">左键点击</div>
   <div @click.right.prevent="handleRightClick">右键点击</div>
+  <div @click.middle="handleMiddleClick">中键点击</div>
 
   <!-- 精确修饰符 -->
   <button @click.ctrl.exact="onCtrlClick">精确 Ctrl 点击</button>
+  <button @click.ctrl="onCtrlClick">Ctrl + 其他按键也可触发</button>
 </template>
 ```
 
@@ -1115,7 +1160,7 @@ export default {
 | 使用场景 | 基本类型、需要替换整个对象 | 对象、数组 |
 | 访问方式 | 需要 `.value` | 直接访问属性 |
 | 重新赋值 | 支持 | 不支持 |
-| 解构 | 需要 `toRefs()` | 需要 `toRefs()` |
+| 解构 | 无此问题（本身就是独立引用） | 直接解构会丢失响应性，需 `toRefs()` |
 
 ```javascript
 import { ref, reactive, toRefs } from 'vue'
@@ -1335,7 +1380,7 @@ export default {
       ],
       filterText: '',
       sortBy: 'age',
-      sortOrder = 'asc'
+      sortOrder: 'asc'
     }
   },
   computed: {
@@ -1819,10 +1864,11 @@ export default {
       // 提供静态值
       appName: 'My App',
 
-      // 提供响应式数据
+      // ⚠️ 基本类型值是非响应式快照：this.theme 变化后后代组件不会更新，
+      // 想保持响应式请提供对象引用 + 修改其属性（如下），或提供修改方法
       theme: this.theme,
 
-      // 提供响应式对象
+      // 提供对象引用：后代拿到的是同一个对象，修改其属性是响应式的
       userInfo: this.userInfo,
 
       // 提供方法
@@ -1977,7 +2023,33 @@ export default {
 
 #### Vue 3 模板引用
 
+⚠️ `<script setup>` 中的组件默认是「封闭」的：父组件通过 ref 拿到的实例上什么都访问不到，子组件必须用 `defineExpose` 显式暴露。
+
 ```vue
+<!-- 子组件 ChildComponent.vue -->
+<script setup>
+function doSomething() {
+  console.log('子组件方法被调用')
+}
+
+// 显式暴露给父组件
+defineExpose({
+  doSomething
+})
+</script>
+```
+
+```vue
+<!-- 父组件 -->
+<template>
+  <div>
+    <child-component ref="childComp" />
+    <input ref="inputEl" />
+    <button @click="focusChild">聚焦输入框</button>
+    <button @click="callChildMethod">调用子组件方法</button>
+  </div>
+</template>
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import ChildComponent from './ChildComponent.vue'
@@ -1986,8 +2058,8 @@ const childComp = ref(null)
 const inputEl = ref(null)
 
 onMounted(() => {
-  console.log(inputEl.value)      // DOM 元素
-  console.log(childComp.value)    // 组件实例
+  console.log(inputEl.value)    // DOM 元素
+  console.log(childComp.value)  // 组件实例（仅包含 defineExpose 暴露的内容）
 })
 
 function focusChild() {
@@ -1997,11 +2069,6 @@ function focusChild() {
 function callChildMethod() {
   childComp.value.doSomething()
 }
-
-// 子组件需要暴露方法
-defineExpose({
-  doSomething
-})
 </script>
 ```
 
@@ -2091,7 +2158,7 @@ export default {
 
 ### 6.1 Vue 2 生命周期
 
-```
+```text
 创建阶段：
   beforeCreate → created
 
@@ -2110,7 +2177,7 @@ export default {
 
 ### 6.2 Vue 3 生命周期
 
-```
+```text
 创建阶段：
   beforeCreate → created
 
@@ -2406,30 +2473,17 @@ export default {
 
 ### 7.1 条件渲染
 
-#### v-if vs v-show
-
-| 特性 | v-if | v-show |
-|------|------|--------|
-| 初始渲染 | 条件为假时不渲染 | 始终渲染（CSS display） |
-| 切换开销 | 大（销毁/重建 DOM） | 小（仅切换 CSS） |
-| 生命周期 | 触发组件生命周期 | 不触发 |
-| 适用场景 | 条件很少改变 | 频繁切换显示/隐藏 |
+v-if 与 v-show 的选择规则同 [3.2 v-if 规范](#32-v-if-规范)，此处只补充分支写法。
 
 ```vue
 <template>
-  <!-- ✅ v-if：条件很少改变 -->
+  <!-- ✅ v-if / v-else 切换组件 -->
   <div>
     <user-profile v-if="isLoggedIn" />
     <login-form v-else />
   </div>
 
-  <!-- ✅ v-show：频繁切换 -->
-  <div>
-    <button @click="showModal = !showModal">切换弹窗</button>
-    <modal v-show="showModal" />
-  </div>
-
-  <!-- ✅ v-if 和 v-else-if -->
+  <!-- ✅ v-if / v-else-if / v-else 状态分支 -->
   <div>
     <loading-spinner v-if="status === 'loading'" />
     <error-message v-else-if="status === 'error'" />
@@ -2437,7 +2491,7 @@ export default {
     <data-list v-else />
   </div>
 
-  <!-- ✅ v-else -->
+  <!-- ✅ template 上使用 v-if（不产生多余 DOM 节点） -->
   <div>
     <template v-if="isLoggedIn">
       <h1>欢迎回来，{{ userName }}</h1>
@@ -2453,7 +2507,7 @@ export default {
 
 ```vue
 <template>
-  <!-- ✅ 使用 key 确保元素被完全替换 -->
+  <!-- v-if/v-else 切换同类元素时，用 key 强制替换而不是复用 -->
   <transition>
     <button v-if="isEditing" key="save" @click="save">
       保存
@@ -2462,10 +2516,10 @@ export default {
       编辑
     </button>
   </transition>
-
-  <!-- 没有 key 的话，Vue 可能会复用元素，导致状态问题 -->
 </template>
 ```
+
+💡 Vue 3 中 v-if/v-else 的两个分支本来就渲染不同内容，这种场景下 key 通常可以省略；Vue 2 则必须靠 key 阻止元素复用。
 
 ### 7.2 列表渲染
 
@@ -2634,97 +2688,12 @@ export default {
 
 #### 事件修饰符
 
-```vue
-<template>
-  <!-- .stop：阻止事件冒泡 -->
-  <div @click="parentClick">
-    <button @click.stop="childClick">子按钮</button>
-  </div>
-
-  <!-- .prevent：阻止默认行为 -->
-  <form @submit.prevent="handleSubmit">
-    <button type="submit">提交</button>
-  </form>
-
-  <!-- .capture：使用捕获模式 -->
-  <div @click.capture="handleClick">
-    捕获模式点击
-  </div>
-
-  <!-- .self：只当事件从元素本身触发时触发 -->
-  <div @click.self="handleClick">
-    <span>内容</span>
-  </div>
-
-  <!-- .once：只触发一次 -->
-  <button @click.once="handleClick">只能点一次</button>
-
-  <!-- .passive：立即执行默认行为（用于提升滚动性能） -->
-  <div @scroll.passive="onScroll">...</div>
-
-  <!-- 修饰符组合 -->
-  <a @click.stop.prevent="doSomething">链接</a>
-
-  <!-- 按键修饰符 -->
-  <input @keyup.enter="submit" />
-  <input @keyup.ctrl.enter="submitWithCtrl" />
-
-  <!-- 鼠标修饰符 -->
-  <div @click.left="handleLeftClick">左键</div>
-  <div @click.right.prevent="handleRightClick">右键</div>
-  <div @click.middle="handleMiddleClick">中键</div>
-
-  <!-- 精确修饰符 -->
-  <button @click.ctrl.exact="onCtrlClick">只按 Ctrl</button>
-  <button @click.ctrl="onCtrlClick">Ctrl + 其他按键也可</button>
-</template>
-```
+`.stop`、`.prevent`、`.capture`、`.self`、`.once`、`.passive`、按键/鼠标/精确修饰符及组合写法，统一见 [3.4 事件绑定规范](#34-事件绑定规范)，此处不再重复。
 
 ### 7.4 表单输入绑定
 
-#### v-model 修饰符
-
-```vue
-<template>
-  <!-- .lazy：在 change 事件而非 input 事件中同步 -->
-  <input v-model.lazy="message" />
-
-  <!-- .number：自动将输入值转换为数字 -->
-  <input v-model.number="age" type="number" />
-
-  <!-- .trim：自动过滤首尾空白 -->
-  <input v-model.trim="username" />
-
-  <!-- 组合使用 -->
-  <input v-model.trim.lazy="searchQuery" />
-</template>
-```
-
-#### 自定义 v-model
-
-```vue
-<!-- 自定义输入组件 -->
-<template>
-  <input
-    type="text"
-    :value="modelValue"
-    @input="$emit('update:modelValue', $event.target.value)"
-  />
-</template>
-
-<script>
-export default {
-  name: 'CustomInput',
-  props: {
-    modelValue: {
-      type: String,
-      default: ''
-    }
-  },
-  emits: ['update:modelValue']
-}
-</script>
-```
+- `.lazy` / `.number` / `.trim` 修饰符的用法与语义见 [3.5 表单输入绑定](#35-表单输入绑定)，不再重复。
+- 自定义组件上实现 v-model 的规范写法见 [5.2 v-model 双向绑定](#52-v-model-双向绑定)。
 
 ### 7.5 自定义指令
 
@@ -2815,7 +2784,7 @@ app.directive('debounce', {
       clearTimeout(timer)
       timer = setTimeout(() => {
         binding.value()
-      }, binding.arg || 300)
+      }, Number(binding.arg) || 300)  // binding.arg 是字符串，需转数字
     })
   }
 })
@@ -2871,25 +2840,25 @@ app.directive('infinite-scroll', {
 <div v-infinite-scroll="loadMore">...</div>
 
 // 5. 复制指令
+// ⚠️ 处理函数要挂在 el 上，卸载时才能移除同一个引用；
+// 不要在普通函数里用 this 取数据（ESM 严格模式下 this 是 undefined）
 app.directive('copy', {
   mounted(el, binding) {
-    el.copyData = binding.value
-    el.addEventListener('click', handleClick)
+    el._copyData = binding.value
+    el._copyHandler = () => {
+      navigator.clipboard.writeText(el._copyData).then(() => {
+        // 可以显示复制成功提示
+      })
+    }
+    el.addEventListener('click', el._copyHandler)
   },
   updated(el, binding) {
-    el.copyData = binding.value
+    el._copyData = binding.value
   },
   unmounted(el) {
-    el.removeEventListener('click', handleClick)
+    el.removeEventListener('click', el._copyHandler)
   }
 })
-
-function handleClick() {
-  const text = this.copyData
-  navigator.clipboard.writeText(text).then(() => {
-    // 可以显示提示
-  })
-}
 
 // 使用
 <button v-copy="'复制内容'">复制</button>
@@ -2935,20 +2904,18 @@ function handleClick() {
 </template>
 
 <style scoped>
-/* Vue 2 */
-.parent >>> .child-class {
-  /* 样式 */
-}
-
-/* Vue 3 */
+/* ✅ Vue 3：:deep() 伪类 */
 .parent :deep(.child-class) {
   /* 样式 */
 }
 
-/* 通用写法 */
-.parent /deep/ .child-class {
+/* ✅ Vue 2：::v-deep */
+/* ⚠️ Vue 2 中 >>> 只对纯 CSS 生效，配合 scss/less 请用 ::v-deep */
+.parent ::v-deep .child-class {
   /* 样式 */
 }
+
+/* ❌ 已废弃：/deep/ 写法不要再使用 */
 </style>
 ```
 
@@ -2999,34 +2966,17 @@ function handleClick() {
 
 ### 8.2 命名规范
 
-#### BEM 方法论
+BEM 基础命名规则见 [1.5 CSS 类名规范](#15-css-类名规范)，此处只补充 Vue 场景下的写法。
 
-```css
-/* Block */
-.card {}
+#### SCSS 嵌套简化 BEM
 
-/* Element */
-.card__header {}
-.card__body {}
-.card__footer {}
-
-/* Modifier */
-.card--primary {}
-.card--large {}
-.card--disabled {}
-
-/* 组合使用 */
-.card--primary .card__header {
-  background: #007bff;
-  color: white;
-}
-
-/* 嵌套规则 */
+```scss
 .card {
   &__header {
     padding: 16px;
   }
 
+  // 编译为 .card--large .card__header
   &--large &__header {
     padding: 24px;
   }
@@ -3035,15 +2985,13 @@ function handleClick() {
 
 #### 组件类名前缀
 
+用组件名（kebab-case）作为 Block 前缀，避免同名样式冲突：
+
 ```css
-/* 使用组件名作为前缀 */
 .user-profile__header {}
 .user-profile__avatar {}
-.user-profile__info {}
-
 .button--primary {}
 .button--danger {}
-.button--large {}
 ```
 
 ### 8.3 响应式设计
@@ -3147,6 +3095,8 @@ export default {
 ### 8.5 动画与过渡
 
 #### Transition 组件
+
+⚠️ 过渡类名在 Vue 3 中重命名：`v-enter` → `v-enter-from`、`v-leave` → `v-leave-from`（`*-enter-to` / `*-leave-to` 不变）。以下示例按 Vue 3 类名书写；写 Vue 2 样式时请沿用旧名。详见官方文档 [Transition](https://cn.vuejs.org/guide/built-ins/transition)。
 
 ```vue
 <template>
@@ -3275,7 +3225,7 @@ export default {
 
 ### 9.1 标准项目结构
 
-```
+```text
 my-vue-app/
 ├── public/                      # 静态资源（不经过 webpack）
 │   ├── favicon.ico
@@ -3387,8 +3337,8 @@ my-vue-app/
 ├── .gitignore
 ├── babel.config.js              # Babel 配置
 ├── package.json
-├── vite.config.js               # Vite 配置
-├── vue.config.js                # Vue CLI 配置
+├── vite.config.js               # Vite 配置（与 vue.config.js 二选一）
+├── vue.config.js                # Vue CLI 配置（与 vite.config.js 二选一）
 └── README.md
 ```
 
@@ -3513,60 +3463,31 @@ import { ref, reactive, toRefs, readonly } from 'vue'
 
 export default {
   setup() {
-    // ========== ref ==========
-    // 基本类型
-    const count = ref(0)
-    const message = ref('Hello')
-    const isActive = ref(false)
+    // ref / reactive 的选择标准同 4.3（基本类型、需要整体替换的对象用 ref；
+    // 多属性关联对象用 reactive），此处补充组合式 API 特有的用法。
 
-    // 单一对象（需要替换整个对象时）
-    const user = ref({
-      name: 'John',
-      age: 25
-    })
-
-    // 替换整个对象
-    user.value = { name: 'Jane', age: 30 }
-
-    // ========== reactive ==========
-    // 复杂对象（多个相关属性）
+    // ========== reactive：对象和数组都可以 ==========
     const state = reactive({
       count: 0,
-      message: 'Hello',
-      isActive: false,
-      user: {
-        name: 'John',
-        age: 25
-      }
+      user: { name: 'John', age: 25 }
     })
 
-    // 直接修改属性
-    state.count++
-    state.user.name = 'Jane'
-
-    // 数组
     const items = reactive([1, 2, 3])
     items.push(4)
     items[0] = 10
 
-    // ========== readonly ==========
+    // ========== readonly：只读代理，防止调用方直接修改 ==========
     const original = reactive({ count: 0 })
     const copy = readonly(original)
+    // copy.count++  // ⚠️ 修改无效并产生警告
 
-    // copy.count++  // 警告：不能修改
+    // ========== toRefs：解构 reactive 时保持响应性 ==========
+    // ⚠️ 解构出的变量名不能与本作用域已有声明重名
+    const stateRefs = toRefs(state)
+    stateRefs.count.value++
+    console.log(state.count)  // 1，与原对象保持双向同步
 
-    // ========== toRefs ==========
-    // 解构时保持响应性
-    const { count, message, isActive } = toRefs(state)
-
-    return {
-      count,    // Ref<number>
-      message,  // Ref<string>
-      isActive, // Ref<boolean>
-      user,     // Ref<User>
-      state,    // Reactive object
-      items     // Reactive array
-    }
+    return { state, items, original, copy, stateRefs }
   }
 }
 ```
@@ -3632,7 +3553,8 @@ export function useFetch(url) {
   const error = ref(null)
   const loading = ref(false)
 
-  async function fetch() {
+  // ⚠️ 不要把内部函数命名为 fetch，会遮蔽全局 fetch 造成无限递归
+  async function requestData() {
     loading.value = true
     error.value = null
 
@@ -3646,9 +3568,9 @@ export function useFetch(url) {
     }
   }
 
-  fetch()
+  requestData()
 
-  return { data, error, loading, fetch }
+  return { data, error, loading, refetch: requestData }
 }
 
 // composables/useDebounce.js
@@ -3672,8 +3594,11 @@ export function useDebounce(value, delay = 300) {
 
   return debouncedValue
 }
+```
 
-// 使用示例
+组件中使用：
+
+```vue
 <script setup>
 import { useMouse } from '@/composables/useMouse'
 import { useLocalStorage } from '@/composables/useLocalStorage'
@@ -3692,8 +3617,8 @@ const { data, error, loading } = useFetch('/api/user')
 
 ### 10.4 依赖注入
 
-```javascript
-// 父组件
+```vue
+<!-- 父组件 -->
 <script setup>
 import { provide, ref, readonly } from 'vue'
 import ChildComponent from './ChildComponent.vue'
@@ -3714,8 +3639,10 @@ provide('setTheme', (newTheme) => {
   theme.value = newTheme
 })
 </script>
+```
 
-// 子组件
+```vue
+<!-- 子组件 -->
 <script setup>
 import { inject } from 'vue'
 
@@ -3847,7 +3774,7 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // 检查权限
+  // 检查权限（403 路由需提前在 routes 中定义 name: 'Forbidden'）
   if (to.meta.permission && !authStore.hasPermission(to.meta.permission)) {
     next({ name: 'Forbidden' })
     return
@@ -4003,10 +3930,12 @@ export const useUserStore = defineStore('user', {
   },
 
   // ========== 持久化配置 ==========
+  // ⚠️ 需要安装并注册 pinia-plugin-persistedstate，否则 persist 选项不生效
+  // 文档：https://pinia-plugin-persistedstate.netlify.app/zh/
   persist: {
     key: 'user-store',
     storage: localStorage,
-    paths: ['token']  // 只持久化 token
+    pick: ['token']  // 只持久化 token（v3 起由 paths 改名为 pick）
   }
 })
 ```
@@ -4114,32 +4043,31 @@ export default {
 
 ### 13.1 代码分割
 
+路由级懒加载见 [11.3 懒加载](#113-懒加载)，这里补充组件级异步加载。
+
 ```javascript
-// 路由懒加载
-const routes = [
-  {
-    path: '/dashboard',
-    component: () => import('@/views/Dashboard.vue')
-  }
-]
+import { defineAsyncComponent } from 'vue'
 
-// 组件懒加载
+// ✅ Vue 3 组件懒加载：必须用 defineAsyncComponent 包裹
 export default {
   components: {
-    HeavyComponent: () => import('./HeavyComponent.vue')
-  }
-}
-
-// 条件加载
-export default {
-  components: {
-    Editor: () => import('./Editor.vue')
+    HeavyComponent: defineAsyncComponent(() => import('./HeavyComponent.vue')),
+    Editor: defineAsyncComponent(() => import('./Editor.vue'))
   },
   data() {
     return { showEditor: false }
   }
 }
+
+// ❌ Vue 2 的裸工厂函数写法，Vue 3 中不再被当作异步组件
+export default {
+  components: {
+    HeavyComponent: () => import('./HeavyComponent.vue')
+  }
+}
 ```
+
+💡 详见官方文档 [异步组件](https://cn.vuejs.org/guide/components/async)。
 
 ### 13.2 列表优化
 
@@ -4155,8 +4083,8 @@ export default {
     <div>{{ item.name }}</div>
   </RecycleScroller>
 
-  <!-- 分页加载 -->
-  <div v-infinite-scroll="loadMore" :infinite-scroll-disabled="loading">
+  <!-- 分页加载（防重复请求的判断放在 loadMore 内部） -->
+  <div v-infinite-scroll="loadMore">
     <div v-for="item in items" :key="item.id">
       {{ item.name }}
     </div>
@@ -4246,6 +4174,8 @@ export default {
 
 ```vue
 <script setup lang="ts">
+import { ref, computed } from 'vue'
+
 interface Props {
   title: string
   count?: number
@@ -4546,7 +4476,7 @@ export default {
     type="email"
     required
     aria-required="true"
-    aria-invalid="!!emailError"
+    :aria-invalid="!!emailError"
     :aria-describedby="emailError ? 'email-error' : null"
   />
   <span
@@ -4562,7 +4492,7 @@ export default {
   <div
     role="status"
     aria-live="polite"
-    aria-busy="isLoading"
+    :aria-busy="isLoading"
   >
     {{ isLoading ? '加载中...' : '加载完成' }}
   </div>

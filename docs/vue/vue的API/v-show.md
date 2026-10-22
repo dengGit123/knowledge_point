@@ -1088,7 +1088,7 @@ interface ImageItem {
   alt: string
 }
 
-const images: Image[] = [
+const images: ImageItem[] = [
   { url: 'https://picsum.photos/600/300?random=1', alt: '图片 1' },
   { url: 'https://picsum.photos/600/300?random=2', alt: '图片 2' },
   { url: 'https://picsum.photos/600/300?random=3', alt: '图片 3' },

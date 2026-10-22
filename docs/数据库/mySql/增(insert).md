@@ -138,6 +138,8 @@ WHERE age > 18;
 INSERT IGNORE INTO users (name, age, email)
 VALUES ('张三', 20, 'zhangsan@xx.com');  -- 假设这个 email 已存在
 -- 结果：0 行受影响，静默跳过
+
+> ⚠️ **注意：** `INSERT IGNORE` 不只忽略主键/唯一键冲突，还会把其他错误（如 NOT NULL 违规、数据超长被截断）**降级为警告**，可能出现"数据被悄悄处理了，你以为插入成功"的情况。只用于"允许跳过脏数据"的场景。
 ```
 
 ### 4.2 INSERT ... ON DUPLICATE KEY UPDATE —— 重复就更新

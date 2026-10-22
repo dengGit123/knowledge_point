@@ -1,8 +1,8 @@
 # useCssModule
 
-用于在 `<script setup>` 中访问 CSS Modules。
+用于在 `setup()` 或 `<script setup>` 中访问 CSS Modules 注入的 class 对象。不传参数时返回 `<style module>`（即 `$style`）的内容；传入与 `module` attribute 一致的名称时，返回对应的具名 CSS Modules。
 
-📖 [useCssModule](https://cn.vuejs.org/api/sfc-css-features#usecssmodule)
+📖 [useCssModule（官方文档 - CSS Modules）](https://cn.vuejs.org/api/sfc-css-features.html#css-modules)
 
 ## 语法
 
@@ -13,13 +13,19 @@ const cssModule = useCssModule()
 const namedModule = useCssModule('custom-name')
 ```
 
+官方类型签名：
+
+```ts
+function useCssModule(name?: string): Record<string, string>
+```
+
 ## 参数
 
-- `name` (可选): 指定要访问的 CSS Modules 名称
+- `name`（可选）：`<style module="xxx">` 的 `module` attribute 值，用于访问具名 CSS Modules
 
 ## 返回值
 
-返回一个包含 CSS Modules 类名的对象
+返回 `Record<string, string>`：键为 `<style module>` 中写的类名，值为编译后的哈希类名（如 `"container"` → `"container_xfpAb2"`）
 
 ## 基础用法
 
@@ -54,7 +60,7 @@ console.log(style.title) // "title_xxx"
 ```vue
 <template>
   <div>
-    <div :classes="defaultClasses.container">默认样式</div>
+    <div :class="defaultClasses.container">默认样式</div>
     <div :class="customClasses.container">自定义样式</div>
   </div>
 </template>
@@ -162,7 +168,7 @@ const combinedClasses = computed(() => [
 </template>
 
 <script setup>
-import { useCssModule, computed } from 'vue'
+import { useCssModule, computed, ref } from 'vue'
 
 const style = useCssModule()
 const isActive = ref(true)
@@ -228,6 +234,8 @@ const buttonClasses = computed(() => [
 
 ## TypeScript 支持
 
+`useCssModule` 的签名是 `useCssModule(name?: string): Record<string, string>`，不接受泛型参数。要获得更精确的类型，用类型断言：
+
 ```vue
 <script setup lang="ts">
 import { useCssModule } from 'vue'
@@ -239,7 +247,8 @@ interface CssModules {
   button: string
 }
 
-const style = useCssModule<CssModules>()
+// ✅ 用 as 断言收窄类型
+const style = useCssModule() as CssModules
 
 // TypeScript 现在知道这些属性存在
 console.log(style.container)
@@ -251,6 +260,11 @@ console.log(style.container)
 .content { /* ... */ }
 .button { /* ... */ }
 </style>
+```
+
+```ts
+// ❌ 错误：useCssModule 没有泛型参数，传类型参数会编译报错
+const style = useCssModule<CssModules>()
 ```
 
 ## 在可组合函数中使用
@@ -282,7 +296,7 @@ export function useTheme() {
 </template>
 
 <script setup>
-import { useCssModule, computed } from 'vue'
+import { useCssModule, computed, ref } from 'vue'
 
 const style = useCssModule()
 const color = ref('#42b983')
@@ -328,13 +342,13 @@ const theme = useCssModule('theme')
 
 ## 注意事项
 
-1. **仅在 `<script setup>` 中使用**：只能在 setup 中使用
+1. **仅在 setup 上下文中使用**：只能在 `setup()` 或 `<script setup>` 中同步调用
 
-2. **需要 module 属性**：`<style>` 标签必须有 `module` 属性
+2. **需要 module 属性**：`<style>` 标签必须有 `module` 属性，否则没有可访问的 CSS Modules
 
-3. **$style 变量**：模板中可以直接使用 `$style`
+3. **$style 变量**：不调用 `useCssModule` 时，模板中也可以直接使用 `$style`（默认注入名称）
 
-4. **作用域隔离**：每个组件的 CSS Modules 是独立的
+4. **作用域隔离**：每个组件的 CSS Modules 是独立的，class 会被哈希化以避免冲突
 
 5. **服务端渲染**：SSR 中也能正常工作
 
@@ -342,6 +356,6 @@ const theme = useCssModule('theme')
    - CSS Modules：生成唯一类名
    - scoped：添加属性选择器
 
-7. **命名规则**：类名遵循 JavaScript 命名规则
+7. **命名规则**：连字符形式的类名（如 `long-class-name`）需要用方括号访问 `style['long-class-name']`；推荐直接在 CSS 中使用驼峰命名（`.longClassName`）
 
-8. **性能**：编译时生成类名，运行时无额外开销
+8. **性能**：编译时生成哈希类名，运行时无额外开销

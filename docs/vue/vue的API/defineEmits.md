@@ -4,7 +4,7 @@
 
 `defineEmits()` 是 `<script setup>` 中用于声明组件可以触发事件的编译器宏。它不需要显式导入，可以在 `<script setup>` 中直接使用。用于子组件向父组件通信。
 
-📖 [官方文档 - defineProps / defineEmits](https://cn.vuejs.org/api/sfc-script-setup#defineprops-defineemits)
+📖 [官方文档 - defineProps / defineEmits](https://cn.vuejs.org/api/sfc-script-setup.html#defineprops-defineemits)
 
 ## 用法
 
@@ -86,12 +86,22 @@ function handleSubmit() {
 
 ### TypeScript 类型声明
 
+类型声明支持两种写法：**调用签名**（逐个事件声明参数）和**具名元组**（3.3+，更简洁）：
+
 ```vue
 <script setup lang="ts">
+// ✅ 写法一：调用签名
 const emit = defineEmits<{
   (e: 'change', id: number): void
   (e: 'update', value: string): void
   (e: 'delete', id: number): void
+}>()
+
+// ✅ 写法二：具名元组（3.3+）
+const emit2 = defineEmits<{
+  change: [id: number]
+  update: [value: string]
+  delete: [id: number]
 }>()
 
 // 使用
@@ -272,9 +282,9 @@ function handleClick(e) {
 
 ### 在 setup 函数中使用
 
-```javascript
-import { defineEmits } from 'vue'
+`defineEmits` 是 `<script setup>` 专属的编译器宏。在 Options API 的 `setup()` 选项中，`emit` 由 `setup` 的第二个参数（上下文）提供，通过 `emits` 选项声明事件：
 
+```javascript
 export default {
   emits: ['click', 'submit'],
 
@@ -293,20 +303,19 @@ export default {
 
 ### 1. emit 命名规范
 
+事件名推荐使用 **kebab-case**，`update:xxx` 形式的 v-model 事件除外。emit 时会自动尝试匹配父组件监听的驼峰 / 连字符形式：
+
 ```vue
 <script setup>
-const emit = defineEmits(['click', 'update:value'])
+const emit = defineEmits(['change', 'update:modelValue'])
 
-// ✅ 推荐：使用 kebab-case
-emit('update:value')
-
-// ✅ 也支持 camelCase
-emit('update:value')
-
-// 在父组件中监听
-// <MyComponent @update-value="handler" />
-// <MyComponent @update:value="handler" />
+// ✅ 声明什么名字就 emit 什么名字
+emit('change')
+emit('update:modelValue')
 </script>
+
+<!-- 父组件中监听（模板中的 @change 会被编译为 onChange） -->
+<!-- <MyComponent @change="handler" @update:model-value="handler" /> -->
 ```
 
 ### 2. 事件验证
@@ -346,19 +355,19 @@ const emit = defineEmits(['myEvent'])
 
 ### 4. 与原生事件区别
 
+一旦用 `defineEmits` 声明了 `click` 等与原生同名的自定义事件，该事件就被视为组件的自定义事件：**不再**随 `$attrs` 自动透传到根元素上，父组件的 `@click` 只会在子组件 `emit('click')` 时触发：
+
 ```vue
 <script setup>
 const emit = defineEmits(['click'])
 
 function handleClick(e) {
-  // emit('click') 是自定义事件
-  // e 是原生 DOM 事件对象
+  // 需要手动转发原生事件对象
   emit('click', e)
 }
 </script>
 
 <template>
-  <!-- 监听自定义 click 事件 -->
   <button @click="handleClick">
     Click
   </button>

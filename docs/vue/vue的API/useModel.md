@@ -43,7 +43,7 @@ const modelValue = useModel(props, 'modelValue')
 
 本质上，它等价于一个 `computed` + `ref` 的结合体：
 
-```
+```text
 ┌──────────────────────────────────────────────────┐
 │                    父组件                         │
 │  const value = ref('hello')                       │
@@ -289,7 +289,7 @@ const text = useModel(props, 'modelValue', {
 </script>
 ```
 
-##### 2.4 搭配修饰符使用
+##### 2.5 搭配修饰符使用
 
 当 `v-model` 带修饰符时（如 `v-model.trim`），需要声明对应的 `modelModifiers` prop：
 
@@ -366,7 +366,16 @@ function handleInput(event: Event) {
 |------|------|
 | `ModelRef<T>` | 一个可写的 ref，读取时返回 props 值，写入时自动触发 emit |
 
-> 💡 **提示：** `ModelRef` 继承自 `Ref`，可以像普通 ref 一样在模板中直接使用，也可以通过 `.value` 在脚本中读写。
+官方类型定义为：
+
+```ts
+type ModelRef<T, M extends PropertyKey = string, G = T, S = T> = Ref<G, S> & [
+  ModelRef<T, M, G, S>,
+  Record<M, true | undefined>
+]
+```
+
+> 💡 **提示：** `ModelRef` 基于 `Ref` 扩展，可以像普通 ref 一样在模板中直接使用，也可以通过 `.value` 在脚本中读写。
 
 ### 四、实现效果
 
@@ -408,7 +417,7 @@ const modelValue = useModel(props, 'modelValue')
 
 **运行效果：**
 
-```
+```text
 1. 初始状态：
    父组件 message: 'Hello'
    子组件 input 显示: 'Hello'

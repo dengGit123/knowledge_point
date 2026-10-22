@@ -1,4 +1,4 @@
-### Vue version
+# version
 
 > 📖 [官方文档 - version](https://cn.vuejs.org/api/general.html#version)
 
@@ -981,11 +981,23 @@ export async function render(url: string): Promise<string> {
 | API | 说明 | 返回值 | 使用场景 |
 | --- | --- | --- | --- |
 | `version` | 运行时获取 Vue 版本号 | `string`，如 `"3.5.13"` | 插件兼容性检查、错误上报 |
+| `app.version` | 应用实例属性，提供当前应用所使用的 Vue 版本号 | `string` | 插件 `install(app)` 内按版本分支逻辑 |
 | `import.meta.env.VUE_VERSION` | 通过 Vite 环境变量获取 | `string`（需手动配置） | 构建时注入版本信息 |
 | `package.json` 的 `version` | 读取 npm 包的声明版本 | `string` | 构建脚本中使用 |
-| `app.version` | Vue 2 的全局 API | `string` | Vue 2 中使用（已废弃） |
 
-> 💡 **提示：** `version` 是 Vue 3 中推荐的方式。Vue 2 中通过 `Vue.version` 访问，但在 Vue 3 中应使用 `import { version } from 'vue'`。
+> 💡 **提示：** 全局导出的 `version` 与应用实例的 `app.version` 值一致。插件内部拿到的只有 `app` 实例时，用 `app.version` 更方便：
+
+```ts
+// app.version 官方示例：插件中根据主版本号执行不同逻辑
+export default {
+  install(app) {
+    const version = Number(app.version.split('.')[0])
+    if (version < 3) {
+      console.warn('此插件要求 Vue 3+')
+    }
+  }
+}
+```
 
 ### 八、总结
 

@@ -1,6 +1,6 @@
-### useLink
+# useLink
 
-> 📖 [Vue Router 官方文档 - useLink](https://router.vuejs.org/zh/api/#uselink)
+> 📖 [Vue Router 官方文档 - useLink](https://router.vuejs.org/zh/api/#Functions-useLink)
 
 ---
 
@@ -22,8 +22,8 @@
 
 `useLink` 的核心工作流程如下：
 
-```
-props（传入 to、custom 等）
+```text
+props（传入 to、replace 等）
         │
         ▼
   ┌─────────────────────────────────┐
@@ -71,10 +71,10 @@ const { route, href, isActive, isExactActive, navigate } = useLink(props)
 </template>
 
 <script setup lang="ts">
-import { useLink } from 'vue-router'
+import { useLink, type RouteLocationRaw } from 'vue-router'
 
 interface Props {
-  to: string | Record<string, any>
+  to: RouteLocationRaw
 }
 
 const props = defineProps<Props>()
@@ -104,10 +104,8 @@ const { href, navigate } = useLink(props)
     :href="href"
     :class="[
       'nav-link',
-      {
-        'router-link-active': isActive,
-        'router-link-exact-active': isExactActive,
-      },
+      isActive ? activeClass : '',
+      isExactActive ? exactActiveClass : '',
     ]"
     @click="navigate"
   >
@@ -116,7 +114,6 @@ const { href, navigate } = useLink(props)
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useLink, type RouteLocationRaw } from 'vue-router'
 
 interface Props {
@@ -125,6 +122,7 @@ interface Props {
   exactActiveClass?: string
 }
 
+// useLink 不消费 activeClass/exactActiveClass，激活类名由我们自己绑定
 const props = withDefaults(defineProps<Props>(), {
   activeClass: 'router-link-active',
   exactActiveClass: 'router-link-exact-active',
@@ -300,26 +298,27 @@ const isAuthorized = computed(() => {
 
 #### 3. API 参数说明
 
-**参数（Props）：**
+**参数（类型为 `UseLinkOptions`，官方文档中写作 `VueUseOptions<RouterLinkOptions>`）：**
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `to` | `RouteLocationRaw` | 是 | 目标路由，可以是路径字符串或路由对象 |
-| `replace` | `boolean` | 否 | 是否替换当前历史记录（默认 `false`） |
-| `force` | `boolean` | 否 | 是否强制导航，即使目标路由与当前路由相同（默认 `false`） |
-| `state` | `Record<string, any>` | 否 | 传递给 `history.pushState` 的状态对象 |
+| `to` | `MaybeRef<RouteLocationRaw>` | 是 | 目标路由，可以是路径字符串或路由对象。接受 ref/响应式对象，目标变化时 `href` 等返回值会自动重新解析 |
+| `replace` | `MaybeRef<boolean>` | 否 | 为 `true` 时调用 `router.replace` 替换当前历史记录，而不是 `push`（默认 `false`） |
+| `viewTransition` | `boolean` | 否 | 将导航交给 `document.startViewTransition()` 处理（较新版本的 Vue Router 4 才支持） |
 
-**返回值：**
+> ⚠️ **注意：** `useLink` 只接受上表三个选项。`activeClass`、`exactActiveClass`、`custom`、`ariaCurrentValue` 是 `<RouterLink>` 组件的 props，不属于 `useLink` 的参数。`force`、`state` 则是 `router.push()` 的导航选项，同样不能传给 `useLink`——激活类名需要你在自己的模板中根据 `isActive` / `isExactActive` 手动绑定。
+
+**返回值（类型为 `UseLinkReturn`）：**
 
 | 属性 | 类型 | 说明 |
 |------|------|------|
-| `route` | `RouteLocation & { href: string }` | 解析后的路由位置对象 |
-| `href` | `string` | 解析后的完整 URL 路径 |
-| `isActive` | `Ref<boolean>` | 当前路由是否匹配此链接（包含匹配，即父路由也算激活） |
-| `isExactActive` | `Ref<boolean>` | 当前路由是否**精确**匹配此链接 |
-| `navigate` | `(e?: MouseEvent) => Promise<void>` | 执行导航的异步函数，可传入原生事件对象 |
+| `route` | `ComputedRef<RouteLocationResolved>` | 解析后的目标路由位置对象（官方文档类型写作 `ComputedRef<RouteLocation & { href: string }>`） |
+| `href` | `ComputedRef<string>` | 解析后的完整 URL 路径 |
+| `isActive` | `ComputedRef<boolean>` | 当前路由是否匹配此链接（包含匹配，即父路由也算激活） |
+| `isExactActive` | `ComputedRef<boolean>` | 当前路由是否**精确**匹配此链接 |
+| `navigate` | `(e?: MouseEvent) => Promise<void \| NavigationFailure>` | 执行导航的异步函数，可传入原生事件对象，返回导航结果或导航失败信息 |
 
-> 💡 **提示：** `isActive` 和 `isExactActive` 都是 `Ref` 对象，在模板中会自动解包（直接用 `.value` 以外的方式访问），但在 `<script>` 中需要通过 `.value` 获取值。
+> 💡 **提示：** `route`、`href`、`isActive`、`isExactActive` 都是 `ComputedRef`。在模板中会自动解包（直接写 `href`、`isActive`），在 `<script>` 中需要通过 `.value` 获取值。
 
 ---
 
@@ -425,27 +424,26 @@ button {
 
 #### 场景 2：导航栏组件（NavMenu）
 
-在导航菜单中统一管理链接的激活状态样式。
+在导航菜单中统一管理链接的激活状态样式。推荐做法是把 `useLink` 封装进子组件，每个列表项内部各自调用一次。
 
 ```vue
 <!-- NavMenu.vue -->
 <template>
   <nav class="nav-menu">
-    <a
+    <NavItem
       v-for="item in menuItems"
-      :key="item.path"
-      :href="getItemLink(item).href.value"
-      :class="{ 'nav-active': getItemLink(item).isActive.value }"
-      @click="getItemLink(item).navigate"
+      :key="String(item.path)"
+      :to="item.path"
     >
       <span :class="item.icon" />
       {{ item.label }}
-    </a>
+    </NavItem>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { useLink, type RouteLocationRaw } from 'vue-router'
+import type { RouteLocationRaw } from 'vue-router'
+import NavItem from './NavItem.vue'
 
 interface MenuItem {
   path: RouteLocationRaw
@@ -453,51 +451,65 @@ interface MenuItem {
   icon: string
 }
 
-// ✅ 注意：实际项目中应避免在 v-for 中重复调用 useLink
-// 推荐使用子组件封装
 const menuItems: MenuItem[] = [
   { path: '/dashboard', label: '仪表盘', icon: 'icon-dashboard' },
   { path: '/profile', label: '个人中心', icon: 'icon-user' },
   { path: '/settings', label: '设置', icon: 'icon-setting' },
 ]
-
-// 将 useLink 封装到子组件 NavItem 中更合理
-// 这里仅演示 useLink 的能力
-const linkCache = new Map()
-
-function getItemLink(item: MenuItem) {
-  if (!linkCache.has(item.path)) {
-    linkCache.set(item.path, useLink({ to: item.path }))
-  }
-  return linkCache.get(item.path)
-}
 </script>
 ```
 
-> 💡 **提示：** 更好的做法是抽离一个 `NavItem.vue` 子组件，在每个子组件内部各自调用 `useLink`，避免在父组件的 `v-for` 中缓存。
+```vue
+<!-- NavItem.vue -->
+<template>
+  <a
+    :href="href"
+    :class="{ 'nav-active': isActive }"
+    @click="navigate"
+  >
+    <slot />
+  </a>
+</template>
+
+<script setup lang="ts">
+import { useLink, type RouteLocationRaw } from 'vue-router'
+
+const props = defineProps<{
+  to: RouteLocationRaw
+}>()
+
+// ✅ 每个子组件实例内部各自调用一次 useLink
+const { href, navigate, isActive } = useLink(props)
+</script>
+```
+
+> 💡 **提示：** 在 `v-for` 场景中不要在父组件里缓存 `useLink` 的返回值再于渲染中调用——抽离子组件让每个列表项自己调用，既天然隔离激活状态，也符合「在 setup 中同步调用」的约束。
 
 #### 场景 3：面包屑导航
+
+同样用「父组件渲染结构 + 子组件内部调用 `useLink`」的方式来组织面包屑。
 
 ```vue
 <!-- Breadcrumb.vue -->
 <template>
   <div class="breadcrumb">
-    <template v-for="(crumb, index) in crumbs" :key="crumb.path">
+    <template v-for="(crumb, index) in crumbs" :key="index">
       <!-- ✅ 最后一项不可点击 -->
       <span v-if="index === crumbs.length - 1" class="crumb-current">
         {{ crumb.label }}
       </span>
       <!-- ✅ 其他项可点击导航 -->
-      <a v-else :href="getLink(crumb.path).href.value" @click="getLink(crumb.path).navigate">
+      <BreadcrumbLink v-else :to="crumb.path">
         {{ crumb.label }}
-      </a>
+      </BreadcrumbLink>
       <span v-if="index < crumbs.length - 1" class="separator">/</span>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useLink, type RouteLocationRaw } from 'vue-router'
+import type { RouteLocationRaw } from 'vue-router'
+import BreadcrumbLink from './BreadcrumbLink.vue'
 
 interface Crumb {
   path: RouteLocationRaw
@@ -507,16 +519,25 @@ interface Crumb {
 defineProps<{
   crumbs: Crumb[]
 }>()
+</script>
+```
 
-const linkMap = new Map<string, ReturnType<typeof useLink>>()
+```vue
+<!-- BreadcrumbLink.vue -->
+<template>
+  <a :href="href" @click="navigate">
+    <slot />
+  </a>
+</template>
 
-function getLink(path: RouteLocationRaw) {
-  const key = JSON.stringify(path)
-  if (!linkMap.has(key)) {
-    linkMap.set(key, useLink({ to: path }))
-  }
-  return linkMap.get(key)!
-}
+<script setup lang="ts">
+import { useLink, type RouteLocationRaw } from 'vue-router'
+
+const props = defineProps<{
+  to: RouteLocationRaw
+}>()
+
+const { href, navigate } = useLink(props)
 </script>
 ```
 
@@ -634,8 +655,6 @@ interface Props {
   badge?: number | string
 }
 
-defineProps<Props>()
-
 const props = defineProps<Props>()
 const { href, navigate, isActive } = useLink(props)
 </script>
@@ -674,27 +693,26 @@ const { href, navigate, isActive } = useLink(props)
 
 #### 场景 7：Tab 切换组件
 
-用路由驱动的 Tab 切换，每个 Tab 对应一个路由。
+用路由驱动的 Tab 切换，每个 Tab 对应一个路由。Tab 项封装为子组件，内部各自调用 `useLink`。
 
 ```vue
 <!-- RouteTab.vue -->
 <template>
   <div class="route-tabs">
-    <a
+    <RouteTabItem
       v-for="tab in tabs"
       :key="String(tab.to)"
-      :href="getTabLink(tab.to).href.value"
-      :class="['tab-item', { active: getTabLink(tab.to).isActive.value }]"
-      @click="getTabLink(tab.to).navigate"
+      :to="tab.to"
     >
       {{ tab.label }}
-    </a>
+    </RouteTabItem>
   </div>
   <RouterView />
 </template>
 
 <script setup lang="ts">
-import { useLink, type RouteLocationRaw } from 'vue-router'
+import type { RouteLocationRaw } from 'vue-router'
+import RouteTabItem from './RouteTabItem.vue'
 
 interface Tab {
   to: RouteLocationRaw
@@ -704,16 +722,6 @@ interface Tab {
 defineProps<{
   tabs: Tab[]
 }>()
-
-const linkCache = new Map<string, ReturnType<typeof useLink>>()
-
-function getTabLink(to: RouteLocationRaw) {
-  const key = JSON.stringify(to)
-  if (!linkCache.has(key)) {
-    linkCache.set(key, useLink({ to }))
-  }
-  return linkCache.get(key)!
-}
 </script>
 
 <style scoped>
@@ -722,6 +730,7 @@ function getTabLink(to: RouteLocationRaw) {
   border-bottom: 1px solid #e8e8e8;
 }
 
+/* 子组件的根元素是 <a class="tab-item">，父组件的 scoped 样式同样作用于它 */
 .tab-item {
   padding: 10px 20px;
   text-decoration: none;
@@ -739,6 +748,29 @@ function getTabLink(to: RouteLocationRaw) {
   color: #333;
 }
 </style>
+```
+
+```vue
+<!-- RouteTabItem.vue -->
+<template>
+  <a
+    :href="href"
+    :class="['tab-item', { active: isActive }]"
+    @click="navigate"
+  >
+    <slot />
+  </a>
+</template>
+
+<script setup lang="ts">
+import { useLink, type RouteLocationRaw } from 'vue-router'
+
+const props = defineProps<{
+  to: RouteLocationRaw
+}>()
+
+const { href, navigate, isActive } = useLink(props)
+</script>
 ```
 
 #### 场景 8：带键盘快捷键的导航
@@ -879,11 +911,6 @@ const visibleItems = computed(() =>
 <script setup lang="ts">
 import { useLink, type RouteLocationRaw } from 'vue-router'
 
-defineProps<{
-  to: RouteLocationRaw
-  icon: string
-}>()
-
 const props = defineProps<{
   to: RouteLocationRaw
   icon: string
@@ -948,8 +975,10 @@ function prefetch() {
 `useLink` 依赖 Vue Router 的上下文，必须在 `setup` 函数或 `<script setup>` 中调用，且应用必须安装了 Vue Router。
 
 ```ts
-// ❌ 在 setup 外部调用会报错
-const { href } = useLink({ to: '/home' }) // Error: No router instance found
+// ❌ 在 setup 外部调用
+const { href } = useLink({ to: '/home' })
+// 开发环境会收到 inject 警告，拿不到 router 上下文，
+// href 等计算属性在求值时会抛出 TypeError
 
 // ✅ 在 setup 中调用
 import { useLink } from 'vue-router'
@@ -1070,7 +1099,7 @@ const { navigate } = useLink({ to: '/dashboard', replace: true })
 
 #### 9. 响应式特性
 
-`useLink` 的返回值（`href`、`isActive`、`isExactActive`）都是响应式的，当 `to` 属性或路由发生变化时会自动更新，无需手动监听。
+`useLink` 的参数 `to`、`replace` 均接受 `MaybeRef`，返回值（`route`、`href`、`isActive`、`isExactActive`）都是 `ComputedRef`：当 `to` 属性或当前路由发生变化时会自动更新，无需手动监听。
 
 ```ts
 const toPath = ref('/home')

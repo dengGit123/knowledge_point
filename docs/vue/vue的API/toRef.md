@@ -58,7 +58,7 @@ export function useFeature(state) {
 
 ```vue
 <script setup>
-import { toRef } from 'vue'
+import { toRef, computed } from 'vue'
 
 const props = defineProps({
   count: Number,
@@ -135,9 +135,11 @@ const userRef = toRef(props, 'user')
 </script>
 ```
 
+补充：`toRef(() => ...)` 这种 getter 写法是 Vue 3.3 新增的，返回的是一个**只读 ref**——源变化时读取到的值会跟着变，但不能对它赋值。
+
 ### TypeScript 类型支持
 
-```javascript
+```typescript
 import { reactive, toRef } from 'vue'
 
 interface State {
@@ -196,13 +198,17 @@ const state = reactive({
   count: 0
 })
 
-// ⚠️ 访问不存在的属性返回 undefined 的 ref
+// ⚠️ 属性不存在时，读取返回 undefined
 const missing = toRef(state, 'missing')
 console.log(missing.value) // undefined
 
-// 可以设置值
+// 赋值会把属性添加到源对象，并触发依赖它的更新
 missing.value = 'new value'
-// state.missing = 'new value' - 会添加到源对象
+console.log(state.missing) // 'new value'
+
+// ✅ Vue 3.3+ 支持第三个参数作为默认值：属性不存在时读取返回默认值
+const message = toRef(state, 'message', 'hello')
+console.log(message.value) // 'hello'
 ```
 
 ### 4. 与 ref 的区别
@@ -552,20 +558,25 @@ const { motion } = useMotion({
 
 ## API 签名
 
-```javascript
+```typescript
+// 值 / ref / getter 版本（getter 写法需要 Vue 3.3+，返回只读 ref）
+function toRef<T>(value: T): ToRef<T>
+
 // 对象属性版本
 function toRef<T extends object, K extends keyof T>(
   object: T,
   key: K
 ): ToRef<T[K]>
 
-// getter 版本
-function toRef<T>(
-  getter: () => T
-): Readonly<Ref<T>>
+// 对象属性版本，带默认值（Vue 3.3+）
+function toRef<T extends object, K extends keyof T>(
+  object: T,
+  key: K,
+  defaultValue: T[K]
+): ToRef<T[K]>
 
-// 类型别名
-type ToRef<T> = T extends Ref ? T : Ref<NonNullable<T>>
+// 类型别名：传入的已经是 ref 就原样返回，否则包装成新 ref
+type ToRef<T> = T extends Ref ? T : Ref<T>
 ```
 
 ## toRef vs 其他响应式 API

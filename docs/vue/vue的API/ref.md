@@ -3,7 +3,7 @@
 📖 [Vue 官方文档 - ref](https://cn.vuejs.org/api/reactivity-core#ref)
 
 ## 作用
-`ref()` 是 Vue 3 组合式 API 中用于创建响应式数据的基本方法。它接受一个内部值并返回一个响应式的、可变的 ref 对象，该对象只有一个指向其内部值的属性 `.value`。
+`ref()` 是 Vue 3 组合式 API 中用于创建响应式数据的基本方法。它接受一个内部值并返回一个响应式的、可变的 ref 对象，通过 `.value` 属性暴露内部值。若内部值是对象，它会通过 `reactive()`（把对象转为深层响应式代理的 API）被转为深层响应式。
 
 ## 用法
 
@@ -138,19 +138,22 @@ count++ // count 不会改变
 // <template>{{ count }}</template>
 ```
 
-### 2. 嵌套响应式对象
+### 2. 整体替换 .value 是安全的
 
 ```javascript
 const state = ref({
   count: 0
 })
 
-// ✅ 正确：.value 是响应式的
+// ✅ 修改深层属性：响应式
 state.value.count++
 
-// ❌ 错误：直接替换整个对象会丢失响应性
-state.value = { count: 1 } // 不推荐，需要特殊处理
+// ✅ 整体替换 .value：同样触发更新
+// 新对象会再次通过 reactive() 转为深层响应式，不会丢失响应性
+state.value = { count: 1 }
 ```
+
+> ⚠️ 会丢失响应性的是 reactive 对象整体重新赋值，ref 的 `.value` 可以放心整体替换。
 
 ### 3. 解构会丢失响应性
 
@@ -161,7 +164,7 @@ const state = ref({ count: 0 })
 const { count } = state.value
 count++ // 不会触发更新
 
-// ✅ 正确：使用 toRefs
+// ✅ 正确：使用 toRefs（把对象的每个属性转为 ref）
 import { toRefs } from 'vue'
 const { count } = toRefs(state.value)
 ```
@@ -178,10 +181,14 @@ const state = reactive({ count })
 state.count++
 console.log(count.value) // 1
 
-// ⚠️ 但新的 ref 不会自动解包
+// ✅ 后续新赋值的 ref 同样会被自动解包
 const newCount = ref(1)
 state.newCount = newCount
-state.newCount++ // ❌ 不会更新 newCount.value
+state.newCount++ // ✅ newCount.value 同步变为 2
+
+// ⚠️ 例外：数组 / Map / Set 中的 ref 元素不会被解包
+const arr = reactive([ref(0)])
+arr[0].value // 需要手动 .value
 ```
 
 ### 5. 异步操作
@@ -236,7 +243,11 @@ function toggle() {
 
 ### 3. 与 computed 配合使用
 
+配合 `computed()`（基于响应式依赖自动缓存派生值的计算属性）使用：
+
 ```javascript
+import { ref, computed } from 'vue'
+
 const count = ref(0)
 const doubled = computed(() => count.value * 2)
 ```
@@ -322,6 +333,8 @@ const currentTab = ref('home')
 
 ```vue
 <script setup>
+import { ref, onMounted } from 'vue'
+
 const canvasRef = ref(null)
 
 onMounted(() => {
@@ -357,7 +370,9 @@ function validateChild() {
 ### 10. 性能优化（与 shallowRef 配合）
 
 ```javascript
-// 对于大型数据，使用 shallowRef
+import { shallowRef } from 'vue'
+
+// shallowRef：浅层 ref，仅替换 .value 才触发更新，适合大型数据
 const bigData = shallowRef({ /* 大量数据 */ })
 
 // 需要更新时整体替换

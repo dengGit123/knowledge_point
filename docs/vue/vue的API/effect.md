@@ -4,9 +4,9 @@
 
 `effect()` 是 Vue 3 响应式系统的底层 API，用于创建一个响应式副作用函数。它会立即执行一次，并自动追踪其中使用的响应式依赖。当依赖发生变化时，副作用函数会自动重新执行。
 
-> ⚠️ 这是一个**底层 API**，在应用代码中通常使用 `watchEffect()` 代替。`effect()` 主要用于库的作者或需要精细控制副作用的场景。
+> ⚠️ 这是一个**底层 API**，Vue 官方文档并未把它列为公开 API（进阶文档只列出 `effectScope()`、`getCurrentScope()`、`onScopeDispose()`）。在应用代码中通常使用 `watchEffect()` 代替；`effect()` 主要用于库作者或需要精细控制副作用的场景。
 
-📖 [Vue 官方文档 - 响应式 API：进阶](https://cn.vuejs.org/api/reactivity-advanced)
+📖 [Vue 官方文档 - 响应式 API：进阶](https://cn.vuejs.org/api/reactivity-advanced.html)
 
 ## 函数签名
 
@@ -17,18 +17,20 @@ function effect<T = any>(
 ): EffectRunner<T>
 
 interface EffectOptions {
-  lazy?: boolean           // 是否延迟执行（不立即运行）
-  scheduler?: EffectScheduler  // 自定义调度器
-  flush?: 'pre' | 'post' | 'sync'  // 执行时机
+  scheduler?: EffectScheduler  // 自定义调度器：依赖变化时不直接重跑 fn，而是调用 scheduler
+  allowRecurse?: boolean   // 是否允许 effect 触发自身的重新执行（默认 false）
   onStop?: () => void      // 停止时的回调
-  allowRecurse?: boolean   // 是否允许递归调用
+  onTrack?: (e: DebuggerEvent) => void   // 调试用：依赖被追踪时触发
+  onTrigger?: (e: DebuggerEvent) => void // 调试用：依赖变化触发更新时触发
 }
 
 interface EffectRunner<T> {
   (): T              // 调用时重新执行副作用
-  effect: ReactiveEffect  // 内部 effect 实例
+  effect: ReactiveEffect  // 内部 effect 实例，可通过 runner.effect.stop() 停止
 }
 ```
+
+> 💡 `effect()` 会在创建时**立即执行一次**。Vue 3.5 起已不支持 `lazy` 选项（3.4 及之前支持）；`flush` 也不是 `effect()` 的选项，它属于 `watch` / `watchEffect`。停止副作用还可以直接调用导出的 `stop(runner)`。
 
 ## 基本用法
 
@@ -72,28 +74,7 @@ count.value++
 
 ## effect 的选项
 
-### 1. lazy - 延迟执行
-
-```javascript
-import { ref, effect } from 'vue'
-
-const count = ref(0)
-
-// lazy: true 不会立即执行，需要手动调用
-const runner = effect(() => {
-  console.log('count:', count.value)
-  return count.value * 2
-}, { lazy: true })
-
-// 手动执行
-const result = runner() // 输出: count: 0
-console.log(result) // 0
-
-count.value++
-runner() // 输出: count: 1
-```
-
-### 2. scheduler - 自定义调度器
+### 1. scheduler - 自定义调度器
 
 ```javascript
 import { ref, effect } from 'vue'
@@ -104,7 +85,8 @@ effect(() => {
   console.log('副作用执行:', count.value)
 }, {
   scheduler(fn) {
-    // 自定义调度：不立即执行，而是放到下一个微任务
+    // 依赖变化时不立即重跑 fn，而是交给 scheduler 调度
+    // 注意：scheduler 必须自行调用 fn 才会让副作用重新执行
     Promise.resolve().then(fn)
   }
 })
@@ -114,30 +96,24 @@ console.log('同步代码') // 先执行
 // 然后: 副作用执行: 1
 ```
 
-### 3. flush - 执行时机
+### 2. flush - 不是 effect 的选项
 
 ```javascript
-import { ref, effect } from 'vue'
+import { ref, watchEffect } from 'vue'
 
 const count = ref(0)
 
-// 默认 flush: 'pre' — 组件更新前执行
-effect(() => {
-  console.log('pre:', count.value)
-}, { flush: 'pre' })
+// ❌ effect() 不支持 flush，传了也不会生效
+// effect(fn, { flush: 'post' })
 
-// flush: 'post' — 组件更新后执行（可访问更新后的 DOM）
-effect(() => {
-  console.log('post:', count.value)
+// ✅ flush 是 watch / watchEffect 的选项
+// 'pre'（默认，组件更新前）、'post'（组件更新后，可访问更新后的 DOM）、'sync'（同步触发）
+watchEffect(() => {
+  console.log('watchEffect:', count.value)
 }, { flush: 'post' })
-
-// flush: 'sync' — 同步执行（依赖变化时立即触发）
-effect(() => {
-  console.log('sync:', count.value)
-}, { flush: 'sync' })
 ```
 
-### 4. onStop - 停止时的回调
+### 3. onStop - 停止时的回调
 
 ```javascript
 import { ref, effect } from 'vue'
@@ -165,38 +141,33 @@ runner.effect.stop()
 import { ref, effect } from 'vue'
 
 const keyword = ref('')
+let timer = null
 
 effect(() => {
-  const value = keyword.value
-  console.log('追踪依赖:', value)
+  console.log('追踪依赖:', keyword.value)
 }, {
   scheduler(fn) {
-    // 使用调度器实现 debounce
-    let timer = null
-    return (...args) => {
-      clearTimeout(timer)
-      timer = setTimeout(() => fn(...args), 300)
-    }
+    // 依赖变化时不立即执行，而是防抖 300ms 后再调用 fn
+    clearTimeout(timer)
+    timer = setTimeout(fn, 300)
   }
 })
 ```
 
-### 2. 简单的 computed 实现
+### 2. 惰性求值请用 computed
 
 ```javascript
-import { reactive, effect } from 'vue'
+// ⚠️ Vue 3.5 起 effect() 不再支持 lazy，创建时总会立即执行一次
+// 需要惰性求值 + 缓存的场景请使用 computed
+import { reactive, computed } from 'vue'
 
 const state = reactive({ count: 0 })
 
-// 使用 lazy + 手动执行 实现类似 computed 的效果
-const runner = effect(() => {
-  return state.count * 2
-}, { lazy: true })
+const doubled = computed(() => state.count * 2)
 
-// 手动获取计算结果
-console.log(runner()) // 0
+console.log(doubled.value) // 0，此时才真正计算
 state.count++
-console.log(runner()) // 2
+console.log(doubled.value) // 2
 ```
 
 ### 3. 自定义响应式存储
@@ -280,8 +251,8 @@ scope.stop()
 | **级别** | 底层 API | 高层 API |
 | **返回值** | runner 函数（含 .effect 属性） | 停止函数 |
 | **推荐度** | 库作者使用 | 应用代码推荐 |
-| **调度器** | 支持自定义 scheduler | 不支持 |
-| **lazy** | 支持 | 不支持 |
+| **调度器** | 支持自定义 scheduler | 不支持（只有 `flush` 选项） |
+| **lazy** | 3.4 及之前支持，3.5 已移除 | 不支持 |
 | **调试** | 较难 | 更友好 |
 | **稳定性** | 可能随版本变化 | 稳定 API |
 
@@ -324,23 +295,19 @@ watchEffect(() => {
 })
 ```
 
-### 2. 避免无限循环
+### 2. 在副作用中修改自己追踪的依赖
 
 ```javascript
 import { reactive, effect } from 'vue'
 
 const state = reactive({ count: 0 })
 
-// ❌ 无限循环：在副作用中修改依赖的值
 effect(() => {
-  state.count++ // 触发自己重新执行 → 无限循环
-})
-
-// ✅ 避免在副作用中修改自己追踪的依赖
-effect(() => {
-  console.log(state.count) // 只读取，不修改
+  state.count++ // ⚠️ 不推荐：在副作用中修改自己追踪的依赖
 })
 ```
+
+> 💡 与直觉不同，这**不会**导致无限循环：effect 默认不允许递归（`allowRecurse: false`），Vue 会忽略它在自身运行期间触发的更新。但这种写法语义混乱、难以维护，应当避免。
 
 ### 3. effect 是同步追踪依赖的
 
@@ -361,25 +328,24 @@ effect(() => {
 })
 ```
 
-### 4. 只能在 setup 中使用
+### 4. 不依赖组件，但要自己负责停止
+
+`effect()` 是独立的响应式 API，与生命周期钩子不同，它**可以在任何地方使用**（组件 `setup` 内、组件外均可）。但正因如此，在组件外创建的 effect 不会随组件卸载自动停止，需要自己管理生命周期。
 
 ```javascript
-import { effect } from 'vue'
+import { ref, effect } from 'vue'
 
-// ❌ 不要在组件外部使用
-effect(() => {
-  console.log('这可能导致问题')
+// ✅ 在组件外部也可以创建 effect
+const count = ref(0)
+const runner = effect(() => {
+  console.log('count:', count.value)
 })
 
-// ✅ 在 setup 中使用
-export default {
-  setup() {
-    effect(() => {
-      console.log('这是正确的')
-    })
-  }
-}
+// ⚠️ 它不会自动停止，不用时必须手动停止，否则内存泄漏
+runner.effect.stop()
 ```
+
+> 💡 推荐配合 `effectScope()` 统一管理：`scope.run()` 内创建的 effect 会在 `scope.stop()` 时一并停止。
 
 ## 最佳实践
 

@@ -820,7 +820,7 @@ function handleDelete(row: TableRow): void { console.log('删除', row) }
 
 #### 1. 必须紧跟 `v-if` 或 `v-else-if`
 
-`v-else-if` 必须紧跟在 `v-if` 或另一个 `v-else-if` 后面，中间不能有任何其他元素或文本节点，否则 Vue 无法将其识别为条件组的一部分。
+`v-else-if` 必须紧跟在 `v-if` 或另一个 `v-else-if` 后面，中间不能有其他元素隔开，否则 Vue 无法将其识别为条件组的一部分。
 
 ```vue
 <template>
@@ -872,17 +872,16 @@ Vue 在切换条件分支时会尽可能复用已有的 DOM 元素，这可能�
 </template>
 ```
 
-#### 4. 不支持在同一个元素上与 `v-for` 混用
+#### 4. 不推荐在同一个元素上与 `v-for` 混用
 
-`v-else-if` 不能与 `v-for` 在同一个元素上使用。当两者同时存在时，`v-for` 的优先级更高，可能导致条件判断不符合预期。应该用 `<template>` 将循环和条件分开。
+Vue 3 中，当 `v-if`（含 `v-else-if`）与 `v-for` 同时存在于一个元素上时，**`v-if` 优先级更高**（Vue 2 相反，`v-for` 优先级更高）。因此 `v-if` 的条件无法访问 `v-for` 作用域内的变量，直接混用会报错。官方推荐用 `<template>` 将循环和条件分开。
 
 ```vue
 <template>
-  <!-- ❌ 不推荐：v-for 和 v-else-if 混用在同一元素 -->
+  <!-- ❌ Vue 3 中报错：v-else-if 先于 v-for 执行，访问不到 item -->
   <div v-for="item in list" v-if="item.type === 'a'">A</div>
-  <div v-for="item in list" v-else-if="item.type === 'b'">B</div>
 
-  <!-- ✅ 正确：使用计算属性过滤 + 条件渲染 -->
+  <!-- ✅ 正确：template 包裹 v-for，条件渲染放内层 -->
   <template v-for="item in filteredList" :key="item.id">
     <div v-if="item.type === 'a'">A: {{ item.name }}</div>
     <div v-else-if="item.type === 'b'">B: {{ item.name }}</div>
@@ -1003,26 +1002,26 @@ const userLevel = computed(() => {
 </script>
 ```
 
-#### 10. 在 `<template>` 上使用时不能添加 `key`
+#### 10. 关于在 `<template>` 上使用 `key`
 
-`v-else-if` 可以用在 `<template>` 标签上，但 `<template>` 是一个不可见的包裹元素，不会渲染为实际的 DOM 节点，因此**不能在 `<template>` 上添加 `key` 属性**。如果需要 `key` 来强制替换，必须在内部的实际元素上添加。
+「`<template>` 不能带 key」是 Vue 2 的限制。**Vue 3 中 `<template>` 可以携带 `key`**（`<template v-for>` 的 key 就必须放在 `<template>` 标签上）。对于 `v-if` / `v-else-if` 条件分支，Vue 3 会在你不写 key 时自动生成唯一 key；如果手动写，各分支必须使用不同的 key。
 
 ```vue
 <template>
-  <!-- ❌ template 上不能添加 key -->
+  <!-- ✅ Vue 3 推荐：条件分支一般不需要手动写 key，Vue 会自动生成唯一 key -->
+  <template v-if="type === 'a'">
+    <input placeholder="A" />
+  </template>
+  <template v-else-if="type === 'b'">
+    <input placeholder="B" />
+  </template>
+
+  <!-- ✅ 手动写 key 时，各分支必须唯一 -->
   <template v-if="type === 'a'" key="a">
     <input placeholder="A" />
   </template>
   <template v-else-if="type === 'b'" key="b">
     <input placeholder="B" />
-  </template>
-
-  <!-- ✅ key 放在实际的 DOM 元素上 -->
-  <template v-if="type === 'a'">
-    <input key="input-a" placeholder="A" />
-  </template>
-  <template v-else-if="type === 'b'">
-    <input key="input-b" placeholder="B" />
   </template>
 </template>
 ```

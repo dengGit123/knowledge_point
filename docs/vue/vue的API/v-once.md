@@ -1,6 +1,6 @@
 # v-once
 
-> 📖 [Vue 官方文档 - v-once](https://cn.vuejs.org/api/built-in-directives.html#v-once)
+> 📖 [Vue 官方文档 - v-once](https://cn.vuejs.org/api/built-in-directives#v-once)
 
 ### 一、概述
 
@@ -150,7 +150,8 @@ const items = ref<Item[]>([
   { id: 1, name: '商品 A', price: 99 },
   { id: 2, name: '商品 B', price: 199 }
 ])
-// ⚠️ 即使后续修改 items 的值，列表也不会重新渲染
+// ⚠️ 已渲染过的列表项被冻结（数据变化不再更新视图）；
+// 但后续新增的列表项仍会正常渲染一次
 </script>
 ```
 
@@ -338,7 +339,7 @@ const appVersion: string = '2.1.0'
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const loadTime = ref<string>('')
 const currentTime = ref<string>('')
@@ -354,9 +355,10 @@ const timer = setInterval(() => {
   currentTime.value = new Date().toLocaleString('zh-CN')
 }, 1000)
 
-onMounted(() => {
-  // 组件卸载时清除定时器
-  return () => clearInterval(timer)
+// ✅ 组件卸载时清除定时器需要用 onUnmounted
+// （onMounted 的返回值会被忽略，不能作为清理函数）
+onUnmounted(() => {
+  clearInterval(timer)
 })
 </script>
 ```
@@ -633,7 +635,7 @@ function refreshLocation(): void {
 </script>
 ```
 
-#### 10. 游染性能敏感的大型组件
+#### 10. 渲染性能敏感的大型组件
 
 在性能要求极高的场景中，对确定不会更新的复杂子树使用 `v-once`，避免大型组件树参与 diff。
 
@@ -774,7 +776,7 @@ const show = ref<boolean>(true)
 
 #### 6. v-for 与 v-once 配合时的作用范围
 
-当 `v-for` 和 `v-once` 在同一元素上使用时，`v-once` 作用于每个列表项独立生效，而不是整个列表。
+当 `v-for` 和 `v-once` 在同一元素上使用时，`v-once` 作用于每个列表项独立生效，而不是整个列表。已渲染的项会被冻结，但后续新增的列表项仍会正常渲染一次。
 
 ```vue
 <template>
@@ -852,7 +854,7 @@ Vue 3 的编译器已经对静态内容做了大量自动优化（静态提升�
 | **版本** | Vue 2.x+ | Vue 3.2+ | Vue 2.x+ |
 | **作用** | 只渲染一次 | 条件性跳过更新 | 隐藏未编译模板 |
 | **参数** | 无 | 接受依赖数组 | 无 |
-| **更新策略** | 永远不更新 | 依赖变化时更新 | 编译完成后移除 |
+| **更新策略** | 永远不更新 | 依赖变化时更新 | 挂载完成后移除 |
 | **灵活性** | 低 | 高 | - |
 | **适用场景** | 纯静态内容 | 部分条件不变的内容 | 防止模板闪烁 |
 | **性能影响** | 跳过整个 diff | 跳过不必要的 diff | 无 |
@@ -869,7 +871,7 @@ Vue 3 的编译器已经对静态内容做了大量自动优化（静态提升�
     <p>{{ valueB }}</p>
   </div>
 
-  <!-- v-cloak：在 Vue 实例编译完成前隐藏元素 -->
+  <!-- v-cloak：在 Vue 实例挂载完成前隐藏元素 -->
   <div v-cloak>{{ message }}</div>
 </template>
 ```

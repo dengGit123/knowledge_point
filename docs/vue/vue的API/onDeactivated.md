@@ -1,6 +1,6 @@
 # onDeactivated
 
-> 📖 [Vue 官方文档 - onDeactivated](https://cn.vuejs.org/api/composition-api-lifecycle#ondeactivated)
+> 📖 [Vue 官方文档 - onDeactivated](https://cn.vuejs.org/api/composition-api-lifecycle.html#ondeactivated)
 
 ### 一、概述
 
@@ -178,20 +178,24 @@ useAutoSave(content, '/api/save')
 
 | **返回值** | **类型** | **说明** |
 |------------|----------|----------|
-| 返回值 | `() => void` | 返回一个函数，调用它可以停止该钩子的监听（卸载回调） |
+| 返回值 | `void` | 无返回值（钩子一旦注册无法单独注销，只能等组件销毁） |
 
 ```ts
-// 停止监听示例
+// ❌ 错误：钩子没有返回清理函数，stop 是 undefined
 import { onDeactivated } from 'vue'
 
 const stop = onDeactivated(() => {
-  console.log('这个钩子可能被取消')
+  console.log('组件停用')
 })
+stop() // TypeError: stop is not a function
 
-// 在某些条件下取消注册
-if (someCondition) {
-  stop() // 之后组件停用时不会再触发这个回调
-}
+// ✅ 正确：需要条件控制时，把判断放进回调内部
+let shouldLog = true
+
+onDeactivated(() => {
+  if (!shouldLog) return
+  console.log('组件停用')
+})
 ```
 
 ### 四、实现效果
@@ -733,7 +737,7 @@ onActivated(() => {
    ```
 
 9. **服务端渲染（SSR）中不会触发**
-   `onDeactivated` 钩子在服务端渲染期间不会被调用，因为 SSR 环境中不存在组件的"激活/停用"概念。只在客户端的水降（hydration）完成后的切换操作中才会触发。
+   `onDeactivated` 钩子在服务端渲染期间不会被调用，因为 SSR 环境中不存在组件的"激活/停用"概念。只在客户端完成水合（hydration）之后的切换操作中才会触发。
 
 10. **不要依赖 DOM 操作的时机**
     `onDeactivated` 触发时，组件的 DOM 可能已被移除或正在被移除。如果需要在 DOM 移除之前进行操作，建议在回调中进行判断，避免操作已不存在的 DOM 元素。

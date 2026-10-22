@@ -2,15 +2,15 @@
 
 > 本文档**专注讲解 Vue 2 的 render 函数（渲染函数）**：它是什么、组件如何借助它工作、背后的渲染机制（`Object.defineProperty` 响应式 + 组件 Watcher + 双端 Diff）、如何声明与缓存，以及它与模板、`createElement`、Vue 3 的关系。
 >
-> 它是 [《Vue 3 中 render 函数完全指南》](./render函数(vue3).md) 的姊妹篇，也与 [《Vue 2 中 h 函数完全指南》](./h函数(vue2).md) 呼应：**`createElement`（别名 `h`）是"创建单个 vnode 的工具"，而 `render` 函数是"组件整体返回 vnode 树的函数"**。技术栈为 **Vue 2 + 选项式 API**。
+> `render` 函数是"组件整体返回 vnode 树的函数"，`createElement`（别名 `h`）是"在 render 内部创建单个 vnode 的工具"（其 data 是嵌套结构：`attrs`/`props`/`domProps`/`on`/`nativeOn` 分层）。Vue 3 的对应实现是"setup 返回渲染函数 + 从 `'vue'` 导入的 `h()`"，响应式由 `Object.defineProperty` + Watcher 换成了 `Proxy` + effect（对比见第十节）。技术栈为 **Vue 2 + 选项式 API**。
 
 > 📖 **官方文档（Vue 2）**
 > - [渲染函数 & JSX](https://v2.cn.vuejs.org/v2/guide/render-function.html)
 > - [深入响应式原理](https://v2.cn.vuejs.org/v2/guide/reactivity.html)
 
-> ⚠️ **说明**：Vue 2 已终止支持（EOL）。本文档面向仍在维护的 Vue 2 项目，帮你正确理解渲染函数与渲染机制。新项目建议使用 Vue 3，详见姊妹篇。
+> ⚠️ **说明**：Vue 2 已终止支持（EOL）。本文档面向仍在维护的 Vue 2 项目，帮你正确理解渲染函数与渲染机制。新项目建议使用 Vue 3。
 
-## 目录
+### 目录
 
 - [一、概述](#一概述)
 - [二、核心概念：render 函数与 Vue 2 渲染机制](#二核心概念render-函数与-vue-2-渲染机制)
@@ -29,7 +29,7 @@
 
 ---
 
-## 一、概述
+### 一、概述
 
 在 Vue 2 中，**render 函数（渲染函数）是一个返回虚拟 DOM 节点（VNode）的函数**。它是每个组件的"渲染入口"——组件挂载时执行它得到 vnode，再由渲染器（patch）把 vnode 变成真实 DOM。
 
@@ -45,7 +45,7 @@ new Vue({
 
 > **通俗理解**：你写的 `<template>` 模板，Vue 2 编译器最终会把它变成一个 `render` 函数（外加 `staticRenderFns`，见第七节）。所以**模板 = 编译后的 render 函数**。手写 render 函数时，你就是在写"模板编译后的样子"——获得 JavaScript 完整的编程能力。
 
-### render 函数 vs createElement(h) —— 一句话区分
+#### render 函数 vs createElement(h) —— 一句话区分
 
 | | `render` 函数 | `createElement`（别名 `h`） |
 |---|---|---|
@@ -67,18 +67,18 @@ render(h) {
 
 ---
 
-## 二、核心概念：render 函数与 Vue 2 渲染机制
+### 二、核心概念：render 函数与 Vue 2 渲染机制
 
-### 1. 虚拟 DOM、mount、patch
+#### 1. 虚拟 DOM、mount、patch
 
 Vue 2 通过**虚拟 DOM（VNode）**追踪如何更新真实 DOM：
 
 - **挂载（mount）**：遍历 vnode 树，创建真实 DOM。
-- **更新（patch，又称 diff / 协调）**：拿新旧 vnode 比对，把差异应用到真实 DOM。Vue 2 的列表比对用**双端 Diff**（`updateChildren`，详见 [h函数(vue2)](./h函数(vue2).md) 第五节）。
+- **更新（patch，又称 diff / 协调）**：拿新旧 vnode 比对，把差异应用到真实 DOM。Vue 2 的列表比对用**双端 Diff**（源码中的 `updateChildren`）：新旧子节点列表各维护首尾两个指针，从两端向中间逐对比较并复用相同节点，把 DOM 操作降到最少。
 
-### 2. Vue 2 的渲染管线（render 函数的位置）
+#### 2. Vue 2 的渲染管线（render 函数的位置）
 
-```
+```text
 ① 编译（Compile）
    模板 <template> ──▶ render 函数 + staticRenderFns（静态子树）
    （可在构建时预编译，也可用运行时编译器即时完成）
@@ -93,7 +93,7 @@ Vue 2 通过**虚拟 DOM（VNode）**追踪如何更新真实 DOM：
             ──▶ 新 vnode ──▶ 与旧 vnode diff ──▶ 应用更新到真实 DOM
 ```
 
-### 3. 响应式原理：Object.defineProperty + 组件 Watcher ⭐
+#### 3. 响应式原理：Object.defineProperty + 组件 Watcher ⭐
 
 这是 Vue 2 渲染机制的核心，也是它与 Vue 3 的本质区别：
 
@@ -101,7 +101,7 @@ Vue 2 通过**虚拟 DOM（VNode）**追踪如何更新真实 DOM：
 
 **② 组件 Watcher**：官方原文——*"每个组件实例都对应一个 **watcher** 实例，它会在组件渲染的过程中把'接触'过的数据 property 记录为依赖。之后当依赖项的 setter 触发时，会通知 watcher，从而使它关联的组件重新渲染。"*
 
-```
+```text
 render 执行时访问 this.count
         │ 触发 count 的 getter
         ▼
@@ -115,7 +115,7 @@ setter 调用 dep.notify() ──▶ 通知 Watcher ──▶ 重新 render ─�
 
 > 💡 **一句话**：Vue 2 的 render 函数之所以能响应数据变化，是因为它在"组件 Watcher"的上下文里执行，访问 `data` 时自动建立依赖；`data` 变了，setter 通知 Watcher，render 重新跑一遍。
 
-### 4. 异步更新队列（nextTick）
+#### 4. 异步更新队列（nextTick）
 
 Vue 2 的 DOM 更新是**异步**的：
 
@@ -137,9 +137,9 @@ methods: {
 
 ---
 
-## 三、声明 render 函数
+### 三、声明 render 函数
 
-### 方式 1：`render(createElement)` 选项（最常见）
+#### 方式 1：`render(createElement)` 选项（最常见）
 
 ```js
 export default {
@@ -153,7 +153,7 @@ export default {
 }
 ```
 
-### 方式 2：使用 `this.$createElement`
+#### 方式 2：使用 `this.$createElement`
 
 ```js
 export default {
@@ -168,7 +168,7 @@ export default {
 > - 在 `render(createElement)` 中，它是 Vue 自动注入的参数（别名 `h`）。
 > - 在非 render 方法（如 methods）里需要创建 vnode 时，用实例方法 **`this.$createElement`**。
 
-### 方式 3：函数式组件（`functional: true`）
+#### 方式 3：函数式组件（`functional: true`）
 
 ```js
 Vue.component('my-heading', {
@@ -181,11 +181,11 @@ Vue.component('my-heading', {
 })
 ```
 
-> 详见 [h函数(vue2) 第八节](./h函数(vue2).md) 的函数式组件。函数式组件无实例、开销低，但 render 函数没有 `this`。
+> 函数式组件**无实例、无 `this`、渲染开销低**：render 接收 `(createElement, context)`，props、children、data 等一切信息都从 `context` 参数获取。
 
 ---
 
-## 四、render 函数中的 this
+### 四、render 函数中的 this
 
 > 这是 Vue 2 与 Vue 3 render 函数的一个**重要区别**：**Vue 2 的 render 函数有 `this`，指向当前组件实例**（Vue 3 用 setup 返回的渲染函数则没有 `this`）。
 
@@ -225,7 +225,7 @@ export default {
 
 ---
 
-## 五、render 的返回值
+### 五、render 的返回值
 
 Vue 2 的 render 函数**返回一个 VNode**（与 Vue 3 可返回字符串/数组不同）。
 
@@ -243,7 +243,7 @@ render(h) {
 
 ---
 
-## 六、render 与 createElement / h 的关系
+### 六、render 与 createElement / h 的关系
 
 一句话：**render 是组件的渲染入口（返回树），createElement（h）是 render 内部拼节点的工具（造单个 vnode）。**
 
@@ -266,9 +266,9 @@ export default {
 }
 ```
 
-> 💡 `h` 内部的 **data 对象是嵌套结构**（`attrs`/`props`/`domProps`/`on`/`nativeOn` 等），详见 [《Vue 2 中 h 函数完全指南》](./h函数(vue2).md) 第四节。
+> 💡 `h` 内部的 **data 对象是嵌套结构**：普通 HTML attribute 放 `attrs`、组件 prop 放 `props`、DOM property 放 `domProps`、事件放 `on`、组件根元素原生事件放 `nativeOn`，class/style/key/ref 则在顶层。
 
-### 看一眼模板编译后的 render
+#### 看一眼模板编译后的 render
 
 模板 `<div>{{ msg }}</div>` 编译后大致是：
 
@@ -286,11 +286,11 @@ function render() {
 
 ---
 
-## 七、Vue 2 的编译优化：staticRenderFns（静态子树）
+### 七、Vue 2 的编译优化：staticRenderFns（静态子树）
 
 > Vue 2 没有 Vue 3 那套 patchFlag / block tree 优化，但它有一项重要的编译优化：**静态子树提取（staticRenderFns）**。
 
-### 工作原理
+#### 工作原理
 
 Vue 2 编译器会识别模板中的**静态根节点**（内容完全不变、无动态绑定的子树），把它们提取成独立的 `staticRenderFns` 数组：
 
@@ -321,12 +321,12 @@ var staticRenderFns = [
 ]
 ```
 
-### 收益
+#### 收益
 
 - 静态子树**只渲染一次**，结果被缓存（`vnode.isStatic` / 缓存到 `staticTrees`）。
 - 后续重新渲染时，patch 会**跳过**静态子树的比对，减少 diff 开销。
 
-### 与 Vue 3 优化的对比
+#### 与 Vue 3 优化的对比
 
 | 优化 | Vue 2 | Vue 3 |
 |------|:-----:|:-----:|
@@ -339,7 +339,7 @@ var staticRenderFns = [
 
 ---
 
-## 八、JSX 支持
+### 八、JSX 支持
 
 层层 `createElement` 写起来痛苦，**JSX 是渲染函数的语法糖**，编译后就是 `createElement` 调用：
 
@@ -358,11 +358,11 @@ export default {
 }
 ```
 
-> 💡 Vue 2 的 JSX 用 `@vue/babel-preset-jsx`（或 `babel-plugin-transform-vue-jsx`）。从 Vue 的 Babel 插件 3.4.0 起，会在含 JSX 的方法/getter 中**自动注入** `const h = this.$createElement`，可省略 `render(h)` 的 `(h)` 参数。详见 [h函数(vue2) 第七节](./h函数(vue2).md)。
+> 💡 Vue 2 的 JSX 用 `@vue/babel-preset-jsx`（或 `babel-plugin-transform-vue-jsx`）配置。从 Vue 的 Babel 插件 3.4.0 起，会在含 JSX 的方法/getter 中**自动注入** `const h = this.$createElement`，可省略 `render(h)` 的 `(h)` 参数。
 
 ---
 
-## 九、模板 vs. 渲染函数
+### 九、模板 vs. 渲染函数
 
 官方建议：**绝大多数场景优先用模板**（更简洁、可读性好，还能享受编译优化如 staticRenderFns）。渲染函数一般只在以下情况使用：
 
@@ -380,9 +380,7 @@ export default {
 
 ---
 
-## 十、Vue 2 与 Vue 3 的 render 差异（对比）
-
-> 姊妹篇：[《Vue 3 中 render 函数完全指南》](./render函数(vue3).md)
+### 十、Vue 2 与 Vue 3 的 render 差异（对比）
 
 | 维度 | **Vue 2** | Vue 3 |
 |------|----------|------|
@@ -422,9 +420,9 @@ export default {
 
 ---
 
-## 十一、常见问题与陷阱
+### 十一、常见问题与陷阱
 
-### 陷阱 1：VNode 必须唯一
+#### 陷阱 1：VNode 必须唯一
 
 ```js
 render(h) {
@@ -439,7 +437,7 @@ render(h) {
 }
 ```
 
-### 陷阱 2：渲染函数里用了箭头函数导致 this 丢失
+#### 陷阱 2：渲染函数里用了箭头函数导致 this 丢失
 
 ```js
 export default {
@@ -454,7 +452,7 @@ export default {
 }
 ```
 
-### 陷阱 3：新增对象属性 / 修改数组索引不响应
+#### 陷阱 3：新增对象属性 / 修改数组索引不响应
 
 ```js
 data() { return { obj: { a: 1 }, list: [1, 2, 3] } },
@@ -474,7 +472,7 @@ methods: {
 
 > 💡 这是 `Object.defineProperty` 的固有限制（无法监听属性新增/数组索引），是 Vue 2 → Vue 3 改用 `Proxy` 的主要原因之一。
 
-### 陷阱 4：以为修改数据后 DOM 立刻更新
+#### 陷阱 4：以为修改数据后 DOM 立刻更新
 
 ```js
 this.msg = 'new'
@@ -485,7 +483,7 @@ this.$nextTick(() => {
 })
 ```
 
-### 陷阱 5：render 忘了 return
+#### 陷阱 5：render 忘了 return
 
 ```js
 render(h) {
@@ -499,7 +497,7 @@ render(h) {
 }
 ```
 
-### 陷阱 6：在 render 中做昂贵计算且不缓存
+#### 陷阱 6：在 render 中做昂贵计算且不缓存
 
 ```js
 // ❌ 每次重新渲染都重新排序
@@ -516,7 +514,7 @@ render(h) {
 }
 ```
 
-### 陷阱 7：返回多个根节点
+#### 陷阱 7：返回多个根节点
 
 ```js
 // ❌ Vue 2 不支持直接返回多根节点数组
@@ -532,9 +530,9 @@ render(h) {
 
 ---
 
-## 十二、常见应用场景
+### 十二、常见应用场景
 
-### 场景 1：动态标签名（anchored-heading）
+#### 场景 1：动态标签名（anchored-heading）
 
 ```js
 // 根据 level 渲染 h1~h6，模板要写 6 个分支
@@ -546,7 +544,7 @@ Vue.component('anchored-heading', {
 })
 ```
 
-### 场景 2：智能列表（smart-list，函数式包装组件）
+#### 场景 2：智能列表（smart-list，函数式包装组件）
 
 ```js
 var EmptyList = { /* ... */ }
@@ -570,7 +568,7 @@ Vue.component('smart-list', {
 })
 ```
 
-### 场景 3：可配置的表格（render 拼装）
+#### 场景 3：可配置的表格（render 拼装）
 
 ```js
 render(h) {
@@ -585,7 +583,7 @@ render(h) {
 }
 ```
 
-### 场景 4：JSX 复杂业务组件
+#### 场景 4：JSX 复杂业务组件
 
 ```jsx
 export default {
@@ -602,21 +600,21 @@ export default {
 
 ---
 
-## 十三、面试常见问题
+### 十三、面试常见问题
 
-### Q1：Vue 2 的 render 函数是什么？和模板什么关系？
+#### Q1：Vue 2 的 render 函数是什么？和模板什么关系？
 
 render 函数（渲染函数）是**返回 VNode 的函数**，是组件的渲染入口。Vue 2 的模板最终会被**编译成 render 函数**（外加 staticRenderFns）。所以模板是 render 函数的语法糖。手写 render 函数能获得 JavaScript 完整的编程能力。
 
-### Q2：render 函数和 createElement（h）有什么区别和联系？
+#### Q2：render 函数和 createElement（h）有什么区别和联系？
 
 `createElement`（别名 `h`）是在 render 函数**内部**创建**单个 VNode** 的工具；render 函数是**组件整体**返回 **vnode 树**的函数。联系是 render 函数在内部调用 `createElement` 来组装 vnode 树。render 决定树的结构，createElement 制造每个节点。
 
-### Q3：Vue 2 的 render 函数为什么能响应数据变化自动更新？
+#### Q3：Vue 2 的 render 函数为什么能响应数据变化自动更新？
 
 因为 Vue 2 用 `Object.defineProperty` 把 `data` 转为 getter/setter，且**每个组件实例对应一个 Watcher**。render 函数在 Watcher 的上下文里执行，访问 `data` 时通过 getter 建立依赖；当 `data` 变化，setter 通知 Watcher，render 重新执行，产生新 vnode，patch 更新 DOM。
 
-### Q4：Vue 2 和 Vue 3 的 render 函数有什么区别？
+#### Q4：Vue 2 和 Vue 3 的 render 函数有什么区别？
 
 - **this**：Vue 2 的 render 函数**有 this**（指向实例）；Vue 3 用 setup 返回的渲染函数**无 this**。
 - **声明**：Vue 2 是 `render(createElement)` 选项；Vue 3 是 setup 返回函数（组合式）或 render 选项。
@@ -624,33 +622,33 @@ render 函数（渲染函数）是**返回 VNode 的函数**，是组件的渲�
 - **响应式**：Vue 2 是 `Object.defineProperty` + Watcher；Vue 3 是 `Proxy` + effect。
 - **编译优化**：Vue 2 是 staticRenderFns；Vue 3 是静态提升 + patchFlag + block tree。
 
-### Q5：什么是组件 Watcher？
+#### Q5：什么是组件 Watcher？
 
 Vue 2 中每个组件实例都有一个 Watcher 实例。组件渲染（执行 render）时，Watcher 会把 render 过程中"接触"过的 data property 记录为依赖；当这些依赖的 setter 被触发时，会通知该 Watcher，使组件重新渲染。这是 Vue 2 响应式驱动视图的核心机制。
 
-### Q6：为什么修改数据后不能立刻读到更新后的 DOM？
+#### Q6：为什么修改数据后不能立刻读到更新后的 DOM？
 
 因为 Vue 2 的 DOM 更新是**异步**的：数据变化后，Vue 把变更缓冲到一个队列（同一 Watcher 多次触发只入队一次），在下一个事件循环的 tick 才刷新队列执行真实更新。所以要用 `this.$nextTick(() => {...})` 等待 DOM 更新完成。
 
-### Q7：Vue 2 的 staticRenderFns 是什么？
+#### Q7：Vue 2 的 staticRenderFns 是什么？
 
 Vue 2 编译器会识别模板中的**静态根节点**（无动态绑定的子树），把它们提取成独立的 `staticRenderFns`。这些静态子树只渲染一次并缓存，后续 patch 时直接跳过比对，减少 diff 开销。这是 Vue 2 的主要编译优化（但不如 Vue 3 的 patchFlag/block tree 细粒度）。
 
-### Q8：Vue 2 的 render 函数能返回字符串或数组吗？
+#### Q8：Vue 2 的 render 函数能返回字符串或数组吗？
 
 不能直接返回字符串。render 必须返回**单个 VNode**。返回多个节点需要用外层元素包裹（Vue 2 组件要求单根节点）。这与 Vue 3 不同——Vue 3 的渲染函数可直接返回字符串、数字、数组（多根 fragment）、null、布尔。
 
-### Q9：Vue 2 渲染函数里为什么不能用箭头函数？
+#### Q9：Vue 2 渲染函数里为什么不能用箭头函数？
 
 因为箭头函数没有自己的 `this`，会绑定到外层（通常是 undefined 或模块作用域），拿不到组件实例。Vue 2 的渲染函数依赖 `this` 访问 data/props/methods，所以必须用普通方法（`render(h) {...}`）。
 
-### Q10：render 函数中 this.$createElement 和参数 createElement 有什么区别？
+#### Q10：render 函数中 this.$createElement 和参数 createElement 有什么区别？
 
 没有本质区别，都是创建 VNode 的函数。`createElement` 是 render 函数的**参数**（自动注入，别名 h）；`this.$createElement` 是**实例方法**。在 render 内部用参数即可；在 methods 等其它地方需要创建 vnode 时，用 `this.$createElement`。
 
 ---
 
-## 十四、总结
+### 十四、总结
 
 | 要点 | 核心结论 |
 |------|---------|

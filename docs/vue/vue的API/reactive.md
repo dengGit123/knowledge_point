@@ -54,6 +54,25 @@ list[0] = 10
 list.splice(1, 1, 99)
 ```
 
+### Map 和 Set
+
+reactive() 同样支持 Map、Set 等原生集合类型，对集合的增删改查都会触发响应式更新。
+
+```javascript
+import { reactive } from 'vue'
+
+const map = reactive(new Map([['count', 0]]))
+
+map.set('total', 100) // ✅ 触发更新
+map.delete('count')   // ✅ 触发更新
+console.log(map.get('total')) // 100
+
+// ⚠️ 集合中的 ref 元素不会被自动解包，需要手动 .value
+const count = ref(0)
+const state = reactive(new Map([['count', count]]))
+console.log(state.get('count').value) // 0
+```
+
 ### 在 setup 中使用
 
 ```javascript
@@ -137,7 +156,10 @@ const state = reactive({
 const { count } = state
 count++ // 不会触发更新
 
-// ✅ 正确：使用 toRefs
+// ❌ 展开运算符同理：copy 只是一个普通对象
+const copy = { ...state }
+
+// ✅ 正确：使用 toRefs（把对象的每个属性转为 ref）
 import { toRefs } from 'vue'
 const { count } = toRefs(state)
 count.value++ // 正确触发更新
@@ -148,7 +170,7 @@ count.value++ // 正确触发更新
 ```javascript
 const state = reactive({ count: 0 })
 
-// ❌ 错误：替换整个对象会丢失响应性
+// ❌ 错误：重新赋值整个对象（const 声明下直接报错），变量不再指向原代理
 state = reactive({ count: 1 })
 
 // ✅ 正确：修改属性
@@ -192,10 +214,14 @@ const state = reactive({ count })
 state.count++ // 自动访问 count.value
 console.log(count.value) // 1
 
-// ⚠️ 但新赋值的 ref 不会自动解包
+// ✅ 后续新赋值的 ref 同样会被自动解包
 const newCount = ref(10)
 state.newCount = newCount
-state.newCount++ // 不会更新 newCount.value
+state.newCount++ // ✅ newCount.value 同步变为 11
+
+// ⚠️ 例外：数组 / Map / Set 中的 ref 元素不会被解包
+const arr = reactive([ref(0)])
+arr[0].value // 需要手动 .value
 ```
 
 ### 6. 作为 props 传递时
@@ -542,7 +568,7 @@ const loading = ref(false)
 | 特性 | reactive | ref |
 |-----|----------|-----|
 | 数据类型 | 仅对象/数组 | 任何类型 |
-| 解构 | 需要 toRefs | 直接解构，保留 .value |
+| 解构 | 需要 toRefs 保持响应性 | ref 无需解构，通过 .value 访问 |
 | 模板访问 | 直接访问属性 | 自动解包，直接使用 |
 | 替换整个值 | 不支持 | 支持 |
 | 使用复杂度 | 稍复杂 | 简单直观 |

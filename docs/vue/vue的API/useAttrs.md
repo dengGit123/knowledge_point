@@ -4,7 +4,7 @@
 
 `useAttrs()` 用于在 `<script setup>` 中访问组件的 attrs（属性）。attrs 包含了父组件传递但未在 props 或 emits 中声明的所有属性和事件监听器。
 
-📖 [useAttrs](https://cn.vuejs.org/api/composition-api-helpers#useattrs)
+📖 [useAttrs](https://cn.vuejs.org/api/composition-api-helpers.html#useattrs)
 
 ## 用法
 
@@ -54,23 +54,24 @@ const attrs = useAttrs()
 
 ### 选择性透传属性
 
+> ⚠️ **注意：** 不要直接解构 `attrs`（如 `const { class: _, ...restAttrs } = attrs`）。解构得到的是一次性的普通值快照，父组件后续更新 attrs 时不会跟着变化。如需剔除部分属性，用 `computed` 包裹（见下方「注意事项」）。
+
 ```vue
 <script setup>
-import { useAttrs } from 'vue'
+import { useAttrs, computed } from 'vue'
 
 const attrs = useAttrs()
 
-// 提取特定属性
-const className = attrs.class
-const style = attrs.style
-
-// 排除特定属性
-const { class: _, ...restAttrs } = attrs
+// 剔除 class，只透传其余属性
+const restAttrs = computed(() => {
+  const { class: _, ...rest } = attrs
+  return rest
+})
 </script>
 
 <template>
   <!-- 使用特定属性 -->
-  <div :class="className" :style="style">
+  <div :class="attrs.class" :style="attrs.style">
     <!-- 透传其他属性 -->
     <button v-bind="restAttrs">Button</button>
   </div>
@@ -96,7 +97,8 @@ const attrs = useAttrs()
 
 <template>
   <input
-    v-model="modelValue"
+    :value="modelValue"
+    @input="$emit('update:modelValue', $event.target.value)"
     :disabled="disabled"
     v-bind="attrs"
   />
@@ -113,13 +115,14 @@ const emit = defineEmits(['update', 'change'])
 
 const attrs = useAttrs()
 
-// attrs 中不包含 @update 和 @change 事件
+// attrs 中不包含 @update 和 @change（已被 emits 声明"消费"）
+// 但未声明的事件（如父组件传的 @click）会以 attrs.onClick 的形式出现
+console.log(attrs.onClick) // (e: Event) => void 或 undefined
 </script>
 
 <template>
-  <div v-bind="attrs" @click="$emit('click', $event)">
-    <!-- click 事件会触发组件的 emit -->
-  </div>
+  <!-- 通过 v-bind="attrs" 透传，事件监听器会一并应用 -->
+  <div v-bind="attrs"></div>
 </template>
 ```
 
@@ -203,16 +206,23 @@ onMounted(() => {
 
 ## 注意事项
 
-### 1. attrs 是响应式的
+### 1. attrs 不是响应式对象，且不能被侦听
+
+attrs 对象**总是反映最新的透传 attribute**（每次组件更新时更新），但它**不是响应式对象**（考虑到性能因素）。你不能用 `watch` / `watchEffect` 侦听它的变化，解构它得到的也只是一次性的快照。
 
 ```javascript
 const attrs = useAttrs()
 
-// attrs 是一个响应式对象
+// ❌ 无效：attrs 不是响应式对象，watchEffect 不会在父组件更新时重新执行
 watchEffect(() => {
-  console.log(attrs.class) // 当父组件传入的 class 变化时重新执行
+  console.log(attrs.class)
 })
+
+// ❌ 无效：解构出的 restAttrs 是快照，父组件后续更新不会反映进来
+const { class: _, ...restAttrs } = attrs
 ```
+
+> 💡 **提示：** 官方建议——如果需要响应性，可以使用 prop；或者在 `onUpdated()` 钩子中结合最新的 attrs 执行副作用。大多数场景下直接在模板里 `v-bind="attrs"` 即可，无需在脚本中处理。
 
 ### 2. 不包含 props 和 emits
 
@@ -252,19 +262,20 @@ const attrs = useAttrs()
 </script>
 ```
 
-### 4. 特殊属性
+### 4. attrs 里有什么
+
+`class`、`style`、`id`、`data-*`、`aria-*` 等未声明为 props 的 attribute，以及未声明为 emits 的事件监听器（以 `on` 开头）都会出现在 attrs 中。
 
 ```javascript
 const attrs = useAttrs()
 
-// 特殊属性也会出现在 attrs 中
-attrs.key         // key（很少需要）
-attrs.ref         // ref（通常不需要）
 attrs.class       // class
 attrs.style       // style
-attrs.slot        // slot 名称
-attrs.name        // name（对于 keep-alive 等）
+attrs['data-id']  // data-* 属性保留原始大小写和连字符，需用方括号访问
+attrs.onClick     // 未声明的 @click 监听器
 ```
+
+> ⚠️ **注意：** `key`、`ref` 不属于 attrs，它们由 Vue 的虚拟 DOM 层单独处理，不会出现在 `useAttrs()` 的返回值中。
 
 ### 5. 事件监听器
 
@@ -372,6 +383,8 @@ const attrs = useAttrs()
 
 ### 2. 自定义输入组件
 
+`label` 已声明为 prop，因此不会出现在 attrs 中，其余属性（如 `placeholder`、`maxlength`）通过 `v-bind="attrs"` 透传给原生 `<input>`：
+
 ```vue
 <!-- CustomInput.vue -->
 <script setup>
@@ -385,9 +398,6 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const attrs = useAttrs()
-
-// 移除 label，因为它有特殊处理
-const { label, ...inputAttrs } = attrs
 </script>
 
 <template>
@@ -396,7 +406,7 @@ const { label, ...inputAttrs } = attrs
     <input
       :value="modelValue"
       @input="emit('update:modelValue', $event.target.value)"
-      v-bind="inputAttrs"
+      v-bind="attrs"
     />
   </div>
 </template>
@@ -495,8 +505,11 @@ const buttonClass = computed(() => {
   return `btn btn-${props.variant}`
 })
 
-// 排除 class，单独处理
-const { class: _, ...restAttrs } = attrs
+// 排除 class，单独处理（computed 包裹，避免一次性解构快照）
+const restAttrs = computed(() => {
+  const { class: _, ...rest } = attrs
+  return rest
+})
 </script>
 
 <template>
@@ -515,13 +528,9 @@ import { useAttrs, ref, onMounted } from 'vue'
 
 const attrs = useAttrs()
 const tooltipRef = ref(null)
-const targetAttrs = computed(() => {
-  const { title, ...rest } = attrs
-  return rest
-})
 
 onMounted(() => {
-  // 初始化工具提示库
+  // 初始化工具提示库（读取一次性快照即可，无响应式需求）
   if (tooltipRef.value && attrs.title) {
     new Tooltip(tooltipRef.value, {
       title: attrs.title
@@ -531,7 +540,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <span ref="tooltipRef" v-bind="targetAttrs">
+  <!-- title 留给 tooltip 库使用，其余属性透传 -->
+  <span ref="tooltipRef" v-bind="attrs">
     <slot />
   </span>
 </template>
@@ -542,7 +552,7 @@ onMounted(() => {
 ```vue
 <!-- FormControl.vue -->
 <script setup>
-import { useAttrs } from 'vue'
+import { useAttrs, computed } from 'vue'
 
 const props = defineProps({
   label: String,
@@ -552,8 +562,11 @@ const props = defineProps({
 
 const attrs = useAttrs()
 
-// 提取特定属性用于不同元素
-const { class: className, ...inputAttrs } = attrs
+// 提取特定属性用于不同元素（computed 包裹，避免解构快照不更新）
+const inputAttrs = computed(() => {
+  const { class: className, ...rest } = attrs
+  return rest
+})
 </script>
 
 <template>
@@ -680,7 +693,7 @@ const ariaAttrs = computed(() => {
 | useSlots | 访问插槽内容 |
 | defineProps | 声明并访问 props |
 | defineEmits | 声明并访问 emits |
-| useContext (Vue 2) | Vue 3 中不再使用 |
+| setup(props, { attrs }) | 非 `<script setup>` 写法中通过上下文访问 attrs |
 
 ## 最佳实践
 

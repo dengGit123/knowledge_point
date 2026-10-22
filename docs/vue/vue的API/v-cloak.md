@@ -6,11 +6,13 @@
 
 ### 一、概述
 
-`v-cloak` 是 Vue 提供的一个内置指令，它会在关联的组件实例**编译完成之前**保留在 DOM 元素上，编译完成后**自动移除**。
+`v-cloak` 是 Vue 提供的一个内置指令，它会在关联的组件实例**挂载完成之前**保留在 DOM 元素上，挂载完成后**自动移除**。
 
-它的核心作用是解决一个常见的前端体验问题 —— **模板闪烁（FOUC，Flash of Uncompiled Content）**。当页面加载时，用户可能会短暂地看到原始的 `{{ message }}` 模板语法，而不是渲染后的真实数据。`v-cloak` 配合 CSS 选择器 `[v-cloak] { display: none }`，可以在 Vue 完成编译之前隐藏未编译的模板，编译完成后自动显示渲染好的内容，从而避免用户看到闪烁过程。
+它的核心作用是解决一个常见的前端体验问题 —— **模板闪烁（FOUC，Flash of Uncompiled Content）**。当页面加载时，用户可能会短暂地看到原始的 `{{ message }}` 模板语法，而不是渲染后的真实数据。`v-cloak` 配合 CSS 选择器 `[v-cloak] { display: none }`，可以在 Vue 挂载完成之前隐藏未编译的模板，挂载完成后自动显示渲染好的内容，从而避免用户看到闪烁过程。
 
 简单来说，`v-cloak` 就像是给 Vue 应用加了一层"遮罩"，在准备工作做好之前不让用户看到未完成的页面。
+
+> ⚠️ **注意：** 官方明确说明：**该指令只在没有构建步骤的环境下需要使用**。使用 SFC 等带构建工具的项目时，模板会在构建阶段预编译为渲染函数，不存在「运行时编译」的过程，`v-cloak` 基本用不到。
 
 ---
 
@@ -29,13 +31,13 @@
   → 将 {{ message }} 替换为真实的响应式数据
   → 绑定事件、处理指令
 
-阶段 3：编译完成
+阶段 3：挂载完成
   → Vue 自动移除 v-cloak 属性
   → CSS [v-cloak] 规则不再生效
-  → 元素以编译后的正确内容显示出来
+  → 元素以渲染后的正确内容显示出来
 ```
 
-其本质是利用了 **CSS 属性选择器** `[v-cloak]` 和 Vue 的 **编译生命周期**之间的时间差来实现隐藏与显示的无缝切换。
+其本质是利用了 **CSS 属性选择器** `[v-cloak]` 和 Vue 的 **挂载时机**之间的时间差来实现隐藏与显示的无缝切换。
 
 > 💡 **提示：** `v-cloak` 不需要表达式，它是一个"无值指令"，直接写 `v-cloak` 即可。
 
@@ -137,6 +139,8 @@ const pageContent = ref<string>('页面内容')
 **（2）配合骨架屏**
 
 在编译前展示骨架屏占位效果，编译完成后自动切换为真实内容。
+
+> ⚠️ **注意：** `v-cloak` 在组件实例**挂载完成**时就被移除，与数据是否加载完成无关。下例中骨架屏只在挂载前短暂可见，并不会覆盖那 1 秒的数据请求过程；要等待异步数据，应该用 `v-if="loaded"` 这类条件渲染（即下例的真实内容部分），骨架屏直接放在 `v-else` 分支即可，不必依赖 `v-cloak`。
 
 ```vue
 <template>
@@ -306,7 +310,7 @@ onMounted(async () => {
 | **指令名称** | `v-cloak` |
 | **是否需要表达式** | 否，直接使用 `v-cloak`，不需要绑定任何值 |
 | **作用范围** | 挂载该指令的元素及其所有子元素 |
-| **移除时机** | 关联的组件实例编译完成后自动移除 |
+| **移除时机** | 关联的组件实例挂载完成后自动移除 |
 | **配合 CSS** | 必须手动添加 `[v-cloak] { display: none }` 等 CSS 规则 |
 | **Vue 3 变化** | 与 Vue 2 行为一致，无重大变更 |
 
@@ -331,7 +335,7 @@ onMounted(async () => {
 ```
 0ms    → 页面加载，v-cloak 属性存在，CSS 隐藏生效，用户看到空白（或加载动画）
 50ms   → Vue 开始编译，用户仍然看不到未编译内容
-100ms  → 编译完成，v-cloak 被移除，用户直接看到渲染好的页面
+100ms  → 挂载完成，v-cloak 被移除，用户直接看到渲染好的页面
 ```
 
 用户体验：页面从空白/加载状态直接切换为完整渲染后的内容，无闪烁。
@@ -381,22 +385,19 @@ onMounted(async () => {
 </body>
 ```
 
-#### 2. 异步数据加载区域
+#### 2. 异步数据加载区域（常见误区）
 
-当某个区域依赖异步接口数据时，使用 `v-cloak` 避免数据加载前显示空模板。
+> ⚠️ **注意：** 「依赖异步接口数据的区域用 `v-cloak` 隐藏」是一个常见误区。`v-cloak` 在组件实例挂载完成时就会移除，**不会等到异步接口返回**——挂载后请求仍在进行时，列表区域会显示为空而不是继续隐藏。要等待异步数据，应使用条件渲染：
 
 ```vue
 <template>
-  <div v-cloak>
+  <!-- ✅ 用 v-if 等待异步数据 -->
+  <div v-if="loaded">
     <div v-for="item in list" :key="item.id">
       {{ item.name }}
     </div>
   </div>
 </template>
-
-<style>
-[v-cloak] { display: none; }
-</style>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
@@ -406,32 +407,27 @@ interface ListItem {
   name: string
 }
 
+const loaded = ref<boolean>(false)
 const list = ref<ListItem[]>([])
 
 onMounted(async () => {
   const res = await fetch('/api/list')
   list.value = await res.json()
+  loaded.value = true
 })
 </script>
 ```
 
-#### 3. SSR 客户端激活阶段
-
-在 SSR（服务端渲染）的客户端激活阶段，避免重复渲染造成的闪烁。
+#### 3. SSR 客户端激活阶段（反模式，不要这样做）
 
 ```html
-<!-- index.html -->
+<!-- ❌ 反模式：SSR 场景下不要使用 v-cloak -->
 <div id="app" v-cloak>
   <!-- SSR 输出的内容 -->
 </div>
 ```
 
-```css
-/* 全局样式 */
-[v-cloak] {
-  display: none;
-}
-```
+SSR 的意义就是让用户立刻看到服务端渲染好的 HTML。如果在 SSR 容器上加 `v-cloak` 并配合 `[v-cloak] { display: none }`，服务端输出的内容会被 CSS 隐藏，直到客户端激活（挂载）完成才显示——这会让首屏内容不可见，破坏 SSR 的价值（对首屏时间和 SEO 都不利）。SSR 场景不需要 `v-cloak`。
 
 #### 4. 多 Vue 实例页面
 
@@ -474,6 +470,8 @@ createApp({ setup() { return { footerText: ref('页脚信息') } } }).mount('#fo
 
 利用 CSS 伪元素在编译前显示加载提示文字或动画。
 
+> 💡 **提示：** 这个「加载提示」只在组件挂载前的极短窗口内可见，且只对没有构建步骤的 DOM 模板（如 CDN 引入 Vue）有意义；SFC 项目中模板已预编译，这个窗口几乎不存在。
+
 ```vue
 <template>
   <div v-cloak class="app-wrapper">
@@ -509,6 +507,8 @@ const pageContent = ref<string>('页面内容')
 #### 6. 表单页面防闪烁
 
 表单中的默认值或动态选项在编译前可能显示为模板语法，使用 `v-cloak` 避免闪烁。
+
+> 💡 **提示：** 与上一节相同，该用法的价值主要体现在无构建步骤的 DOM 模板场景；SFC 中模板已预编译，基本用不到。
 
 ```vue
 <template>
@@ -551,6 +551,8 @@ const handleSubmit = (): void => {
 #### 7. 配合 CSS 过渡动画
 
 编译完成后添加淡入、滑入等过渡动画效果，提升视觉体验。
+
+> 💡 **提示：** 同样只对无构建步骤的 DOM 模板场景有意义；SFC 中建议用 `<Transition>` 等运行时方案实现入场动画。
 
 ```vue
 <template>
@@ -629,10 +631,11 @@ const description = ref<string>('这是一个带淡入效果的应用')
 
 #### 9. 电商商品详情页
 
-商品详情页通常包含大量动态数据（价格、库存、评价等），使用 `v-cloak` 避免数据加载前显示空白或模板语法。
+商品详情页通常包含大量异步数据（价格、库存、评价等）。注意：这类「等待接口数据」的场景**不应该用 `v-cloak`**——它在挂载完成时就会移除，等不到接口返回：
 
 ```vue
 <template>
+  <!-- ❌ 常见误区：v-cloak 在挂载后立即移除，无法覆盖数据请求期间 -->
   <div v-cloak class="product-detail">
     <h1>{{ product.name }}</h1>
     <p class="price">¥{{ product.price }}</p>
@@ -643,12 +646,27 @@ const description = ref<string>('这是一个带淡入效果的应用')
     </button>
   </div>
 </template>
+```
 
-<style>
-[v-cloak] {
-  display: none;
-}
-</style>
+正确做法是用条件渲染等待数据：
+
+```vue
+<template>
+  <!-- ✅ 用 v-if 等待异步数据，加载中显示占位 -->
+  <div class="product-detail">
+    <p v-if="loading">加载中...</p>
+
+    <div v-else>
+      <h1>{{ product.name }}</h1>
+      <p class="price">¥{{ product.price }}</p>
+      <p class="stock">库存：{{ product.stock }} 件</p>
+      <p class="rating">评分：{{ product.rating }} / 5</p>
+      <button @click="addToCart" :disabled="product.stock === 0">
+        {{ product.stock > 0 ? '加入购物车' : '已售罄' }}
+      </button>
+    </div>
+  </div>
+</template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
@@ -660,11 +678,13 @@ interface Product {
   rating: number
 }
 
+const loading = ref<boolean>(true)
 const product = ref<Product>({ name: '', price: 0, stock: 0, rating: 0 })
 
 onMounted(async () => {
   const res = await fetch('/api/product/123')
   product.value = await res.json()
+  loading.value = false
 })
 
 const addToCart = (): void => {
@@ -868,14 +888,14 @@ export default defineConfig({
 
 | 特性 | `v-cloak` | `v-if` | `v-show` |
 |------|-----------|--------|----------|
-| **作用** | 编译前隐藏未编译模板 | 条件渲染（销毁/重建 DOM） | 条件显示（切换 display） |
+| **作用** | 挂载前隐藏未编译模板 | 条件渲染（销毁/重建 DOM） | 条件显示（切换 display） |
 | **是否需要表达式** | 否 | 是 | 是 |
 | **隐藏方式** | CSS 属性选择器 | 不渲染 DOM | `display: none` |
-| **移除时机** | 编译完成后自动移除 | 条件为 true 时渲染 | 条件为 true 时显示 |
+| **移除时机** | 挂载完成后自动移除 | 条件为 true 时渲染 | 条件为 true 时显示 |
 | **适用场景** | 防止模板闪烁 | 条件展示/隐藏 | 频繁切换显示/隐藏 |
 | **需要配合 CSS** | 是 | 否 | 否 |
 
-> 💡 **提示：** `v-cloak` 和 `v-show` 虽然都能控制显示隐藏，但本质不同。`v-cloak` 是编译前的临时隐藏策略，`v-show` 是运行时的条件显示控制，两者适用于完全不同的场景。
+> 💡 **提示：** `v-cloak` 和 `v-show` 虽然都能控制显示隐藏，但本质不同。`v-cloak` 是挂载前的临时隐藏策略，`v-show` 是运行时的条件显示控制，两者适用于完全不同的场景。
 
 ---
 
@@ -888,6 +908,6 @@ export default defineConfig({
 3. **CSS 提前加载**：确保 `[v-cloak]` 的 CSS 在 Vue 编译之前就已生效
 4. **注意优先级**：遇到内联样式冲突时使用 `!important`
 5. **CDN 场景必备**：通过 CDN 引入 Vue 时，`v-cloak` 是防止闪烁的关键手段
-6. **现代构建工具下仍有价值**：虽然 Vite 开发模式下闪烁不明显，但在生产环境慢网络下仍然有效
+6. **只在无构建步骤的环境下需要**：SFC 等带构建工具的项目中模板已预编译，`v-cloak` 基本用不到；CDN 引入、直接写 HTML 的 DOM 模板场景才是它的主战场
 
 掌握 `v-cloak` 的正确使用方式，可以确保你的 Vue 应用在任何网络条件下都能给用户呈现干净、无闪烁的页面体验。

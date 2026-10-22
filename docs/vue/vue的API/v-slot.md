@@ -179,11 +179,17 @@ const users = ref([
 
     <!-- 默认插槽的缩写 -->
     <template #default>默认内容</template>
+  </MyComponent>
+</template>
+```
 
-    <!-- 默认插槽可省略 template（只有默认插槽时） -->
-    <MyComponent v-slot="{ item }">
-      {{ item.name }}
-    </MyComponent>
+当组件**只有默认插槽**时，`v-slot` 可以直接写在组件标签上，省略 `<template>`：
+
+```vue
+<template>
+  <!-- ✅ 直接在组件上接收作用域插槽的 props -->
+  <MyComponent v-slot="{ item }">
+    {{ item.name }}
   </MyComponent>
 </template>
 ```

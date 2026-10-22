@@ -369,17 +369,19 @@ const objectValue = ref({ key: 'value' })
 
 <template>
   <!-- 数字会被转为字符串 -->
-  <div :data-id="numberValue">      <!-- data-id="42" -->
+  <div :data-id="numberValue"></div>      <!-- data-id="42" -->
 
   <!-- 对象会被转为 [object Object] -->
-  <div :data-value="objectValue">  <!-- data-value="[object Object]" -->
+  <div :data-value="objectValue"></div>   <!-- data-value="[object Object]" -->
 
   <!-- 使用 JSON.stringify 处理对象 -->
-  <div :data-value="JSON.stringify(objectValue)">
+  <div :data-value="JSON.stringify(objectValue)"></div>
 </template>
 ```
 
 ### 5. camelCase vs kebab-case
+
+HTML attribute 名不区分大小写，浏览器会把大写字母统一解析为小写，因此 camelCase 的 attribute（如 SVG 的 `viewBox`）在**直接写在 HTML 里的 DOM 模板**中会丢失大小写，需要用 `.camel` 修饰符：
 
 ```vue
 <script setup>
@@ -389,37 +391,45 @@ const viewBox = ref('0 0 100 100')
 </script>
 
 <template>
-  <!-- 在绑定中使用 camelCase -->
-  <svg :viewBox="viewBox">
-    <!-- HTML 属性中自动转为 kebab-case -->
-  </svg>
+  <!-- ✅ SFC（经构建工具预编译）中可以直接用 camelCase -->
+  <svg :viewBox="viewBox"></svg>
 
-  <!-- 也可以使用字符串形式 -->
-  <svg :view-box="viewBox">
+  <!-- ✅ DOM 模板中需要用 .camel 修饰符 -->
+  <svg :view-box.camel="viewBox"></svg>
 </template>
 ```
 
-### 6. 保留 attribute
+> 💡 **提示：** `.camel` 主要用于 DOM 模板（直接写在 HTML 文件中的模板）。使用 SFC 等带构建步骤的方式时模板会预先编译，基本用不到它。
+
+### 6. .prop 与 .attr 修饰符
 
 ```vue
 <script setup>
-const condition = true
+import { ref } from 'vue'
+
+const htmlContent = ref('<strong>hello</strong>')
+const someValue = ref('text')
 </script>
 
 <template>
-  <!-- .prop 修饰符用于绑定 DOM property -->
-  <div :innerHTML.prop="htmlContent">
+  <!-- .prop：绑定到 DOM property 而不是 attribute -->
+  <div :innerHTML.prop="htmlContent"></div>
+  <!-- 3.2+ 起可用 . 前缀简写 -->
+  <div .innerHTML="htmlContent"></div>
 
-  <!-- .attr 修饰符用于绑定 attribute（默认） -->
-  <div :value="someValue" :value.attr="someValue">
+  <!-- .attr：强制作为 attribute 绑定（默认行为，一般无需显式写出） -->
+  <div :value.attr="someValue"></div>
 </template>
 ```
 
 ### 7. 组件继承
 
+组件上未声明为 props 的 attribute（如 class、id、type 等）会自动「透传」到组件的根元素上；在子组件中可以通过 `useAttrs()` 访问：
+
 ```vue
 <script setup>
 import { ref } from 'vue'
+import MyButton from './MyButton.vue'
 
 const buttonAttrs = ref({
   type: 'button',
@@ -429,15 +439,18 @@ const buttonAttrs = ref({
 </script>
 
 <template>
-  <!-- 组件会自动继承 attrs -->
-  <MyButton v-bind="buttonAttrs">
-
-  <!-- 在组件中使用 attrs -->
-  <!-- <script setup>
-    const attrs = useAttrs()
-  </script>
-  -->
+  <!-- type、class、disabled 未声明为 props 时，会透传到 MyButton 的根元素 -->
+  <MyButton v-bind="buttonAttrs" />
 </template>
+```
+
+```vue
+<!-- 子组件中访问透传的 attrs -->
+<script setup>
+import { useAttrs } from 'vue'
+
+const attrs = useAttrs()
+</script>
 ```
 
 ## 使用场景
@@ -666,6 +679,7 @@ onMounted(() => {
 <script setup>
 import { ref } from 'vue'
 
+const show = ref(true)
 const isAnimating = ref(false)
 const transitionStyles = {
   enter: {
@@ -696,11 +710,11 @@ const transitionStyles = {
 
 ## v-bind 修饰符
 
-| 修饰符 | 说明 |
-|------|------|
-| .prop | 作为 DOM property 绑定而不是 attribute |
-| .attr | 作为 attribute 绑定（默认） |
-| .camel | 将 kebab-case attribute 名转换为 camelCase |
+| 修饰符 | 说明 | 简写 |
+|------|------|------|
+| .prop | 作为 DOM property 绑定而不是 attribute（3.2+） | `.` |
+| .attr | 作为 attribute 绑定（默认行为，可用于显式声明，3.2+） | `^` |
+| .camel | 将 kebab-case attribute 名转换为 camelCase（主要用于 DOM 模板） | — |
 
 ## 最佳实践
 

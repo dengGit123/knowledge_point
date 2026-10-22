@@ -217,16 +217,18 @@ const year = ref(new Date().getFullYear())
   <!-- ❌ v-pre 内的 v-for 不会被编译 -->
   <div v-pre>
     <li v-for="item in list">{{ item }}</li>
-    <!-- 输出原样：<li v-for="item in list">{{ item }}</li> -->
+    <!-- v-for 不会执行、列表不会循环，{{ item }} 也原样显示 -->
   </div>
 </template>
 ```
 
 ### 4. 注意 HTML 转义
 
+`v-pre` 只是跳过 Vue 的模板编译，元素仍会被当作**普通 HTML 解析**。因此在文本中展示 `<`、`>` 这类字符时，仍然需要写成 HTML 实体 `&lt;`、`&gt;`，否则会被当成真实的标签解析：
+
 ```vue
 <template>
-  <!-- v-pre 中可以直接写 < > 等 HTML 字符，但推荐使用 HTML 实体 -->
+  <!-- ✅ 展示标签字面量需要用 HTML 实体 -->
   <div v-pre>
     <p>标签：&lt;div&gt;content&lt;/div&gt;</p>
   </div>

@@ -1,10 +1,12 @@
+# watchEffect
+
 ### 一、概述
 
-> 📖 [官方文档 - watchEffect](https://cn.vuejs.org/api/reactivity-core#watcheffect)
+> 📖 [官方文档 - watchEffect](https://cn.vuejs.org/api/reactivity-core.html#watcheffect)
 >
-> 📖 [官方文档 - watchPostEffect](https://cn.vuejs.org/api/reactivity-core#watchposteffect)
+> 📖 [官方文档 - watchPostEffect](https://cn.vuejs.org/api/reactivity-core.html#watchposteffect)
 >
-> 📖 [官方文档 - watchSyncEffect](https://cn.vuejs.org/api/reactivity-core#watchsynceffect)
+> 📖 [官方文档 - watchSyncEffect](https://cn.vuejs.org/api/reactivity-core.html#watchsynceffect)
 
 `watchEffect` 是 Vue 3 组合式 API 中用于**自动追踪响应式依赖并执行副作用**的核心 API。它会立即运行一个回调函数，同时自动追踪其中用到的所有响应式数据，当这些数据发生变化时，回调函数会自动重新执行。
 
@@ -41,7 +43,7 @@ count.value++ // 输出: count: 1
 3. **触发更新**：当被追踪的响应式数据发生变化时，Vue 的调度器会将回调重新执行加入任务队列
 4. **副作用清理**：每次回调重新执行前，会先调用上一次注册的 `onCleanup` 清理函数，防止内存泄漏
 
-```
+```text
 watchEffect 调用
     │
     ▼
@@ -70,15 +72,21 @@ watchEffect 调用
 ```ts
 import { watchEffect, watchPostEffect, watchSyncEffect } from 'vue'
 
-// 函数签名
+// 函数签名（简化）
 function watchEffect(
   effect: (onCleanup: (cleanupFn: () => void) => void) => void,
   options?: WatchEffectOptions
-): () => void // 返回停止侦听器的函数
+): WatchHandle // 返回句柄，调用即停止侦听
 
-// watchPostEffect 和 watchSyncEffect 是简写形式
-function watchPostEffect(effect: WatchEffect): () => void
-function watchSyncEffect(effect: WatchEffect): () => void
+// watchPostEffect 和 watchSyncEffect 是 flush 选项的简写别名
+function watchPostEffect(effect: WatchEffect): WatchHandle
+function watchSyncEffect(effect: WatchEffect): WatchHandle
+
+interface WatchEffectOptions {
+  flush?: 'pre' | 'post' | 'sync' // 默认：'pre'
+  onTrack?: (event: DebuggerEvent) => void
+  onTrigger?: (event: DebuggerEvent) => void
+}
 ```
 
 **自动追踪依赖**
@@ -97,7 +105,7 @@ watchEffect(() => {
 // 立即输出: 姓名: 张三
 
 firstName.value = '李'  // 输出: 姓名: 李三
-lastName.value = '四'   // 输出: 李四
+lastName.value = '四'   // 输出: 姓名: 李四
 ```
 
 **停止侦听器**
@@ -121,7 +129,7 @@ stop()
 count.value++ // 不再输出
 ```
 
-> 💡 **提示：** 在 `<script setup>` 中定义的 `watchEffect` 会在组件卸载时自动停止，通常不需要手动调用 `stop()`。但如果是在异步回调或组合函数中创建的，建议手动停止。
+> 💡 **提示：** 在 `<script setup>` 中用同步语句创建的 `watchEffect` 会在组件卸载时自动停止，通常不需要手动调用 `stop()`。但如果是在异步回调（如 `setTimeout`）等非组件上下文中创建的，则不会绑定组件实例，必须手动停止。
 
 **副作用清理（onCleanup）**
 
@@ -313,7 +321,7 @@ export function useMousePosition() {
 
 | 类型 | 说明 |
 |------|------|
-| `() => void` | 停止侦听器函数，调用后不再追踪依赖和执行回调 |
+| `WatchHandle` | 停止函数，调用后不再追踪依赖和执行回调；Vue 3.5+ 还提供 `pause()` / `resume()` |
 
 **flush 时机对比**
 
@@ -577,19 +585,19 @@ watchEffect((onCleanup) => {
 
 ```ts
 // composables/useFetch.ts
-import { ref, watchEffect, toValue, type MaybeRefOrGetter } from 'vue'
+import { ref, watchEffect, toValue, type Ref, type MaybeRefOrGetter } from 'vue'
 
 interface UseFetchResult<T> {
-  data: ref<T | null>
-  error: ref<Error | null>
-  isLoading: ref<boolean>
+  data: Ref<T | null>
+  error: Ref<Error | null>
+  isLoading: Ref<boolean>
 }
 
 export function useFetch<T = unknown>(
   url: MaybeRefOrGetter<string>
 ): UseFetchResult<T> {
-  const data = ref<T | null>(null) as ref<T | null>
-  const error = ref<Error | null>(null)
+  const data = ref<T | null>(null) as Ref<T | null>
+  const error = ref<Error | null>(null) as Ref<Error | null>
   const isLoading = ref(false)
 
   watchEffect(async (onCleanup) => {
@@ -792,9 +800,9 @@ function changeScale(delta: number) {
 #### 9. WebSocket 自动连接管理
 
 ```ts
-import { ref, watchEffect } from 'vue'
+import { ref, watchEffect, toValue, type MaybeRefOrGetter } from 'vue'
 
-export function useWebSocket(url: ref<string> | string) {
+export function useWebSocket(url: MaybeRefOrGetter<string>) {
   const status = ref<'connecting' | 'connected' | 'disconnected'>('disconnected')
   const messages = ref<string[]>([])
 

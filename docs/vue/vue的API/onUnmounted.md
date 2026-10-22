@@ -2,7 +2,7 @@
 
 ## 作用
 
-📖 [Vue 官方文档 - onUnmounted](https://cn.vuejs.org/api/composition-api-lifecycle#onunmounted)
+📖 [Vue 官方文档 - onUnmounted](https://cn.vuejs.org/api/composition-api-lifecycle.html#onunmounted)
 
 `onUnmounted()` 是 Vue 3 的生命周期钩子，在组件实例被卸载之后调用。这是执行清理工作的理想位置，例如移除事件监听器、取消定时器等。
 
@@ -148,13 +148,13 @@ export default {
 }
 ```
 
-### 与 watchCleanupEffect 配合
+### 与 watchEffect 配合
 
 ```vue
 <script setup>
-import { watchEffect, onUnmounted } from 'vue'
+import { watchEffect } from 'vue'
 
-const stop = watchEffect((onCleanup) => {
+watchEffect((onCleanup) => {
   const timer = setInterval(() => {
     console.log('Tick')
   }, 1000)
@@ -163,11 +163,8 @@ const stop = watchEffect((onCleanup) => {
     clearInterval(timer)
   })
 })
-
-// 组件卸载时自动停止 watchEffect
-onUnmounted(() => {
-  stop()
-})
+// 💡 setup 中创建的 watchEffect 已经绑定到组件作用域，
+// 组件卸载时会自动停止，不需要在 onUnmounted 里手动调用返回的 stop()
 </script>
 ```
 
@@ -175,7 +172,7 @@ onUnmounted(() => {
 
 ```vue
 <script setup>
-import { onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import Chart from 'chart.js/auto'
 
 const canvasRef = ref(null)
@@ -260,14 +257,15 @@ onMounted(() => {
 
 ```javascript
 // 组件卸载流程：
-// 1. onBeforeUnmount 执行
-// 2. 组件实例卸载
-// 3. onUnmounted 执行
-// 4. DOM 元素移除
+// 1. onBeforeUnmount 执行（DOM 还在）
+// 2. 卸载过程中：DOM 从页面移除，子组件递归卸载
+// 3. onUnmounted 执行（此时组件已不在文档中）
+//
+// 官方说明：触发时组件实例的所有子组件都已被卸载，
+// setup 中创建的计算属性、侦听器等响应式副作用也都已停止
 
 onUnmounted(() => {
-  // 此时组件已从 DOM 中移除
-  // 不要访问组件的 DOM
+  // 不要再访问组件的 DOM，此时元素已从页面移除
 })
 ```
 
@@ -279,11 +277,12 @@ import { ref, onUnmounted } from 'vue'
 const count = ref(0)
 
 onUnmounted(() => {
-  // ⚠️ 可以访问响应式状态
-  console.log(count.value) // 可以访问
+  // ✅ 响应式状态本身仍可读取
+  console.log(count.value)
 
-  // ❌ 但状态更新不会触发任何响应
-  count.value++ // 不会有效果
+  // ⚠️ 赋值仍然会修改值本身，只是组件已卸载、不再渲染，
+  // 所以看不到任何界面上的变化
+  count.value++
 })
 ```
 
@@ -322,15 +321,12 @@ onUnmounted(() => {
 
 ### 5. 异步清理
 
+回调可以传 `async` 函数，但 Vue 不会等待它完成（组件卸载是同步流程），异步部分可能要等卸载结束后才执行完。
+
 ```javascript
 import { onUnmounted } from 'vue'
 
-onUnmounted(() => {
-  // ⚠️ onUnmounted 不支持 async
-  // 需要异步操作时，使用回调
-})
-
-// ✅ 正确的异步清理方式
+// ✅ 异步清理：自行处理 Promise，避免 unhandled rejection
 onUnmounted(() => {
   cleanupAsync().catch(console.error)
 })

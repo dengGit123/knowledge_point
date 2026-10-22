@@ -19,9 +19,9 @@
 `effectScope` 的底层机制基于 Vue 3 响应式系统的**副作用收集与销毁**模型：
 
 1. **副作用收集**：当调用 `scope.run(fn)` 时，`fn` 内部创建的所有响应式副作用（`watch`、`computed`、`watchEffect` 等）都会被自动记录到当前 `scope` 中
-2. **统一销毁**：调用 `scope.stop()` 时，Vue 会遍历该作用域收集到的所有副作用，逐个触发它们的清理逻辑
+2. **统一销毁**：调用 `scope.stop()` 时，Vue 会先停止该作用域自身的所有副作用、执行注册的清理回调，再递归停止其子作用域
 3. **嵌套管理**：作用域支持嵌套，父作用域停止时会自动停止所有子作用域，形成树状的生命周期管理
-4. **分离机制**：通过 `scope.detach()` 可以将子作用域从父作用域中分离，使父作用域停止时不再影响子作用域
+4. **分离机制**：创建时传入 `effectScope(true)` 可以得到一个 detached（分离）作用域，它不会注册为父作用域的子作用域，父作用域停止时不再影响它
 
 #### 类比理解
 
@@ -72,12 +72,13 @@ import { effectScope, onScopeDispose, ref, watch } from 'vue'
 // ❌ 错误示例：不使用 effectScope，副作用无法统一清理
 function useCounter() {
   const count = ref(0)
-  
+
   watch(count, (val) => {
     console.log('count:', val)
   })
-  
-  // 无法在外部清理这个 watch
+
+  // 在组件 setup 中调用时，这个 watch 会被组件作用域自动清理；
+  // 但脱离组件（全局、Store 等场景）调用时，它没有归属的作用域，无法统一清理
   return { count }
 }
 
@@ -195,9 +196,9 @@ scope.run(() => {
   })
 })
 
-// 调用 stop 时，两个 onScopeDispose 回调都会执行
+// 调用 stop 时，两个 onScopeDispose 回调按注册顺序执行
 scope.stop()
-// 输出：timer 已清理
+// 输出：定时器已清理
 // 输出：第二个清理回调
 ```
 
@@ -271,15 +272,14 @@ store.destroy()
 
 | API | 参数 | 返回值 | 说明 |
 |-----|------|--------|------|
-| `effectScope(detached?)` | `detached: boolean`（默认 `false`） | `EffectScope` | 创建一个副作用作用域。`detached` 为 `true` 时，创建的作用域不会与父作用域关联 |
+| `effectScope(detached?)` | `detached: boolean`（默认 `false`） | `EffectScope` | 创建一个副作用作用域。`detached` 为 `true` 时，创建的作用域不会注册为当前活跃作用域的子作用域（不存在 `scope.detach()` 这样的分离方法，分离只能通过构造参数控制） |
 | `scope.run(fn)` | `fn: () => T` | `T \| undefined` | 在作用域中执行函数，收集其中创建的所有副作用。如果作用域已被停止则返回 `undefined` |
 | `scope.stop()` | 无 | `void` | 停止作用域内所有副作用，并递归停止所有子作用域 |
 | `scope.active` | 无 | `boolean`（只读） | 作用域是否仍然活跃 |
-| `scope.detach()` | 无 | `void` | 将当前作用域从父作用域中分离 |
-| `onScopeDispose(fn)` | `fn: () => void` | `void` | 在当前作用域销毁时注册一个清理回调。如果当前没有活跃的 `effectScope` 则在开发环境下报警告 |
+| `onScopeDispose(fn, failSilently?)` | `fn: () => void`；`failSilently: boolean`（默认 `false`，Vue 3.4+） | `void` | 在当前作用域销毁时注册一个清理回调。如果当前没有活跃的 `effectScope`，默认在开发环境下报警告；传 `failSilently: true` 可静默跳过 |
 | `getCurrentScope()` | 无 | `EffectScope \| undefined` | 返回当前正在运行的 `effectScope`，如果没有则返回 `undefined` |
 
-> 💡 **提示：** `EffectScope` 实例上的 `active` 属性是一个只读的布尔值，可用于判断作用域是否仍然有效，避免在已停止的作用域上重复操作。
+> 💡 **提示：** `EffectScope` 实例上的 `active` 属性是一个只读的布尔值，可用于判断作用域是否仍然有效，避免在已停止的作用域上重复操作。Vue 3.5 还为 `EffectScope` 增加了 `pause()` / `resume()` 方法，可以暂停和恢复作用域内的副作用。
 
 ### 四、实现效果
 
@@ -366,8 +366,9 @@ parentScope.run(() => {
 })
 
 parentScope.stop()
-// 按照子作用域优先的顺序执行清理
-// 输出顺序可能是：3 -> 2 -> 4 -> 1（从内到外）
+// 输出顺序：1 -> 2 -> 3 -> 4
+// stop() 会先停止自身的 effect、执行自身的清理回调（输出 1），
+// 然后按创建顺序递归停止子作用域（依次输出 2、3、4）
 ```
 
 ### 五、使用场景
@@ -938,7 +939,7 @@ const result = scope.run(() => 42)
 console.log(result) // undefined，因为作用域已停止
 ```
 
-2. **`onScopeDispose` 必须在活跃的 `effectScope` 中调用**：如果在没有活跃 `effectScope` 的上下文中调用 `onScopeDispose`，在开发环境下会产生警告。
+2. **`onScopeDispose` 必须在活跃的 `effectScope` 中调用**：如果在没有活跃 `effectScope` 的上下文中调用 `onScopeDispose`，默认在开发环境下会产生警告（Vue 3.4+ 可传第二个参数 `failSilently: true` 静默跳过）。
 
 ```ts
 // ❌ 错误：不在任何 effectScope 内
@@ -1010,7 +1011,7 @@ const newScope = effectScope()
 newScope.run(() => { /* 新的作用域 */ })
 ```
 
-7. **嵌套作用域的销毁顺序**：当父作用域被停止时，子作用域会先于父作用域被销毁（从内到外），类似于 DOM 事件的冒泡机制，子元素先被移除。
+7. **嵌套作用域的销毁顺序**：`scope.stop()` 的执行顺序是——先停止自身的所有 effect、执行自身的 `onScopeDispose` 清理回调，然后按创建顺序递归停止子作用域（即"从外到内"触发清理回调）。依赖子作用域清理顺序的逻辑不要写得过于隐式。
 
 8. **避免在 `onScopeDispose` 回调中创建新的副作用**：`onScopeDispose` 的回调应该在清理时只做资源释放操作，不要再创建新的响应式副作用，否则可能导致不可预期的行为。
 

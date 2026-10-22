@@ -50,7 +50,7 @@ DELETE FROM users WHERE age < 18;
 
 ```sql
 -- 只删除满足条件的前 100 行（防止一次性删除太多把库搞挂）
-DELETE FROM users WHERE status = 'inactive' LIMIT 100;
+DELETE FROM users WHERE created_at < '2024-01-01' LIMIT 100;
 ```
 
 ---
@@ -95,7 +95,7 @@ DROP TABLE users;  -- 表的数据 + 表结构全部删除，表没了
 
 ```sql
 -- 场景 1：只想删一部分数据 → DELETE
-DELETE FROM users WHERE status = 'spam';
+DELETE FROM users WHERE age < 18;
 
 -- 场景 2：清空测试表，从头开始（id 也重置）→ TRUNCATE
 TRUNCATE TABLE test_log;
@@ -249,10 +249,10 @@ DELETE FROM users WHERE id = 1;
 ```sql
 -- 删除前，先把要删的数据存到备份表
 CREATE TABLE users_backup_20260702 AS
-SELECT * FROM users WHERE status = 'spam';
+SELECT * FROM users WHERE created_at < '2024-01-01';
 
 -- 然后再删
-DELETE FROM users WHERE status = 'spam';
+DELETE FROM users WHERE created_at < '2024-01-01';
 ```
 
 ---

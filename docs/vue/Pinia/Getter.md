@@ -91,13 +91,13 @@ Getter 只在依赖变化时重新计算，多次访问返回缓存值：
 ```js
 const cartStore = useCartStore()
 
-console.log(cartStore.totalPrice) // 计算 → 1836.1
-console.log(cartStore.totalPrice) // 缓存 → 1836.1（不重新计算）
-console.log(cartStore.totalPrice) // 缓存 → 1836.1（不重新计算）
+console.log(cartStore.totalPrice) // 计算 → 1824.3（subtotal 2027 × 0.9）
+console.log(cartStore.totalPrice) // 缓存 → 1824.3（不重新计算）
+console.log(cartStore.totalPrice) // 缓存 → 1824.3（不重新计算）
 
 // 修改 state → getter 自动重新计算
 cartStore.items.push({ id: 3, name: 'Keyboard', price: 79, quantity: 1 })
-console.log(cartStore.totalPrice) // 重新计算 → 1907.2
+console.log(cartStore.totalPrice) // 重新计算 → 1895.4（subtotal 2106 × 0.9）
 ```
 
 #### 2. 只读
@@ -108,7 +108,7 @@ Getter 默认是**只读**的，不能直接赋值：
 const cartStore = useCartStore()
 
 // ❌ 不能修改 getter
-cartStore.totalPrice = 100 // 警告：Readonly
+cartStore.totalPrice = 100 // 开发环境会收到 Vue 警告：computed value is readonly，赋值无效
 ```
 
 #### 3. 响应式
@@ -319,6 +319,8 @@ export const useCartStore = defineStore('cart', {
 | :--: | :--: | :--: | :--: |
 | 箭头函数 `(state) =>` | ✅ 通过参数 | ❌ | 简单的、不依赖其他 getter 的场景 |
 | 普通函数 `fn()` | ✅ 通过 `this` | ✅ 通过 `this` | 需要访问其他 getter 的场景 |
+
+> 💡 **TypeScript 注意：** 使用 `this` 的 getter 必须显式标注返回类型（如 `doubleCountPlusOne(): number`），这是官方要求，用于规避 TS 的类型推断缺陷；箭头函数或不使用 `this` 的 getter 可以自动推断。
 
 ### 七、常见应用场景
 

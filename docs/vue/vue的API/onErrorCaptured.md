@@ -497,7 +497,7 @@ const goBack = () => {
 
 ```vue
 <script setup lang="ts">
-import { ref, onErrorCaptured, Suspense } from 'vue'
+import { ref, onErrorCaptured } from 'vue'
 import AsyncDataLoader from './AsyncDataLoader.vue'
 
 const loadingError = ref<string | null>(null)
@@ -727,46 +727,46 @@ onErrorCaptured((err: unknown, instance, info) => {
 
 #### 10. 可插拔的模块化错误处理
 
-利用 `onErrorCaptured` 在组件级别实现可配置的错误处理策略。
+利用 `onErrorCaptured` 在组合式函数中封装可配置的错误处理策略。
 
-```vue
-<!-- handlers/withErrorHandling.ts -->
-<script setup lang="ts">
-import { onErrorCaptured, type ComponentPublicInstance } from 'vue'
+```ts
+// composables/useErrorBoundary.ts
+import { ref, onErrorCaptured, type ComponentPublicInstance } from 'vue'
 
 interface ErrorHandlingOptions {
   /** 是否阻止错误传播 */
   stopPropagation: boolean
   /** 错误回调 */
   onError?: (err: unknown, instance: ComponentPublicInstance | null, info: string) => void
-  /** 降级 UI 内容 */
-  fallback?: string
 }
 
-// 可复用的错误处理逻辑
-function useErrorBoundary(options: ErrorHandlingOptions) {
+export function useErrorBoundary(options: ErrorHandlingOptions) {
   const hasError = ref(false)
 
   onErrorCaptured((err, instance, info) => {
     hasError.value = true
     options.onError?.(err, instance, info)
+    // 返回 false 才会阻止传播
     return options.stopPropagation ? false : true
   })
 
   return { hasError }
 }
+```
 
-// 使用时
+```vue
+<!-- 组件中使用 -->
+<script setup lang="ts">
+import { useErrorBoundary } from '@/composables/useErrorBoundary'
+
 const { hasError } = useErrorBoundary({
   stopPropagation: true,
   onError: (err, instance, info) => {
     console.error('[自定义处理]', err, info)
     reportToSentry(err)
-  },
-  fallback: '该模块暂时不可用'
+  }
 })
 
-import { ref } from 'vue'
 function reportToSentry(err: unknown) {
   console.log('上报到 Sentry:', err)
 }
@@ -943,12 +943,12 @@ const handleRetry = () => {
 
 #### 8. 不要在 `onErrorCaptured` 中抛出错误
 
-在 `onErrorCaptured` 回调中抛出新的错误会导致无限循环或不可预期的行为。
+在 `onErrorCaptured` 回调中抛出新的错误，Vue 会把新错误交给全局 `app.config.errorHandler` 处理，容易形成连锁反应或循环上报，应避免。
 
 ```ts
 // ❌ 危险：在错误处理中再次抛出错误
 onErrorCaptured((err) => {
-  throw new Error('处理错误时又出错了') // 会导致无限循环
+  throw new Error('处理错误时又出错了') // 会被抛给全局 errorHandler
 })
 
 // ✅ 正确：使用 try/catch 包裹可能出错的处理逻辑

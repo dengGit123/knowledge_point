@@ -1,6 +1,6 @@
 # defineExpose
 
-> 📖 [官方文档 - defineExpose](https://cn.vuejs.org/api/sfc-script-setup#defineexpose)
+> 📖 [官方文档 - defineExpose](https://cn.vuejs.org/api/sfc-script-setup.html#defineexpose)
 
 ### 一、概述
 

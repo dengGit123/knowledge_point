@@ -1,28 +1,46 @@
 # createRenderer
 
-> 📖 [Vue 官方文档 - createRenderer](https://cn.vuejs.org/api/custom-renderer#createrenderer)
+> 📖 [Vue 官方文档 - createRenderer](https://cn.vuejs.org/api/custom-renderer.html#createrenderer)
 
-创建自定义渲染器，用于将 Vue 渲染到非 DOM 环境。
+创建自定义渲染器。通过提供平台特定的节点创建与操作 API，复用 Vue 的核心运行时（响应式、虚拟 DOM、diff），把 Vue 渲染到非 DOM 环境（Canvas、WebGL/Three.js、终端、PDF 等）。Vue 自己的 DOM 运行时 `@vue/runtime-dom` 也是用同一套 API 实现的。
 
 ## 语法
 
 ```javascript
 import { createRenderer } from 'vue'
 
-const { createApp } = createRenderer({
-  createElement,
-  createComment,
-  createText,
+// 返回 { render, createApp }
+const { render, createApp } = createRenderer({
+  patchProp,
   insert,
   remove,
-  patchProp,
+  createElement
   // ... 其他选项
 })
 ```
 
 ## 参数
 
-返回渲染器 API，包含 createApp 等方法
+`RendererOptions`：平台节点的创建与操作函数。前 10 个为**必需**，后 4 个为可选：
+
+| 选项 | 必需 | 说明 |
+|------|------|------|
+| `patchProp(el, key, prevValue, nextValue, namespace?, parentComponent?)` | ✅ | 更新元素上的 prop / attribute / 事件 / class / style |
+| `insert(el, parent, anchor?)` | ✅ | 在 parent 中 anchor 之前插入节点 |
+| `remove(el)` | ✅ | 从父节点中移除节点 |
+| `createElement(type, namespace?, isCustomizedBuiltIn?, vnodeProps?)` | ✅ | 创建元素节点 |
+| `createText(text)` | ✅ | 创建文本节点 |
+| `createComment(text)` | ✅ | 创建注释节点 |
+| `setText(node, text)` | ✅ | 设置文本节点的内容 |
+| `setElementText(el, text)` | ✅ | 设置元素的文本内容 |
+| `parentNode(node)` | ✅ | 获取父节点 |
+| `nextSibling(node)` | ✅ | 获取下一个兄弟节点 |
+| `querySelector(selector)` | 可选 | 选择器查询（Transition 等特性需要） |
+| `setScopeId(el, id)` | 可选 | 应用作用域 ID（scoped 样式需要） |
+| `cloneNode(node)` | 可选 | 克隆节点 |
+| `insertStaticContent(content, parent, anchor, namespace, start?, end?)` | 可选 | 插入静态 HTML 内容，返回首尾节点（静态提升/hydration 需要） |
+
+返回值：`{ render, createApp }`——`render` 是底层渲染函数，`createApp` 创建使用该渲染器的应用实例。此外 Vue 还导出了配套的 `createHydrationRenderer()`，用于需要水合（hydration）的自定义渲染器场景。
 
 ## 基础结构
 
@@ -94,13 +112,15 @@ const renderer = createRenderer({
   cloneNode(node) {},
 
   // 插入静态内容（可选）
-  insertStaticContent(content, parent, anchor, SVG) {}
+  insertStaticContent(content, parent, anchor, isSVG) {}
 })
 
 export const createApp = renderer.createApp
 ```
 
-## Canvas 渲染器示例
+## 自定义节点操作示例
+
+> ⚠️ **注意：** `createRenderer` 只接收 `patchProp` 一个属性更新入口，**没有** `patchClass` / `patchStyle` / `patchAttr` / `patchDOMProp` / `patchEvent` 这些选项——它们是 Vue 内部 `@vue/runtime-dom` 的实现细节，class、style、attribute、DOM property、事件的分发逻辑都需要你在自己的 `patchProp` 里处理。
 
 ```javascript
 import { createRenderer } from 'vue'
@@ -159,38 +179,24 @@ const nodeOps = {
     return parent.children[index + 1]
   },
 
+  // class / style / attribute / 事件全部在这里分发
   patchProp(el, key, prevValue, nextValue) {
-    el.props[key] = nextValue
+    if (key === 'class') {
+      el.props.class = nextValue
+    } else if (key === 'style') {
+      el.props.style = nextValue
+    } else if (key.startsWith('on') && /^on[a-z]/.test(key)) {
+      // 事件：onClick -> click
+      const event = key.slice(2).toLowerCase()
+      el.handlers = el.handlers || {}
+      el.handlers[event] = nextValue
+    } else {
+      el.props[key] = nextValue
+    }
   }
 }
 
-const patchOps = {
-  // 声明周期补丁
-  patchClass(el, value, isSVG) {
-    el.props.class = value
-  },
-
-  patchStyle(el, prev, next) {
-    el.props.style = next
-  },
-
-  patchAttr(el, key, value) {
-    el.props[key] = value
-  },
-
-  patchDOMProp(el, key, prevValue, nextValue) {
-    el.props[key] = nextValue
-  },
-
-  patchEvent(el, key, prevValue, nextValue) {
-    el.props[key] = nextValue
-  }
-}
-
-const renderer = createRenderer({
-  ...nodeOps,
-  ...patchOps
-})
+const renderer = createRenderer(nodeOps)
 
 export const createApp = renderer.createApp
 ```
@@ -569,9 +575,9 @@ export { createApp, renderToPDF }
 
 5. **测试**：充分测试渲染器的各种场景
 
-6. **替代方案**：
-   - 对于 Canvas：考虑使用现有库如 vue-gpu
-   - 对于终端：考虑使用 blessed 或 ink
-   - 对于 Three.js：考虑使用 troika-three
+6. **替代方案**：动手之前，先确认对应环境是否已有成熟方案，避免重复造轮子：
+   - Canvas / WebGL：多数场景直接操作 Canvas API 或使用 Three.js 等库更简单；Vue 生态也有基于自定义渲染器的 Three.js 方案（如 Trois）可参考
+   - 终端：React 生态有 Ink，Vue 侧可参考社区的自定义终端渲染器实现思路
+   - 服务端：SSR 用 Vue 官方的 `@vue/server-renderer`，不需要自建渲染器
 
 7. **维护成本**：自定义渲染器需要持续维护以跟上 Vue 更新

@@ -1,6 +1,6 @@
 # onRenderTriggered
 
-> 📖 [官方文档：onRenderTriggered](https://cn.vuejs.org/api/composition-api-lifecycle#onrendertriggered)
+> 📖 [官方文档：onRenderTriggered](https://cn.vuejs.org/api/composition-api-lifecycle.html#onrendertriggered)
 
 ### 一、概述
 
@@ -14,7 +14,7 @@ Vue 3 的响应式系统会自动追踪渲染函数中使用的响应式依赖�
 
 - 谁动了东西（`target` — 哪个响应式对象）
 - 动了哪个位置（`key` — 哪个属性）
-- 怎么动的（`type` — 操作类型：set / add / delete）
+- 怎么动的（`type` — 操作类型：set / add / delete / clear）
 - 之前是什么样的（`oldValue`）
 - 现在变成了什么样（`newValue`）
 
@@ -238,26 +238,31 @@ onRenderTriggered(
 </template>
 ```
 
-**（4）在 onMounted 中动态注册**
+**（4）用标志位控制调试开关**
 
 ```vue
 <script setup lang="ts">
-import { onMounted, onRenderTriggered, ref } from 'vue'
+import { onRenderTriggered, ref } from 'vue'
 
 const count = ref(0)
 const debugEnabled = ref(false)
 
-onMounted(() => {
-  // ✅ 在 onMounted 内动态注册（需要在同步上下文中）
-  if (import.meta.env.DEV) {
-    onRenderTriggered((e) => {
-      if (debugEnabled.value) {
-        console.log('[动态调试] 渲染触发:', e.key, e.type)
-      }
-    })
-  }
+// ⚠️ 不要想着"在 onMounted 里动态注册"：
+// Vue 在组件首次挂载时就把该钩子接入渲染副作用，此后再注册不会生效，
+// 而且这种写法不会报错，只会静默失效
+// onMounted(() => { onRenderTriggered(...) })  // ❌ 永远不会被调用
+
+// ✅ 需要开关时，在 setup 中同步注册，用标志位控制回调内部逻辑
+onRenderTriggered((e) => {
+  if (!debugEnabled.value) return
+  console.log('[调试] 渲染触发:', e.key, e.type)
 })
 </script>
+
+<template>
+  <button @click="debugEnabled = !debugEnabled">切换调试</button>
+  <button @click="count++">{{ count }}</button>
+</template>
 ```
 
 #### 3. API 参数说明
@@ -274,29 +279,31 @@ function onRenderTriggered(
 
 ```ts
 interface DebuggerEvent {
-  /** 触发变更的响应式对象的引用 */
+  /** 触发变更的响应式对象的引用（reactive 传原始对象，ref 传 RefImpl） */
   target: object
-  /** 被修改的属性键名 */
-  key: string | symbol | undefined
+  /** 被修改的属性键名（类型为 any，iterate 类操作时为 undefined） */
+  key: any
   /** 操作类型 */
   type: TriggerOpTypes
-  /** 变更前的值 */
-  oldValue: any
-  /** 变更后的值（仅 type 为 set 时存在） */
+  /** 变更前的值（add 操作时为 undefined；computed 触发时也没有 oldValue） */
+  oldValue?: any
+  /** 变更后的值（set / add 时有值；delete / clear 时为 undefined） */
   newValue?: any
 }
 
 // TriggerOpTypes 的可选值
-type TriggerOpTypes = 'set' | 'add' | 'delete'
+type TriggerOpTypes = 'set' | 'add' | 'delete' | 'clear'
 ```
+
+> 💡 完整的事件对象还包含 `effect`（被触发的渲染副作用）和 `oldTarget`（`clear` 操作前的 Map/Set 快照）两个字段，官方类型定义见 `DebuggerEventExtraInfo`。
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| `target` | `object` | 触发变更的响应式对象本身（如 reactive 对象、ref 的 RefImpl） |
-| `key` | `string \| symbol \| undefined` | 被修改的属性键名。对于 `ref` 通常是 `"value"`，对于 `reactive` 对象则是具体的属性名 |
-| `type` | `'set' \| 'add' \| 'delete'` | 触发类型：`set`（修改已有属性）、`add`（添加新属性）、`delete`（删除属性） |
-| `oldValue` | `any` | 变更前的旧值 |
-| `newValue` | `any` | 变更后的新值（注意：`type` 为 `add` 或 `delete` 时可能为 `undefined`） |
+| `target` | `object` | 触发变更的响应式对象（如 reactive 对象、ref 的 RefImpl） |
+| `key` | `any` | 被修改的属性键名。对于 `ref` 通常是 `"value"`，对于 `reactive` 对象则是具体的属性名 |
+| `type` | `'set' \| 'add' \| 'delete' \| 'clear'` | 触发类型：`set`（修改已有属性）、`add`（添加新属性）、`delete`（删除属性）、`clear`（清空 Map/Set） |
+| `oldValue` | `any` | 变更前的旧值（`add` 时为 `undefined`；`clear` 时改为放在 `oldTarget` 上） |
+| `newValue` | `any` | 变更后的新值（`set` / `add` 时有值，`delete` / `clear` 时为 `undefined`） |
 
 **返回值：** `void`（无返回值）
 
@@ -663,16 +670,19 @@ function handleInput(e: Event) {
 
 ```vue
 <script setup lang="ts">
-import { onRenderTriggered } from 'vue'
+import { onRenderTriggered, toRaw } from 'vue'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
 
 if (import.meta.env.DEV) {
+  // target 是被修改的响应式对象背后的原始对象，
+  // 用 toRaw 拿到模板所用数据的原始引用，就能做对比
+  const rawUserInfo = toRaw(userStore.userInfo)
+
   onRenderTriggered((e) => {
     // 检查是否是 store 中的数据导致的渲染
-    const targetStr = String(e.target)
-    if (targetStr.includes('Reactive') || targetStr.includes('pinia')) {
+    if (e.target === rawUserInfo) {
       console.warn(
         `[Pinia 渲染检测] Store 状态变化触发渲染:`,
         `key=${String(e.key)}, type=${e.type}`
@@ -791,13 +801,19 @@ function heavyUpdate() {
 
 追踪跨组件层级注入的数据变化是否触发了当前组件的渲染。
 
+```ts
+// keys.ts：Symbol key 必须由提供方和注入方共享，要单独放在模块中导出
+import type { InjectionKey, Ref } from 'vue'
+
+export const themeKey: InjectionKey<Ref<string>> = Symbol('theme')
+```
+
 ```vue
 <!-- ChildDeepComponent.vue -->
 <script setup lang="ts">
-import { onRenderTriggered, inject } from 'vue'
-import type { InjectionKey, Ref } from 'vue'
+import { onRenderTriggered, inject, ref } from 'vue'
+import { themeKey } from './keys'
 
-const themeKey: InjectionKey<Ref<string>> = Symbol('theme') as unknown as InjectionKey<Ref<string>>
 const theme = inject(themeKey, ref('light'))
 
 if (import.meta.env.DEV) {
@@ -824,6 +840,7 @@ if (import.meta.env.DEV) {
 
 ```ts
 // plugins/renderDebug.ts
+import { onRenderTriggered } from 'vue'
 import type { App } from 'vue'
 
 /**
@@ -835,10 +852,8 @@ export function installRenderDebugPlugin(app: App) {
 
   app.mixin({
     setup() {
-      // ❌ 注意：mixin 中的 onRenderTriggered 可以工作，
-      // 但 mixin 方式在 Vue 3 中不推荐，仅作调试用途
-      const { onRenderTriggered } = await import('vue')
-
+      // ⚠️ mixin 的 setup 会在每个组件中执行，
+      // 相当于给所有组件都注册了调试钩子，仅作调试用途
       onRenderTriggered((e) => {
         console.log(
           `[全局调试] 渲染触发: key="${String(e.key)}", type="${e.type}"`
@@ -867,7 +882,7 @@ app.mount('#app')
 ### 六、注意事项
 
 1. **仅开发模式生效**
-   `onRenderTriggered` 只在开发环境（`import.meta.env.DEV` 为 `true`）下工作。生产构建时，Vue 会完全移除这些调试钩子的调用，不会产生任何性能开销。
+   `onRenderTriggered` 只在开发环境（`import.meta.env.DEV` 为 `true`）下工作。生产构建中，Vue 不会把该钩子接入渲染副作用（这段接线代码只在 DEV 构建里存在），所以回调永远不会执行，也不需要手动判断环境。
 
    ```ts
    // ✅ 不需要手动判断环境，Vue 内部已处理
@@ -894,7 +909,7 @@ app.mount('#app')
    ```
 
 3. **注册时机必须在 setup 同步上下文中**
-   `onRenderTriggered` 必须在 `setup()` 函数或 `<script setup>` 的同步执行阶段注册。不能在 `setTimeout`、`Promise.then` 等异步回调中注册。
+   `onRenderTriggered` 必须在 `setup()` 函数或 `<script setup>` 的同步执行阶段注册。Vue 在组件首次挂载时才会把该钩子接入渲染副作用，之后再注册不会生效；在 `setTimeout`、`Promise.then` 等异步回调中注册还会收到"没有活跃组件实例"的警告。
 
    ```ts
    // ❌ 错误：异步注册无效
@@ -904,6 +919,7 @@ app.mount('#app')
      })
    }, 100)
 
+   // ❌ 在 onMounted 等其他钩子里注册也不会生效（挂载时已错过接线时机）
    // ✅ 正确：在 setup 同步上下文中注册
    onRenderTriggered((e) => {
      console.log('正确注册')
@@ -915,8 +931,8 @@ app.mount('#app')
    - `onRenderTracked`：在**首次渲染时收集依赖**时就会调用（每个依赖收集一次）
    - 如需追踪"谁导致了渲染"，用 `onRenderTriggered`；如需追踪"渲染依赖了谁"，用 `onRenderTracked`
 
-5. **newValue 在某些情况下可能为 undefined**
-   当 `type` 为 `'delete'`（删除属性）或 `'add'`（添加新属性）时，`newValue` 可能为 `undefined`。在使用时需要做安全检查。
+5. **newValue / oldValue 并非总是有值**
+   按 `type` 区分：`set` 时新旧值都有；`add` 时只有 `newValue`（新增的值），`oldValue` 为 `undefined`；`delete` 时只有 `oldValue`（被删除的值），`newValue` 为 `undefined`；`clear` 时两者都是 `undefined`，旧内容放在 `oldTarget` 上。另外，由 computed 触发的渲染事件里 `oldValue` 也是 `undefined`。使用时需要做安全检查。
 
    ```ts
    onRenderTriggered((e) => {
@@ -928,8 +944,8 @@ app.mount('#app')
    })
    ```
 
-6. **深层对象变化报告的是最终触发源**
-   当嵌套对象的深层属性变化时，`target` 和 `key` 报告的是最终导致渲染触发的那个响应式对象和属性，而非中间的 computed 依赖。
+6. **报告的是渲染函数直接订阅的依赖**
+   嵌套对象场景下，`target` 和 `key` 是实际被修改的那一层对象和属性（如 `user.address.city` 变化时是 `address` 上的 `city`）。computed 链场景下，报告的是链上最后一个 computed（渲染函数直接依赖的那个），而不是最初被修改的源头数据。
 
 7. **高频变更时注意控制台性能**
    如果组件有大量快速变化的响应式数据，`onRenderTriggered` 会频繁触发，大量 `console.log` 会拖慢浏览器。建议添加节流或条件过滤。

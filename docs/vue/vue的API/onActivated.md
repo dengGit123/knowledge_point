@@ -1,6 +1,6 @@
-### onActivated
+# onActivated
 
-> 📖 [Vue 官方文档 - onActivated](https://cn.vuejs.org/api/composition-api-lifecycle#onactivated)
+> 📖 [Vue 官方文档 - onActivated](https://cn.vuejs.org/api/composition-api-lifecycle.html#onactivated)
 
 ---
 
@@ -282,13 +282,13 @@ const currentComponent = computed(() => {
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | `callback` | `() => void` | 组件被激活时执行的回调函数 |
-| **返回值** | `() => void` | 返回一个清理函数，调用后会注销该回调 |
+| **返回值** | `void` | 无返回值（生命周期钩子一旦注册无法注销，只能等组件销毁） |
 
 > 💡 **提示：** `onActivated` 必须在 `setup()` 函数或 `<script setup>` 中**同步调用**，不能放在 `setTimeout`、`Promise.then` 等异步操作中。
 
 ```typescript
 // 函数签名
-function onActivated(callback: () => void): () => void
+function onActivated(callback: () => void): void
 ```
 
 ---
@@ -727,20 +727,24 @@ onActivated(async () => {
 })
 ```
 
-#### 5. 使用返回函数注销回调
+#### 5. 钩子注册后无法注销
 
-`onActivated` 返回一个清理函数，可以用来注销已注册的回调，防止内存泄漏。
+`onActivated` 没有返回清理函数，注册过的回调无法单独移除。如果某段逻辑只在特定条件下执行，应把条件判断放进回调内部。
 
 ```typescript
-// ✅ 在不需要时注销回调
+// ❌ 错误：钩子没有返回值，stop 是 undefined
 const stop = onActivated(() => {
   console.log('激活')
 })
+stop() // TypeError: stop is not a function
 
-// 条件满足后注销
-if (shouldRemove) {
-  stop()
-}
+// ✅ 正确：用标志位控制回调内部逻辑
+const enabled = ref(true)
+
+onActivated(() => {
+  if (!enabled.value) return
+  console.log('激活')
+})
 ```
 
 #### 6. 多个回调按注册顺序执行

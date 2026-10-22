@@ -1,6 +1,6 @@
 ### TransitionGroup
 
-> 📖 [官方文档：TransitionGroup](https://cn.vuejs.org/api/built-in-components#transitiongroup)
+> 📖 [官方文档：TransitionGroup](https://cn.vuejs.org/api/built-in-components.html#transitiongroup)
 
 ### 一、概述
 
@@ -366,6 +366,7 @@ const removeItem = (id) => {
 |------|------|--------|------|
 | `tag` | `string` | `undefined` | 渲染为的容器标签，不设置则不渲染额外 DOM |
 | `name` | `string` | `'v'` | 过渡类名前缀 |
+| `move-class` | `string` | `name + '-move'` | 自定义移动过渡类名（覆盖默认的 `list-move`） |
 | `css` | `boolean` | `true` | 是否使用 CSS 过渡类 |
 | `duration` | `number \| { enter: number, leave: number }` | — | 显式指定过渡持续时间（毫秒） |
 | `type` | `'transition' \| 'animation'` | — | 指定检测的过渡类型 |
@@ -909,7 +910,7 @@ const filteredItems = computed(() => {
    </TransitionGroup>
    ```
 
-2. **移动动画需要 `position: absolute`**：要让 `.v-move` 生效，离开的元素必须设置绝对定位，否则它会一直占据空间，其他元素不会移动。
+2. **移动动画需要 `position: absolute`**：要让移动过渡类（`name` 为 `list` 时是 `.list-move`，未设置 `name` 时是 `.v-move`）产生效果，离开的元素必须设置绝对定位，否则它会一直占据空间，其他元素不会移动。
    ```css
    .list-leave-active {
      position: absolute; /* ✅ 关键 */
@@ -959,6 +960,6 @@ const filteredItems = computed(() => {
 - `<TransitionGroup>` 是 Vue 内置的列表过渡组件，专为多个元素的增删和移动场景设计
 - 核心基于 FLIP 动画技术，自动计算元素位置变化并应用平滑过渡
 - 每个子元素**必须**有唯一的 `key`
-- 移动动画生效的关键：`.v-leave-active { position: absolute }` + `.v-move` 过渡类
+- 移动动画生效的关键：`.list-leave-active { position: absolute }`（离开元素脱离文档流）+ `.list-move` 过渡类
 - 不支持 `mode` 属性（与 `<Transition>` 的重要区别）
 - 适用于待办列表、购物车、通知系统、标签管理、搜索过滤等动态列表场景

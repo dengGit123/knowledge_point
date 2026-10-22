@@ -1,6 +1,6 @@
 # useId
 
-> 📖 [官方文档 - useId](https://cn.vuejs.org/api/composition-api-helpers#useid)
+> 📖 [官方文档 - useId](https://cn.vuejs.org/api/composition-api-helpers.html#useid)
 
 ### 一、概述
 
@@ -22,7 +22,7 @@
 3. **SSR 状态同步**：在 SSR 过程中，服务端渲染时生成的 ID 序列会被序列化传递到客户端，客户端在水合时使用相同的 ID 序列，从而保证一致性
 4. **默认前缀**：生成的 ID 默认以 `v` 为前缀，格式类似 `v-0`、`v-1`、`v-2`，可通过 `app.config.idPrefix` 自定义
 
-```
+```text
 // ID 生成示意
 应用实例 A:  v-0, v-1, v-2, ...
 应用实例 B:  app-b-0, app-b-1, app-b-2, ...（配置了 idPrefix）
@@ -839,9 +839,20 @@ const app2 = createApp(App2)
 app2.config.idPrefix = 'app2'
 ```
 
-9. **不要用于 CSS 选择器样式**：`useId()` 生成的 ID 格式包含冒号前缀（如 `:v-0`），在某些 CSS 选择器场景下可能需要转义。它的主要用途是无障碍属性和表单关联，不建议用于样式挂钩。
+9. **注意 ID 中的分隔符与 CSS 选择器**：Vue 3.5.3 及以上版本生成的 ID 形如 `v-0`（连字符分隔），可以直接用于 CSS 选择器；而 3.5.0 ~ 3.5.2 中分隔符是冒号（形如 `v:0`），冒号在 `querySelector` 等 CSS 选择器中是特殊字符，需要转义。如果你的项目版本跨度较大或需要用 ID 做选择器，建议通过 `app.config.idPrefix` 自定义不含特殊字符的前缀。`useId()` 的主要用途是无障碍属性和表单关联，不建议用于样式挂钩。
 
 10. **在 Composable 中优先使用 `useId()`**：编写通用的 Composable 时，如果需要为 DOM 元素生成 ID，应优先使用 `useId()` 而不是让调用者手动传入 ID，这样能确保 SSR 场景下的一致性。
+
+11. **不要在 `computed()` 内部调用**：官方明确提醒，在 `computed()` 属性内部调用 `useId()` 可能导致实例冲突。应先在 `computed()` 外部声明 ID，再在计算函数内部引用它。
+
+```ts
+// ❌ 错误：在 computed 内部调用
+const itemId = computed(() => `${useId()}-${index.value}`)
+
+// ✅ 正确：先声明，再引用
+const baseId = useId()
+const itemId = computed(() => `${baseId}-${index.value}`)
+```
 
 ### 七、相关 API 对比
 

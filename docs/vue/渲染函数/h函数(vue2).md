@@ -2,15 +2,15 @@
 
 > 本文档**专注讲解 Vue 2** 的渲染函数，即 `createElement`（社区惯例将其别名简写为 `h`）。系统讲解它的作用、三参数签名、**data 数据对象的嵌套结构**、模板语法的等价实现、函数式组件与 JSX，并对比 Vue 3 的差异。
 >
-> 它是 [《Vue 3 中 h() 函数完全指南》](./h函数(vue3).md) 的姊妹篇。本文技术栈为 **Vue 2 + 选项式 API**。
+> 本文技术栈为 **Vue 2 + 选项式 API**。Vue 3 中该 API 改为从 `'vue'` 导入的 `h()`，data/props 也从嵌套结构变成扁平对象，事件统一写 `onClick` 这种形式（对比见第九节）。
 
 > 📖 **官方文档**
 > - [渲染函数 & JSX（Vue 2 指南）](https://v2.cn.vuejs.org/v2/guide/render-function.html)
 > - [Vue 2 API · 实例 property（$slots / $scopedSlots / $createElement）](https://v2.cn.vuejs.org/v2/api/#%E5%AE%9E%E4%BE%8B-property)
 
-> ⚠️ **说明**：Vue 2 已于 2023 年底进入终止支持（EOL）。本文档面向仍在维护的 Vue 2 项目（尤其是 2.6/2.7），帮你正确使用渲染函数。新项目建议使用 Vue 3，详见姊妹篇。
+> ⚠️ **说明**：Vue 2 已于 2023 年底进入终止支持（EOL）。本文档面向仍在维护的 Vue 2 项目（尤其是 2.6/2.7），帮你正确使用渲染函数。新项目建议使用 Vue 3。
 
-## 目录
+### 目录
 
 - [一、概述](#一概述)
 - [二、核心原理：createElement 与虚拟 DOM](#二核心原理createelement-与虚拟-dom)
@@ -28,7 +28,7 @@
 
 ---
 
-## 一、概述
+### 一、概述
 
 在 Vue 2 中，渲染函数通过 **`createElement`** 来创建虚拟 DOM 节点（VNode）。社区约定俗成地把 `createElement` 作为 `render` 函数的参数并简写为 **`h`**（hyperscript 的意思）：
 
@@ -52,9 +52,9 @@ render(h) {
 
 ---
 
-## 二、核心原理：createElement 与虚拟 DOM
+### 二、核心原理：createElement 与虚拟 DOM
 
-### 1. createElement 返回 VNode
+#### 1. createElement 返回 VNode
 
 `createElement` 不直接操作真实 DOM，它返回一个普通的 JS 对象——**虚拟节点（VNode）**，描述"这里应该有一个什么样的节点"。Vue 通过一整棵 VNode 树（虚拟 DOM）来追踪如何更新真实 DOM。
 
@@ -66,11 +66,11 @@ render(h) {
 }
 ```
 
-### 2. 渲染函数 vs 模板
+#### 2. 渲染函数 vs 模板
 
 无论你用模板还是渲染函数，Vue 都会自动保持页面与数据同步：
 
-```
+```text
 模板 <template> ──(编译器)──▶ render 函数 ──(执行)──▶ VNode 树 ──(patch)──▶ 真实 DOM
                                                   ▲
                                   手写 createElement 直接写在这里 ─┘
@@ -80,7 +80,7 @@ render(h) {
 
 ---
 
-## 三、createElement 函数签名详解
+### 三、createElement 函数签名详解
 
 ```js
 // @returns {VNode}
@@ -115,7 +115,7 @@ createElement(
 
 ---
 
-## 四、深入 data 数据对象（嵌套结构，核心）
+### 四、深入 data 数据对象（嵌套结构，核心）
 
 > 这是 Vue 2 渲染函数**最重要、也最和 Vue 3 不同**的部分：**data 是一个嵌套的对象**，class/style/属性/事件/指令各有自己的命名空间字段，而不是像 Vue 3 那样扁平地写在一起。
 
@@ -172,7 +172,7 @@ createElement(
 }
 ```
 
-### 字段速查表
+#### 字段速查表
 
 | 字段 | 对应模板语法 | 说明 |
 |------|------------|------|
@@ -199,9 +199,9 @@ createElement(
 
 ---
 
-## 五、声明渲染函数
+### 五、声明渲染函数
 
-### 方式 1：`render` 选项（接收 createElement 参数）
+#### 方式 1：`render` 选项（接收 createElement 参数）
 
 ```js
 export default {
@@ -216,7 +216,7 @@ export default {
 }
 ```
 
-### 方式 2：使用 `this.$createElement`
+#### 方式 2：使用 `this.$createElement`
 
 ```js
 export default {
@@ -234,9 +234,9 @@ export default {
 
 ---
 
-## 六、用 JavaScript 代替模板功能
+### 六、用 JavaScript 代替模板功能
 
-### 1. v-if / v-for —— 用 `if/else` 和 `map`
+#### 1. v-if / v-for —— 用 `if/else` 和 `map`
 
 ```js
 // 模板：
@@ -257,7 +257,7 @@ render(h) {
 }
 ```
 
-### 2. v-model —— 必须手动实现
+#### 2. v-model —— 必须手动实现
 
 渲染函数中没有 `v-model` 的直接对应，你需要自己用 `domProps` + `on` 组合：
 
@@ -280,9 +280,9 @@ render(h) {
 
 > 💡 虽然繁琐，但手动实现 `v-model` 能让你对交互细节有完全的控制。
 
-### 3. 事件 & 按键修饰符 ⭐
+#### 3. 事件 & 按键修饰符 ⭐
 
-#### `.passive` / `.capture` / `.once` —— 用前缀
+##### `.passive` / `.capture` / `.once` —— 用前缀
 
 | 修饰符 | `on` 中的前缀 |
 |------|:---:|
@@ -299,7 +299,7 @@ on: {
 }
 ```
 
-#### 其它修饰符 —— 在处理函数里手动实现
+##### 其它修饰符 —— 在处理函数里手动实现
 
 | 修饰符 | 处理函数中的等价操作 |
 |------|------------|
@@ -326,9 +326,9 @@ on: {
 }
 ```
 
-### 4. 插槽
+#### 4. 插槽
 
-#### 读取插槽（在子组件内部）
+##### 读取插槽（在子组件内部）
 
 - `this.$slots`：**静态插槽**，每个插槽是 VNode 数组。
 - `this.$scopedSlots`：**作用域插槽**，每个插槽是返回 VNode 的函数。
@@ -348,7 +348,7 @@ render(h) {
 }
 ```
 
-#### 传递作用域插槽（向子组件传递）
+##### 传递作用域插槽（向子组件传递）
 
 通过 data 对象的 `scopedSlots` 字段：
 
@@ -366,7 +366,7 @@ render(h) {
 
 ---
 
-## 七、JSX 支持
+### 七、JSX 支持
 
 层层嵌套的 `createElement` 写起来很痛苦，这时可以用 **JSX**——它是渲染函数的语法糖，编译后就是 `createElement` 调用：
 
@@ -394,7 +394,7 @@ Vue 2 的 JSX 使用 `@vue/babel-preset-jsx`（或 `babel-plugin-transform-vue-j
 
 ---
 
-## 八、函数式组件（functional）
+### 八、函数式组件（functional）
 
 当一个组件**没有状态（无 data）、没有 `this` 上下文、没有生命周期**时，可以把它标记为**函数式组件**——它渲染开销更低（无实例），在 Vue 2 中常用于包装组件。
 
@@ -409,7 +409,7 @@ Vue.component('my-component', {
 })
 ```
 
-### context 对象的字段
+#### context 对象的字段
 
 函数式组件没有实例，所有信息都通过 `context` 参数传入：
 
@@ -424,7 +424,7 @@ Vue.component('my-component', {
 | `listeners` | （2.3.0+）父组件注册的事件监听器对象，是 `data.on` 的别名 |
 | `injections` | （2.3.0+）`inject` 注入的 property |
 
-### `slots()` 与 `children` 的区别
+#### `slots()` 与 `children` 的区别
 
 | | `children` | `slots().default` |
 |---|---|---|
@@ -444,7 +444,7 @@ Vue.component('my-component', {
 
 > 💡 同时提供两者，让你能选择"是否感知插槽机制"，或简单地把 `children` 整体透传。
 
-### 透传 attribute 和事件（关键技巧）
+#### 透传 attribute 和事件（关键技巧）
 
 普通组件会自动把非 prop 的 attribute 加到根元素；但**函数式组件需要你显式处理**——最简单的做法是把 `context.data` 原样作为子节点的 data 传入：
 
@@ -472,9 +472,7 @@ Vue.component('my-functional-button', {
 
 ---
 
-## 九、Vue 2 与 Vue 3 的 h() 差异（对比）
-
-> 姊妹篇：[《Vue 3 中 h() 函数完全指南》](./h函数(vue3).md)
+### 九、Vue 2 与 Vue 3 的 h() 差异（对比）
 
 | 维度 | **Vue 2（`createElement` / `h`）** | Vue 3（`h`） |
 |------|----------|----------|
@@ -519,9 +517,9 @@ h('div', {
 
 ---
 
-## 十、常见问题与陷阱
+### 十、常见问题与陷阱
 
-### 陷阱 1：VNode 必须唯一
+#### 陷阱 1：VNode 必须唯一
 
 ```js
 render(h) {
@@ -536,7 +534,7 @@ render(h) {
 }
 ```
 
-### 陷阱 2：混淆 attrs / props / domProps
+#### 陷阱 2：混淆 attrs / props / domProps
 
 ```js
 // ❌ 把组件 prop 写进 attrs
@@ -552,7 +550,7 @@ h('input', { attrs: { value: 'x' } })
 h('input', { domProps: { value: 'x' } })
 ```
 
-### 陷阱 3：v-for 忘记加 key
+#### 陷阱 3：v-for 忘记加 key
 
 ```js
 // ❌ 没加 key
@@ -562,7 +560,7 @@ h('ul', this.items.map(item => h('li', item.name)))
 h('ul', this.items.map(item => h('li', { key: item.id }, item.name)))
 ```
 
-### 陷阱 4：以为有 v-model 语法糖
+#### 陷阱 4：以为有 v-model 语法糖
 
 ```js
 // ❌ 渲染函数里没有 v-model 语法
@@ -575,7 +573,7 @@ h('input', {
 })
 ```
 
-### 陷阱 5：事件修饰符用错（用 onXxx 或直接写修饰符）
+#### 陷阱 5：事件修饰符用错（用 onXxx 或直接写修饰符）
 
 ```js
 // ❌ Vue 2 的 on 里不能用 @click.stop 这种写法，也没有 onClick
@@ -589,7 +587,7 @@ h('button', { on: { click(e) { e.stopPropagation(); fn() } } })
 h('div', { on: { '!click': fn } })    // @click.capture
 ```
 
-### 陷阱 6：函数式组件忘了透传 attribute
+#### 陷阱 6：函数式组件忘了透传 attribute
 
 ```js
 // ❌ 函数式组件不会自动透传 attribute，下面会丢掉外部传入的 class/事件
@@ -606,7 +604,7 @@ render(h, ctx) {
 }
 ```
 
-### 陷阱 7：在 render 外创建 VNode 却不用 $createElement
+#### 陷阱 7：在 render 外创建 VNode 却不用 $createElement
 
 ```js
 // ❌ h / createElement 在 render 外部不可用
@@ -624,7 +622,7 @@ methods: {
 }
 ```
 
-### 陷阱 8：函数式组件里用 this
+#### 陷阱 8：函数式组件里用 this
 
 ```js
 // ❌ 函数式组件没有 this 上下文
@@ -643,9 +641,9 @@ render(h, ctx) {
 
 ---
 
-## 十一、常见应用场景
+### 十一、常见应用场景
 
-### 场景 1：动态标签名（anchored-heading）
+#### 场景 1：动态标签名（anchored-heading）
 
 根据 `level` 动态渲染 `h1`~`h6`，模板要写 6 个分支，渲染函数一行搞定：
 
@@ -658,7 +656,7 @@ Vue.component('anchored-heading', {
 })
 ```
 
-### 场景 2：智能列表（smart-list，函数式包装组件）
+#### 场景 2：智能列表（smart-list，函数式包装组件）
 
 根据数据类型，程序化地选择渲染哪个列表组件：
 
@@ -688,7 +686,7 @@ Vue.component('smart-list', {
 })
 ```
 
-### 场景 3：配置驱动的表格列
+#### 场景 3：配置驱动的表格列
 
 ```js
 render(h) {
@@ -703,7 +701,7 @@ render(h) {
 }
 ```
 
-### 场景 4：函数式包装组件（透传 + 加料）
+#### 场景 4：函数式包装组件（透传 + 加料）
 
 ```js
 // 给任意组件统一加主题 class，并透传所有 attribute 和事件
@@ -720,7 +718,7 @@ Vue.component('with-theme', {
 })
 ```
 
-### 场景 5：JSX 复杂业务组件
+#### 场景 5：JSX 复杂业务组件
 
 ```jsx
 export default {
@@ -737,54 +735,54 @@ export default {
 
 ---
 
-## 十二、面试常见问题
+### 十二、面试常见问题
 
-### Q1：Vue 2 中 createElement（h）是什么？返回什么？
+#### Q1：Vue 2 中 createElement（h）是什么？返回什么？
 
 `createElement` 是 Vue 2 渲染函数用来创建**虚拟 DOM 节点（VNode）**的函数，社区惯例简写为 `h`（hyperscript）。它接收 `tag`、`data`、`children` 三个参数，返回一个描述节点的普通 JS 对象（VNode）。Vue 2 的模板最终会被编译成渲染函数（即 `createElement` 调用）。
 
-### Q2：Vue 2 的 createElement 和 Vue 3 的 h 有什么区别？
+#### Q2：Vue 2 的 createElement 和 Vue 3 的 h 有什么区别？
 
 最大区别是 **data/props 的结构**：Vue 2 是**嵌套命名空间**（`attrs`/`props`/`domProps`/`on`/`nativeOn` 各成一格），Vue 3 是**扁平对象**（属性和事件都写一层，事件用 `onXxx`）。此外 Vue 2 的 `h` 来自 `render(h)` 参数或 `this.$createElement`，Vue 3 从 `'vue'` 导入；Vue 2 用组件需注册，Vue 3 直接 import；Vue 2 事件修饰符 `.capture/.once/.passive` 用 `!`/`~`/`&` 前缀，其它手动实现，Vue 3 用驼峰后缀和 `withModifiers`。
 
-### Q3：Vue 2 的 data 数据对象有哪些字段？
+#### Q3：Vue 2 的 data 数据对象有哪些字段？
 
 主要有：`class`、`style`（与 `v-bind:class/style` 相同）、`attrs`（普通 HTML 属性）、`props`（组件 prop）、`domProps`（DOM 属性如 innerHTML）、`on`（事件）、`nativeOn`（组件原生事件）、`directives`（指令）、`scopedSlots`（作用域插槽）、`slot`（插槽名）、`key`、`ref`、`refInFor`。
 
-### Q4：attrs、props、domProps 有什么区别？
+#### Q4：attrs、props、domProps 有什么区别？
 
 - `attrs`：写到 HTML 标签上的**普通属性**（如 `id`、`href`）。
 - `props`：传给**组件**的 prop（与组件 `props` 选项对应）。
 - `domProps`：元素的 **DOM property**（如 `innerHTML`、`input` 的 `value`）。
 
-### Q5：渲染函数里如何实现 v-model？
+#### Q5：渲染函数里如何实现 v-model？
 
 手动实现：原生 `<input>` 用 `domProps.value` 绑定值，用 `on.input` 监听输入并向父组件 `$emit('input', e.target.value)`。渲染函数没有 `v-model` 的语法糖。
 
-### Q6：渲染函数里如何实现事件修饰符？
+#### Q6：渲染函数里如何实现事件修饰符？
 
 - `.passive`/`.capture`/`.once`：在 `on` 里用前缀——`&`/`!`/`~`（组合用 `~!`）。
 - `.stop`/`.prevent`/`.self`/按键/修饰键：没有语法糖，在事件处理函数里手动实现（`event.stopPropagation()`、`event.preventDefault()`、判断 `event.target`/`keyCode`/`ctrlKey` 等）。
 
-### Q7：什么是函数式组件？context 参数有哪些字段？
+#### Q7：什么是函数式组件？context 参数有哪些字段？
 
 函数式组件用 `functional: true` 标记，**无状态、无 `this`、无实例**，渲染开销低。因为没有实例，一切通过第二个参数 `context` 传入，其字段包括：`props`、`children`、`slots()`、`scopedSlots`、`data`、`parent`、`listeners`、`injections`。常用于包装组件，并把 `context.data` 原样透传以传递 attribute 和事件。
 
-### Q8：$slots 和 $scopedSlots 有什么区别？
+#### Q8：$slots 和 $scopedSlots 有什么区别？
 
 `this.$slots` 是**静态插槽**，每个插槽是 VNode **数组**；`this.$scopedSlots` 是**作用域插槽**，每个插槽是返回 VNode 的**函数**（可接收子组件回传的 props）。在 Vue 2.6+，`$scopedSlots` 也会以函数形式暴露普通插槽。
 
-### Q9：为什么 VNode 必须唯一？怎么复用？
+#### Q9：为什么 VNode 必须唯一？怎么复用？
 
 Vue 在 patch 时假设组件树中的 VNode 是唯一的，复用同一个 VNode 引用会导致渲染异常。要重复渲染相同结构，用**工厂函数**（如 `Array.apply(null, { length: 20 }).map(() => h('p'))`）每次产生新的 VNode。
 
-### Q10：Vue 2 渲染函数里的 this 指向什么？
+#### Q10：Vue 2 渲染函数里的 this 指向什么？
 
 `render(h)` 函数里的 `this` 指向**当前组件实例**，可以访问 `this.xxx`（data/methods/computed/props）以及 `this.$slots`、`this.$scopedSlots`、`this.$emit`、`this.$createElement` 等。但**函数式组件**（`functional: true`）没有 `this`，需用 `context` 参数。
 
 ---
 
-## 十三、总结
+### 十三、总结
 
 | 要点 | 核心结论 |
 |------|---------|

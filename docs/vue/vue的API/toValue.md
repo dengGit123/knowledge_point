@@ -157,13 +157,12 @@ const { data: postsData } = useFetch(apiUrl)
 **TypeScript 泛型类型声明：**
 
 ```ts
-import type { Ref, ComputedRef } from 'vue'
+import type { ComputedRef, MaybeRefOrGetter } from 'vue'
 
-// Vue 内部定义的 MaybeRefOrGetter 类型（可用于自己的组合式函数）
-type MaybeRefOrGetter<T> = T | Ref<T> | (() => T)
-
-// 更完善的版本，支持只读 ref
-type MaybeRefOrGetterStrict<T> = T | Ref<T> | Readonly<Ref<T>> | (() => T)
+// ✅ Vue 已内置该类型，可直接从 'vue' 导入
+// 官方定义（简化后）：
+// type MaybeRef<T> = T | Ref<T>
+// type MaybeRefOrGetter<T> = MaybeRef<T> | ComputedRef<T> | (() => T)
 
 // 使用示例
 function useClamp(source: MaybeRefOrGetter<number>, min: number, max: number): ComputedRef<number> {
@@ -968,9 +967,9 @@ function useFeature(param: MaybeRefOrGetter<string>) {
 ```ts
 const countRef = ref(0)
 
-// ❌ 直接 toValue 作为 watch source，不会追踪变化
+// ❌ toValue(countRef) 的结果是一个普通数字，作为 watch source 无效
 watch(toValue(countRef), (val) => {
-  console.log(val)  // 只会执行一次，countRef 变化不会触发
+  console.log(val)  // 回调永远不会触发
 })
 
 // ✅ 用 getter 函数包裹，或者直接 watch ref

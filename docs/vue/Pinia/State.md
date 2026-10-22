@@ -87,10 +87,10 @@ export const useUserStore = defineStore('user', () => {
 const list = ref([1, 2, 3])
 list.value = [4, 5, 6] // ✅ 直接替换
 
-// reactive 的局限：不能整体替换
-const list = reactive([1, 2, 3])
-list = [4, 5, 6]       // ❌ 丢失响应式
-list.splice(0, list.length, 4, 5, 6) // ✅ 但写法麻烦
+// reactive 的局限：本身无法整体替换，只能逐个改属性
+const state = reactive({ list: [1, 2, 3] })
+state.list = [4, 5, 6] // ✅ 替换属性仍是响应式的
+// 但把整个 state 换成另一个对象是做不到的
 ```
 
 ### 三、访问 State
@@ -182,8 +182,8 @@ userStore.$patch({
   name: 'Bob',
   age: 30,
 })
-// ⚠️ 对象形式的 $patch 会用 Object.assign 合并
-// 无法处理数组操作（push、splice 等）
+// ⚠️ 对象形式是补丁合并，一次更新多个属性
+// 但无法直接做数组操作（push、splice 等），需要创建新集合替换
 
 // 方式 B：传入函数（推荐，更灵活）
 userStore.$patch((state) => {
@@ -198,9 +198,9 @@ userStore.$patch((state) => {
 | 对比项 | `$patch(object)` | `$patch(function)` |
 | :--: | :--: | :--: |
 | 批量修改 | ✅ | ✅ |
-| 数组操作（push/splice） | ❌ | ✅ |
-| 基于旧值计算 | ❌ | ✅ |
-| 性能 | 多次修改合并为一次更新 | 相同 |
+| 数组操作（push/splice） | ❌ 需创建新集合替换 | ✅ |
+| 基于当前值计算 | ✅ 如 `count: store.count + 1` | ✅ |
+| devtools 记录 | 多个变更合并为同一条 | 多个变更合并为同一条 |
 | 推荐度 | 简单场景可用 | ⭐ 推荐 |
 
 ```js
@@ -250,16 +250,27 @@ export const useCounterStore = defineStore('counter', () => {
 ```js
 const userStore = useUserStore()
 
-// $state 可以获取和替换整个 state
+// $state 可以读取整个 state
 console.log(userStore.$state) // { name: 'Alice', age: 25, ... }
 
-// 替换（结构必须与原 state 一致）
-userStore.$state = {
+// ⚠️ 官方明确：不能完全替换 store 的 state（会破坏响应性）
+// 给 $state 赋值时，内部实际执行的是 $patch，属于合并语义
+userStore.$state = { name: 'Charlie' }
+// 等价于 userStore.$patch({ name: 'Charlie' })
+// 未给出的属性保持原值，响应性不受影响
+```
+
+```js
+// 如需批量修改多个属性，推荐直接用 $patch
+userStore.$patch({
   name: 'Charlie',
   age: 28,
   hobbies: ['writing'],
   address: { city: 'Guangzhou', district: 'Tianhe' },
-}
+})
+
+// 补充：可以通过 pinia 实例设置整个应用的初始 state（常用于 SSR 激活）
+// pinia.state.value = {}
 ```
 
 ### 五、重置 State（$reset）
@@ -357,6 +368,7 @@ const unsubscribe = userStore.$subscribe((mutation, state) => {
   //   'patch function'  → $patch(state => { state.xxx = yyy })
 
   // mutation.storeId：Store 的 id
+  // mutation.payload：仅 'patch object' 时可用，是传给 $patch 的补丁对象
   console.log('Store:', mutation.storeId)
   console.log('变化类型:', mutation.type)
   console.log('当前 state:', state)
@@ -365,6 +377,8 @@ const unsubscribe = userStore.$subscribe((mutation, state) => {
 // 取消监听
 unsubscribe()
 ```
+
+> 💡 **补充：** `$subscribe` 底层基于 Vue 的 `watch`，第二个参数可传 watch 选项（如 `{ flush: 'sync' }` 立即触发）。与 `watch` 相比，它的优势是一次 `$patch` 的多个变更只触发一次回调。默认订阅绑定在当前组件上（组件卸载自动取消），传 `{ detached: true }` 可在组件卸载后保留。
 
 **watch vs $subscribe 对比：**
 
@@ -483,12 +497,13 @@ export const useStoreA = defineStore('a', {
 #### 3. 数组/对象的响应式陷阱
 
 ```js
-// ❌ 直接赋值新数组会丢失响应式（在 reactive 中）
+// Vue 3 中，替换 reactive 对象的属性仍然是响应式的
 const state = reactive({ list: [1, 2, 3] })
-state.list = [4, 5, 6] // 在 reactive 中这是可以的
-// 但如果从 store 解构出来，就可能有问题
+state.list = [4, 5, 6] // ✅ 会正常触发更新
 
-// ✅ 使用 ref 包裹数组更安全
+// ⚠️ 真正的局限是：reactive 本身无法整体替换
+// 变量重新指向新对象后，旧引用与响应式系统断开
+// 所以数组推荐用 ref 包裹，可以整体替换
 const list = ref([1, 2, 3])
 list.value = [4, 5, 6] // ✅ 完全没问题
 

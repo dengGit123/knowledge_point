@@ -215,19 +215,7 @@ console.log(isRef(refObj))             // true
 console.log(isRef(reactiveObj))        // false
 ```
 
-### 2. 对 readonly(reactive(...)) 返回 true
-
-```javascript
-import { reactive, readonly, isReactive } from 'vue'
-
-const original = reactive({ count: 0 })
-const wrapped = readonly(original)
-
-console.log(isReactive(wrapped)) // true
-// readonly 只是代理层，底层仍然是 reactive
-```
-
-### 3. 对普通 readonly 不返回 true
+### 2. 对普通 readonly 不返回 true
 
 ```javascript
 import { readonly, isReactive, isReadonly } from 'vue'
@@ -237,6 +225,8 @@ const plain = readonly({ count: 0 })
 console.log(isReactive(plain))  // false（不是 reactive 创建的）
 console.log(isReadonly(plain))  // true
 ```
+
+补充：`readonly(reactive(...))` 这种嵌套是特例，此时 `isReactive()` 返回 true，详见上文「readonly 包裹 reactive 的情况」。
 
 ## 最佳实践
 

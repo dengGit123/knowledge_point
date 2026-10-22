@@ -2,7 +2,7 @@
 
 ## 作用
 
-📖 [Vue 官方文档 - onBeforeUpdate](https://cn.vuejs.org/api/composition-api-lifecycle#onbeforeupdate)
+📖 [Vue 官方文档 - onBeforeUpdate](https://cn.vuejs.org/api/composition-api-lifecycle.html#onbeforeupdate)
 
 `onBeforeUpdate()` 是 Vue 3 的生命周期钩子，在组件响应式状态变化而更新 DOM 之前调用。这个钩子非常适合在更新之前访问现有的 DOM 状态。
 
@@ -173,7 +173,7 @@ export default {
 }
 ```
 
-### 4. 性能优化
+### 4. 无法阻止更新
 
 ```javascript
 import { ref, onBeforeUpdate } from 'vue'
@@ -181,19 +181,19 @@ import { ref, onBeforeUpdate } from 'vue'
 export default {
   setup() {
     const list = ref([])
-    const shouldUpdate = ref(true)
 
     onBeforeUpdate(() => {
-      if (!shouldUpdate.value) {
-        // 阻止更新
-        return false
-      }
+      // ❌ 返回 false 并不能阻止更新——生命周期钩子没有这个能力
+      // （只有 onErrorCaptured 的返回 false 用于阻止错误传播）
+      return false
     })
 
-    return { list, shouldUpdate }
+    return { list }
   }
 }
 ```
+
+> 💡 想减少不必要的渲染，应该在数据层面下功夫：用 `computed` 派生数据、`v-if` / `v-show` 控制渲染、或用 `v-memo` 跳过子树更新。
 
 ### 5. 动画状态保存
 
@@ -280,12 +280,13 @@ export default {
   setup() {
     const count = ref(0)
 
-    // onBeforeUpdate：任何响应式变化都会触发
+    // onBeforeUpdate：只要"这个组件"即将重新渲染就会触发，
+    // 不管是哪个数据引起的，也不带新旧值
     onBeforeUpdate(() => {
       console.log('组件即将更新')
     })
 
-    // watch：只监听特定数据的变化
+    // watch：只监听特定数据的变化，能拿到新旧值
     watch(count, (newVal, oldVal) => {
       console.log('count 从', oldVal, '变为', newVal)
     })

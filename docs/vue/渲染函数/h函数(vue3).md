@@ -2,13 +2,13 @@
 
 > 本文档**专注讲解 Vue 3** 中的 `h()` 函数（渲染函数 API 的核心），系统讲解它的作用、完整签名、三个参数、模板语法的等价实现、配套工具函数、函数式组件与 JSX/TSX，并对比 Vue 2 的差异，帮助你在模板力有不逮时用 JavaScript 完整地描述 UI。
 >
-> 它是 [《Vue 3 中 render 函数完全指南》](./render函数(vue3).md) 的姊妹篇（`h()` 负责创建单个 vnode，`render` 负责返回整棵 vnode 树），并与 [《Vue 2 中 h 函数完全指南》](./h函数(vue2).md) 互为对照，同属本 Vue 系列。
+> `h()` 负责创建**单个 vnode**，而 render 函数负责**返回整棵 vnode 树**——`h()` 是"零件"，render 是"发动机"。在 Vue 2 中对应的函数叫 `createElement`（由 `render(h)` 参数注入），其 data 是嵌套结构（`attrs`/`props`/`domProps`/`on` 分层），与 Vue 3 的扁平 props 是最大的差异（对比见第十节）。
 
 > 📖 **官方文档**
 > - [渲染函数 & JSX（指南）](https://cn.vuejs.org/guide/extras/render-function.html)
 > - [渲染函数 API（h / mergeProps / cloneVNode 等）](https://cn.vuejs.org/api/render-function.html)
 
-## 目录
+### 目录
 
 - [一、概述](#一概述)
 - [二、核心原理：h() 与虚拟 DOM](#二核心原理h-与虚拟-dom)
@@ -27,7 +27,7 @@
 
 ---
 
-## 一、概述
+### 一、概述
 
 在 Vue 3 中，`h()` 是一个用于**创建虚拟 DOM 节点（VNode）**的函数。它是"渲染函数（render function）"写法的核心工具——当你不想（或不能）用模板（`<template>`）来描述 UI 时，就用 `h()` 在 JavaScript 里手写界面结构。
 
@@ -53,9 +53,9 @@ const vnode = h('div', { id: 'foo', class: 'bar' }, 'hello')
 
 ---
 
-## 二、核心原理：h() 与虚拟 DOM
+### 二、核心原理：h() 与虚拟 DOM
 
-### 1. h() 返回一个 vnode
+#### 1. h() 返回一个 vnode
 
 `h()` 不直接操作真实 DOM，它返回一个普通的 JS 对象——**虚拟节点（VNode）**，描述"这里应该有一个什么样的 DOM/组件"。
 
@@ -73,11 +73,11 @@ vnode.key      // null     —— key（未设置时为 null）
 
 > ⚠️ **注意**：完整的 `VNode` 接口还包含很多内部属性，官方**强烈建议不要**直接读写这些内部属性，否则可能在版本升级时出现不兼容。
 
-### 2. 渲染函数如何工作
+#### 2. 渲染函数如何工作
 
 Vue 3 组件的渲染，本质是"执行一个返回 vnode 的函数"。模板只是这种函数的语法糖：
 
-```
+```text
 模板 <template> ──(编译器)──▶ 渲染函数 () => vnode ──(执行)──▶ vnode ──(patch)──▶ 真实 DOM
                                                     ▲
                                   手写 h() 直接写在这里 ─┘
@@ -87,7 +87,7 @@ Vue 3 组件的渲染，本质是"执行一个返回 vnode 的函数"。模板�
 
 ---
 
-## 三、h() 函数签名详解
+### 三、h() 函数签名详解
 
 `h()` 有两个重载（来自官方 API）：
 
@@ -118,9 +118,9 @@ type Slots = { [name: string]: Slot }
 
 ---
 
-## 四、三个参数详解
+### 四、三个参数详解
 
-### 1. type（节点类型）
+#### 1. type（节点类型）
 
 ```js
 // ① 原生 HTML 元素：用字符串
@@ -141,7 +141,7 @@ h(Transition, { mode: 'out-in' }, () => h('div'))
 
 > 💡 **关键区别于模板**：模板里用组件要先注册或用 `<script setup>`；而在渲染函数里，**直接 `import` 组件传给 `h()` 即可**，不需要注册。如果组件是用名字全局注册、无法直接导入的（比如某个库全局注册的组件），才用 `resolveComponent('Name')`。
 
-### 2. props（属性对象）—— 扁平化结构
+#### 2. props（属性对象）—— 扁平化结构
 
 Vue 3 的 props 是**一个扁平对象**，所有 class、style、普通属性、DOM 属性、事件都写在同一层：
 
@@ -187,7 +187,7 @@ h('li', { key: item.id, ref: itemRef }, text)
 | key | `{ key: id }` | `:key="id"` |
 | 组件 prop | `{ someProp: 'x' }` | `:some-prop="x"` |
 
-#### 深入：普通 attribute 与 DOM 属性（property）的区别
+##### 深入：普通 attribute 与 DOM 属性（property）的区别
 
 速查表里的"普通 attribute"和"DOM 属性"是两类不同的东西，理解它们的区别能帮你写出正确的 props。
 
@@ -244,7 +244,7 @@ input.value                 // 'world'  ← property 变了（当前值）
 
 > 💡 **需要强制时**用前缀：`.prop`（写成 `{ '.xxx': v }`）强制设为 property，`.attr`（`{ '^xxx': v }`）强制设为 attribute——用于 Vue 判断不准或你想明确控制的场景。
 
-### 3. children（子节点）—— 多种形式
+#### 3. children（子节点）—— 多种形式
 
 ```js
 import { h } from 'vue'
@@ -267,9 +267,9 @@ h('ul', [
 
 ---
 
-## 五、声明渲染函数的三种方式
+### 五、声明渲染函数的三种方式
 
-### 方式 1：`setup()` 返回函数（组合式 API，推荐）
+#### 方式 1：`setup()` 返回函数（组合式 API，推荐）
 
 ```js
 import { ref, h } from 'vue'
@@ -309,7 +309,7 @@ export default {
 > return () => [h('div'), h('div')]        // 返回数组（多根节点）
 > ```
 
-### 方式 2：`render` 选项（选项式 API）
+#### 方式 2：`render` 选项（选项式 API）
 
 ```js
 import { h } from 'vue'
@@ -325,7 +325,7 @@ export default {
 }
 ```
 
-### 方式 3：函数式组件（无状态组件）
+#### 方式 3：函数式组件（无状态组件）
 
 当一个组件不需要任何实例状态时，可以直接写成一个函数：
 
@@ -340,11 +340,11 @@ function Hello() {
 
 ---
 
-## 六、模板语法的渲染函数等价实现
+### 六、模板语法的渲染函数等价实现
 
 这是 `h()` 最实用的部分：把模板里熟悉的语法"翻译"成渲染函数。
 
-### 1. v-if / v-else —— 三元运算符
+#### 1. v-if / v-else —— 三元运算符
 
 ```js
 // 模板：
@@ -359,7 +359,7 @@ h('div', [ok.value ? h('div', 'yes') : h('span', 'no')])
 
 > 💡 没有 `v-else-if` 的特殊语法，直接用 `if/else` 或三元/逻辑运算符即可，这正是渲染函数的灵活之处。
 
-### 2. v-for —— 数组的 `map()`
+#### 2. v-for —— 数组的 `map()`
 
 ```js
 // 模板：
@@ -375,7 +375,7 @@ h(
 
 > ⚠️ 渲染函数里 **`v-for` 不会自动加 key**，必须像模板一样手动在 props 里写 `{ key: id }`。
 
-### 3. v-on 与事件修饰符
+#### 3. v-on 与事件修饰符
 
 ```js
 // @click
@@ -390,7 +390,7 @@ h('button', {
 h('div', { onClickCapture() { /* ... */ } })
 ```
 
-### 4. v-model —— 手动展开
+#### 4. v-model —— 手动展开
 
 `v-model` 在模板编译时会展开为 `modelValue` + `onUpdate:modelValue`。渲染函数里必须自己提供这两个：
 
@@ -423,7 +423,7 @@ h('input', {
 
 > 💡 多个 `v-model`（如 `v-model:title`）则用 `title` + `onUpdate:title`。
 
-### 5. 自定义指令 —— `withDirectives`
+#### 5. 自定义指令 —— `withDirectives`
 
 ```js
 import { h, withDirectives } from 'vue'
@@ -443,7 +443,7 @@ const vnode = withDirectives(h('div'), [
 
 > 如果指令是用名字注册、无法直接导入的，用 `resolveDirective('pin')` 取到再传入。
 
-### 6. 内置组件 —— 必须 import
+#### 6. 内置组件 —— 必须 import
 
 ```js
 import { h, KeepAlive, Teleport, Transition, TransitionGroup } from 'vue'
@@ -455,7 +455,7 @@ export default {
 }
 ```
 
-### 7. 模板引用 ref —— 组合式传对象，选项式传字符串
+#### 7. 模板引用 ref —— 组合式传对象，选项式传字符串
 
 ```js
 // 组合式：传入 ref() 创建的对象
@@ -475,9 +475,9 @@ export default {
 }
 ```
 
-### 8. 插槽（重点）
+#### 8. 插槽（重点）
 
-#### 渲染插槽（在子组件内部使用插槽）
+##### 渲染插槽（在子组件内部使用插槽）
 
 `slots` 对象里每个插槽都是**返回 vnode 数组的函数**：
 
@@ -497,7 +497,7 @@ export default {
 }
 ```
 
-#### 传递插槽（在父组件给子组件传插槽内容）
+##### 传递插槽（在父组件给子组件传插槽内容）
 
 给组件传子节点要用**插槽函数**（而非数组）：
 
@@ -513,7 +513,7 @@ h(MyComponent, null, {
 })
 ```
 
-#### 作用域插槽（子组件向父组件回传数据）
+##### 作用域插槽（子组件向父组件回传数据）
 
 ```js
 // 父组件
@@ -539,7 +539,7 @@ export default {
 
 ---
 
-## 七、渲染函数工具箱（相关 API）
+### 七、渲染函数工具箱（相关 API）
 
 | API | 作用 | 典型场景 |
 |------|------|---------|
@@ -552,7 +552,7 @@ export default {
 | `withDirectives(vnode, dirs)` | 给 vnode 添加自定义指令 | 渲染函数中使用 `v-xxx` |
 | `withModifiers(fn, mods)` | 给事件处理函数加内置修饰符 | `@click.stop` 等 |
 
-### mergeProps：合并 class / style / 事件
+#### mergeProps：合并 class / style / 事件
 
 ```js
 import { mergeProps } from 'vue'
@@ -569,7 +569,7 @@ const merged = mergeProps(one, two)
 
 > 💡 如果你**不想要**合并行为、只是想覆盖，用对象展开 `{ ...one, ...two }` 即可，不必用 `mergeProps`。
 
-### cloneVNode：vnode 是不可变的
+#### cloneVNode：vnode 是不可变的
 
 ```js
 import { h, cloneVNode } from 'vue'
@@ -584,7 +584,7 @@ const cloned = cloneVNode(original, { id: 'foo' })
 
 > ⚠️ vnode 创建后**不可变**。cloneVNode 处理了 vnode 的内部属性，比单纯 `{ ...vnode }` 更安全。
 
-### resolveComponent / resolveDirective
+#### resolveComponent / resolveDirective
 
 ```js
 import { h, resolveComponent, resolveDirective } from 'vue'
@@ -603,7 +603,7 @@ export default {
 
 ---
 
-## 八、函数式组件
+### 八、函数式组件
 
 函数式组件（Functional Component）是一种**没有自身状态**的组件，像纯函数：接收 props，返回 vnode。它**不会创建组件实例**（没有 `this`），也**不触发生命周期钩子**——选项式的 `mounted` 等不触发，组合式的 `onMounted` 等同样**不可用**（它们依赖"当前活动组件实例"，而函数式组件没有实例，强行调用会得到 `onMounted is called when there is no active component instance` 警告）。
 
@@ -634,7 +634,7 @@ MyComponent.inheritAttrs = false
 
 ---
 
-## 九、JSX / TSX 支持
+### 九、JSX / TSX 支持
 
 如果你嫌 `h()` 嵌套写起来繁琐，可以用 **JSX/TSX**——它是 `h()` 的语法糖，编译后就是 `h()` 调用。
 
@@ -645,13 +645,13 @@ const vnode = <div id={dynamicId}>hello, {userName}</div>
 
 `create-vue` 和 Vue CLI 都**预置了 JSX 支持**。手动配置可参考 `@vue/babel-plugin-jsx`，Vite 项目通常用 `@vitejs/plugin-vue-jsx`。
 
-### Vue 的 JSX 与其它框架不同
+#### Vue 的 JSX 与其它框架不同
 
 > ⚠️ **重要**：Vue 的 JSX 转换与 React 不同，**不能混用**。主要差异：
 > - 直接用 HTML 属性名 `class` / `for`，不需要 `className` / `htmlFor`
 > - 给组件传子元素（插槽）的方式不同
 
-### TSX 类型推断
+#### TSX 类型推断
 
 Vue 3.4 起，不再隐式注册全局 `JSX` 命名空间。使用 TSX 时在 `tsconfig.json` 配置：
 
@@ -668,7 +668,7 @@ Vue 3.4 起，不再隐式注册全局 `JSX` 命名空间。使用 TSX 时在 `t
 
 ---
 
-## 十、Vue 2 与 Vue 3 的 h() 差异（对比）
+### 十、Vue 2 与 Vue 3 的 h() 差异（对比）
 
 这是 Vue 2 升级 Vue 3、或从 Vue 2 心智迁移时**最需要重新理解**的点：**props 从"嵌套命名空间"变成了"扁平对象"**。
 
@@ -713,9 +713,9 @@ h('div', {
 
 ---
 
-## 十一、常见问题与陷阱
+### 十一、常见问题与陷阱
 
-### 陷阱 1：复用同一个 vnode（VNode 必须唯一）
+#### 陷阱 1：复用同一个 vnode（VNode 必须唯一）
 
 ```js
 function render() {
@@ -732,7 +732,7 @@ function render() {
 }
 ```
 
-### 陷阱 2：`setup()` 返回了值而不是函数
+#### 陷阱 2：`setup()` 返回了值而不是函数
 
 ```js
 export default {
@@ -747,7 +747,7 @@ export default {
 }
 ```
 
-### 陷阱 3：给组件传子节点用了数组（应为插槽函数）
+#### 陷阱 3：给组件传子节点用了数组（应为插槽函数）
 
 ```js
 // ❌ 错误：组件的子节点不能用数组
@@ -762,7 +762,7 @@ h(MyComponent, null, {
 })
 ```
 
-### 陷阱 4：具名插槽对象被当成 props（漏写 `null`）
+#### 陷阱 4：具名插槽对象被当成 props（漏写 `null`）
 
 ```js
 // ❌ 错误：第二个参数直接是插槽对象，会被当成 props
@@ -772,7 +772,7 @@ h(MyComponent, { default: () => 'hi' })
 h(MyComponent, null, { default: () => 'hi' })
 ```
 
-### 陷阱 5：v-for 忘记手动加 key
+#### 陷阱 5：v-for 忘记手动加 key
 
 ```js
 // ❌ 没加 key
@@ -782,7 +782,7 @@ h('ul', items.value.map(item => h('li', item.text)))
 h('ul', items.value.map(item => h('li', { key: item.id }, item.text)))
 ```
 
-### 陷阱 6：修改已创建的 vnode
+#### 陷阱 6：修改已创建的 vnode
 
 ```js
 const vnode = h('div')
@@ -793,7 +793,7 @@ vnode.props = { id: 'foo' }
 const cloned = cloneVNode(vnode, { id: 'foo' })
 ```
 
-### 陷阱 7：事件名格式错误
+#### 陷阱 7：事件名格式错误
 
 ```js
 // ❌ 用 onclick / on-click 都不对
@@ -804,7 +804,7 @@ h('button', { 'on-click': fn })
 h('button', { onClick: fn })
 ```
 
-### 陷阱 8：在 setup/render 之外调用 resolveComponent
+#### 陷阱 8：在 setup/render 之外调用 resolveComponent
 
 ```js
 // ❌ 在模块顶层调用，拿不到组件上下文
@@ -821,9 +821,9 @@ export default {
 
 ---
 
-## 十二、常见应用场景
+### 十二、常见应用场景
 
-### 场景 1：配置驱动的动态渲染（如表格列）
+#### 场景 1：配置驱动的动态渲染（如表格列）
 
 ```js
 // 根据列配置动态渲染表头与单元格
@@ -839,7 +839,7 @@ function renderTable(columns, data) {
 }
 ```
 
-### 场景 2：函数式展示组件
+#### 场景 2：函数式展示组件
 
 ```js
 // 一个无状态的水平分割线组件
@@ -849,7 +849,7 @@ function Divider(props) {
 Divider.props = ['size']
 ```
 
-### 场景 3：高阶 / 包装组件（合并透传属性）
+#### 场景 3：高阶 / 包装组件（合并透传属性）
 
 ```js
 import { h, mergeProps } from 'vue'
@@ -861,7 +861,7 @@ export function withTheme(Wrapped) {
 }
 ```
 
-### 场景 4：带复杂条件的标题渲染
+#### 场景 4：带复杂条件的标题渲染
 
 ```js
 // 当 v-if/v-else 嵌套过多、模板难维护时，渲染函数更清晰
@@ -874,7 +874,7 @@ function renderHeading(level, text, icon) {
 }
 ```
 
-### 场景 5：用 JSX 写复杂业务组件
+#### 场景 5：用 JSX 写复杂业务组件
 
 ```jsx
 // 用 JSX 替代层层 h()，更易读
@@ -891,49 +891,49 @@ const UserProfile = ({ user }) => (
 
 ---
 
-## 十三、面试常见问题
+### 十三、面试常见问题
 
-### Q1：Vue 3 中 h() 函数是什么？返回什么？
+#### Q1：Vue 3 中 h() 函数是什么？返回什么？
 
 `h()` 是 Vue 3 渲染函数 API 的核心，用于创建**虚拟 DOM 节点（VNode）**。它接收 `type`（标签字符串或组件）、`props`、`children`，返回一个描述 UI 的普通 JS 对象（vnode）。`h` 是 hyperscript 的简称，更准确的叫法是 `createVnode()`。Vue 的模板在编译后其实就是 `h()` 调用。
 
-### Q2：h() 和模板有什么关系？什么时候用 h()？
+#### Q2：h() 和模板有什么关系？什么时候用 h()？
 
 模板是渲染函数的语法糖，编译后就是返回 vnode 的渲染函数。**绝大多数场景优先用模板**（更简洁、编译期有静态/补丁标记优化）；当需要复杂逻辑动态拼装结构、写配置驱动的组件库、高阶/renderless 组件，或偏好 JSX 时，才用 `h()` / 渲染函数。
 
-### Q3：h() 的三个参数分别是什么？
+#### Q3：h() 的三个参数分别是什么？
 
 - `type`：必填，标签字符串（`'div'`）或组件定义（导入的 `.vue`/组件对象/内置组件）。
 - `props`：可选，扁平的属性对象，class/style/普通属性/DOM 属性/事件（`onXxx`）/`key`/`ref` 都写在这一层；可为 `null`。
 - `children`：可选，子节点。元素用文本/数组；**组件必须用插槽函数（单个）或插槽对象（具名）**。
 
-### Q4：Vue 3 渲染函数里如何实现 v-if / v-for / v-model？
+#### Q4：Vue 3 渲染函数里如何实现 v-if / v-for / v-model？
 
 - `v-if`：三元运算符或 `if/else`，例如 `ok.value ? h('div','yes') : h('span','no')`。
 - `v-for`：用 `array.map()`，并**手动加 `key`**：`items.value.map(i => h('li', { key: i.id }, i.text))`。
 - `v-model`：手动展开为 `modelValue` + `onUpdate:modelValue`（原生 input 用 `value` + `onInput`）。
 
-### Q5：Vue 3 和 Vue 2 的 h() 有什么区别？
+#### Q5：Vue 3 和 Vue 2 的 h() 有什么区别？
 
 最大区别是 **props 从嵌套命名空间变成扁平对象**：Vue 2 要分 `attrs`/`props`/`domProps`/`on`/`nativeOn`，Vue 3 统统写在同一层，事件用 `onXxx`。此外 Vue 3 用组件可直接 `import` 传入（无需注册）、移除了 `nativeOn`、v-model 需手动展开。
 
-### Q6：为什么 setup() 返回渲染函数时要返回"函数"而不是"值"？
+#### Q6：为什么 setup() 返回渲染函数时要返回"函数"而不是"值"？
 
 因为 `setup()` 在每个组件实例只执行**一次**，而渲染函数会被**多次执行**。若返回 `h(...)` 的结果（值），它只会在 setup 执行那一次生成 vnode，后续响应式数据变化不会重新渲染；返回函数才能保证数据变化时重新执行、产生新 vnode。
 
-### Q7：组件的 children 和元素的 children 有什么不同？
+#### Q7：组件的 children 和元素的 children 有什么不同？
 
 元素的 children 可以是文本或 vnode 数组；但**组件的 children 必须以插槽函数传递**——单个默认插槽用一个函数，多个具名插槽用 `{ default: fn, name: fn }` 对象（此时 props 要用 `null` 占位）。插槽用函数是为了让子组件懒调用、把依赖正确注册到子组件。
 
-### Q8：渲染函数里如何处理事件修饰符（.stop / .capture / .once）？
+#### Q8：渲染函数里如何处理事件修饰符（.stop / .capture / .once）？
 
 `.passive`/`.capture`/`.once` 用驼峰拼接到事件名后，如 `onClickCapture`、`onKeyupOnce`；`.stop`/`.prevent`/`.self`/按键修饰符用 `withModifiers(fn, ['stop'])` 包装。
 
-### Q9：VNode 为什么必须唯一？怎么复用？
+#### Q9：VNode 为什么必须唯一？怎么复用？
 
 Vue 在 patch 时假设组件树中的 vnode 是唯一的，重复使用同一个 vnode 引用会导致渲染异常。要复用相同结构，用**工厂函数**（如 `Array.from(...).map(() => h('p'))`）每次产生新 vnode，而非引用同一个。
 
-### Q10：mergeProps / cloneVNode / withDirectives / resolveComponent 分别做什么？
+#### Q10：mergeProps / cloneVNode / withDirectives / resolveComponent 分别做什么？
 
 - `mergeProps`：合并多个 props，自动合并 `class`/`style`/`onXxx`（同名事件合并成数组）。
 - `cloneVNode`：克隆 vnode 并附加额外 props（vnode 创建后不可变，不能直接改）。
@@ -942,7 +942,7 @@ Vue 在 patch 时假设组件树中的 vnode 是唯一的，重复使用同一�
 
 ---
 
-## 十四、总结
+### 十四、总结
 
 | 要点 | 核心结论 |
 |------|---------|

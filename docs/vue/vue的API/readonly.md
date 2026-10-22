@@ -2,7 +2,7 @@
 
 ## 作用
 
-`readonly()` 接收一个对象（响应式或普通）并返回一个只读的原始代理。这意味着任何对返回对象的修改尝试都会失败并发出警告。
+`readonly()` 接收一个对象（响应式或普通，也可以是 ref）并返回一个原值的只读代理。这意味着任何通过该代理进行的修改尝试都会失败并发出警告。
 
 📖 [官方文档](https://cn.vuejs.org/api/reactivity-core#readonly)
 
@@ -222,7 +222,7 @@ console.log(readonlyMap.has('key1')) // true
 
 ## 注意事项
 
-### 1. 不是深度不可变
+### 1. readonly 是深度只读的
 
 ```javascript
 const original = reactive({
@@ -233,14 +233,13 @@ const original = reactive({
 
 const copy = readonly(original)
 
-// ⚠️ 如果嵌套对象被提取出来
+// ✅ 通过代理访问到的嵌套对象同样是只读的
 const nested = copy.nested
-
-// nested 对象本身仍然是只读的
 nested.value = 2 // 警告
 
-// 但如果原始对象中的嵌套对象被替换
-// copy 会反映这个变化
+// ⚠️ 若原始对象中的嵌套对象被整体替换，copy 会同步反映新的嵌套对象
+original.nested = { value: 10 }
+console.log(copy.nested.value) // 10
 ```
 
 ### 2. 原始对象修改会同步
@@ -253,7 +252,9 @@ original.count = 1
 console.log(copy.count) // 1（同步反映变化）
 ```
 
-### 3. 只阻止直接修改
+### 3. 只拦截通过代理的修改
+
+readonly 保证的是"通过这个代理无法修改"，而不是原始对象本身不可变。
 
 ```javascript
 const original = reactive({
@@ -262,41 +263,32 @@ const original = reactive({
 
 const copy = readonly(original)
 
-// ❌ 直接修改数组被阻止
+// ❌ 通过只读代理修改：被阻止
 copy.data.push({ id: 2, name: 'Item 2' }) // 警告
+copy.data[0].name = 'Modified' // 警告
 
-// ⚠️ 但如果数组元素被替换
-const item = copy.data[0]
-item.name = 'Modified' // 如果 item 是响应式的，可能不会警告
-
-// ✅ 真正的深度不可变
-import { markRaw } from 'vue'
-const deepCopy = readonly(markRaw(JSON.parse(JSON.stringify(original))))
+// ⚠️ 绕过代理直接修改原始对象：仍然生效，并会同步到只读代理
+original.data[0].name = 'Modified'
+console.log(copy.data[0].name) // 'Modified'
 ```
 
 ### 4. 与 Object.freeze 的区别
 
 ```javascript
-// Object.freeze: 冻结对象，无法修改
+// Object.freeze: 冻结对象本身
 const frozen = Object.freeze({ count: 0 })
-frozen.count = 1 // 静默失败，无警告
+frozen.count = 1 // 非严格模式静默失败；严格模式（如 ES 模块）直接抛 TypeError
 
-// readonly: 响应式只读代理，有警告
+// readonly: 响应式只读代理，开发环境警告（生产环境静默失败）
 const ro = readonly(reactive({ count: 0 }))
 ro.count = 1 // 开发环境警告
 
-// readonly 仍然是响应式的，Object.freeze 不是
+// readonly 仍然是响应式的（原始对象变化会同步），Object.freeze 不是
 ```
 
 ### 5. 性能考虑
 
-```javascript
-// readonly 会创建代理，有一定开销
-const largeObject = reactive({ /* 大量数据 */ })
-
-// 对于大型数据，考虑其他方案
-// 或确保在适当的时机使用
-```
+readonly 会为对象创建代理，对大型深层对象有一定开销。只需保护顶层属性时，可用 `shallowReadonly()`（readonly() 的浅层版本，仅根级属性只读，嵌套对象可变）。
 
 ### 6. 与 shallowReadonly 的区别
 
@@ -332,7 +324,7 @@ const readonlyState = readonly(state)
 const { count } = readonlyState
 count = 1 // 不警告（已脱离代理）
 
-// ✅ 使用 toRefs 保持只读
+// ✅ 使用 toRefs（把对象的每个属性转为 ref）保持只读
 import { toRefs } from 'vue'
 const { count: roCount } = toRefs(readonlyState)
 roCount.value = 1 // 警告

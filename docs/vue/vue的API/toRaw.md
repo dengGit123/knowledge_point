@@ -9,7 +9,7 @@
 - 写入而不触发响应式更新
 - 与第三方库交互时避免 Proxy 兼容性问题
 
-📖 [Vue 官方文档 - toRaw](https://cn.vuejs.org/api/reactivity-advanced#toraw)
+📖 [Vue 官方文档 - toRaw](https://cn.vuejs.org/api/reactivity-advanced.html#toraw)
 
 ## 函数签名
 
@@ -84,8 +84,8 @@ const raw = toRaw(state)
 raw.count = 10
 raw.internalFlag = true
 
-// 修改完成后，通过替换触发一次性更新
-// state.count = raw.count // 这会触发更新
+// ⚠️ 此时视图不会更新；如需更新视图，应改为通过代理写入，
+// 或整体替换对应 ref 的 .value
 ```
 
 ### 4. 对象引用比较
@@ -188,10 +188,11 @@ export function useForm(initialValues) {
 ```javascript
 import { reactive, toRaw, markRaw } from 'vue'
 
-// toRaw：获取原始对象，但不阻止后续响应式转换
+// toRaw：获取原始对象，但原始对象随时可以被 reactive() 再次代理
 const state = reactive({ count: 0 })
 const raw = toRaw(state)
-const reReactive = reactive(raw) // 可以再次被代理
+const reReactive = reactive(raw)
+console.log(reReactive === state) // true（Vue 按 target 缓存代理，返回的还是同一个代理）
 
 // markRaw：永久标记对象不可被代理
 const plainObj = markRaw({ count: 0 })
@@ -247,12 +248,12 @@ const state = reactive({
   nested: { count: 0 }
 })
 
-// toRaw 只脱去最外层代理
+// toRaw 只作用于传入的对象本身，不会处理它的嵌套属性
 const raw = toRaw(state)
 console.log(raw.nested === state.nested) // false
-// raw.nested 仍然是被代理的对象（因为 reactive 是深层代理）
+// raw.nested 是原始嵌套对象，而 state.nested 是它的代理
 
-// 需要手动处理深层
+// 需要原始的嵌套对象时，对它再取一次
 const rawNested = toRaw(state.nested)
 ```
 
@@ -262,4 +263,4 @@ const rawNested = toRaw(state.nested)
 2. **序列化**：JSON 序列化前脱去 Proxy，避免潜在问题
 3. **避免滥用**：不要用 `toRaw` 来绕过响应式系统，优先使用正常的响应式方式
 4. **调试辅助**：在调试时查看原始对象的结构
-5. **不要持久化引用**：`toRaw` 返回的引用可能会变，不要长期持有
+5. **不要持久化引用**：官方不建议长期保留对原始对象的引用，用完即弃，谨慎使用
