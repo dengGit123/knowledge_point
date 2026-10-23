@@ -1,6 +1,8 @@
 # Vite 配置完整文档索引
 
-本文档包含 Vite `vite.config.js` 的所有配置属性详细说明。
+本目录基于 Vite 官方文档整理，收录 `vite.config.js` 中各配置属性的中文详解，按配置项拆分为独立文档。
+
+> 📖 [Vite 官方配置文档](https://cn.vitejs.dev/config/)
 
 ## 核心配置
 
@@ -62,6 +64,7 @@
 
 | 配置 | 说明 | 文档 |
 |------|------|------|
+| 环境变量文件 | .env 文件加载规则与 Mode、NODE_ENV 的关系 | [查看](./环境变量文件.md) |
 | envDir | 环境变量文件目录 | [查看](./envDir-环境变量目录.md) |
 | envPrefix | 环境变量前缀 | [查看](./envPrefix-环境变量前缀.md) |
 | define | 全局常量定义 | [查看](./define-全局常量.md) |
@@ -77,6 +80,7 @@
 ## 配置模板
 
 ```javascript
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -88,13 +92,13 @@ export default defineConfig({
   // 路径解析
   resolve: {
     alias: {
-      '@': '/src'
+      '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
   publicDir: 'public',
   cacheDir: 'node_modules/.vite',
 
-  // 开发服务器
+  // 服务器
   server: {
     port: 5173,
     open: true
@@ -111,10 +115,11 @@ export default defineConfig({
     include: ['vue']
   },
 
-  // 插件
+  // 插件与扩展
   plugins: [],
 
   // 环境变量
+  envDir: 'env',
   envPrefix: 'VITE_',
   define: {},
 
@@ -123,3 +128,5 @@ export default defineConfig({
   clearScreen: true
 })
 ```
+
+模板只列出常用配置项，注释分组与上方索引的分类一一对应。`configFile`、`preview`、`css`、`assetsInclude`、`json`、`ssr`、`worker` 等配置通常使用默认值或按需添加，详细说明见上方对应文档。

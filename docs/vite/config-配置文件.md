@@ -1,91 +1,90 @@
 # configFile 配置
 
+> 📖 [官方文档：配置 Vite](https://cn.vitejs.dev/config/)
+>
+> 📖 [官方文档：命令行界面](https://cn.vitejs.dev/guide/cli.html)
+
 ## 定义
 
-`configFile` 指定 Vite 配置文件的路径，或禁用配置文件使用默认配置。
+`configFile` 用于指定 Vite 配置文件的路径，或设为 `false` 完全禁用配置文件。
 
 **类型**：`string | false`
 
-**默认值**：`'vite.config.js'`（自动查找支持的配置文件）
+**默认值**：在项目根目录下按以下顺序查找第一个存在的文件：
+
+```text
+vite.config.js → vite.config.mjs → vite.config.ts → vite.config.cjs → vite.config.mts → vite.config.cts
+```
 
 ## 配置文件查找规则
 
 ### 支持的配置文件名
 
-Vite 会自动查找 `vite.config.js`、`vite.config.mjs`、`vite.config.ts`、`vite.config.cjs`、`vite.config.mts`、`vite.config.cts`，找到第一个即使用：
-
 | 文件名 | 说明 |
 |--------|------|
-| `vite.config.js` | 会根据 `package.json` 的 `type` 字段当作 ESM 或 CJS 加载 |
-| `vite.config.mjs` | 明确以 ES Module 格式加载 |
-| `vite.config.ts` | TypeScript，自动用 esbuild 转译 |
-| `vite.config.mts` | TypeScript ES Module |
+| `vite.config.js` | 根据 `package.json` 的 `type` 字段决定按 ESM 还是 CJS 加载 |
+| `vite.config.mjs` | 明确按 ES Module 格式加载 |
+| `vite.config.ts` | TypeScript，Vite 会先用 esbuild 转译 |
 | `vite.config.cjs` | CommonJS 格式 |
+| `vite.config.mts` | TypeScript ES Module |
 | `vite.config.cts` | TypeScript CommonJS |
+
+多个文件同时存在时按上表顺序取第一个。例如同时有 `vite.config.js` 和 `vite.config.ts` 时，只会加载 `vite.config.js`。
 
 ### 查找位置
 
-配置文件在 **项目根目录**（`root` 配置项，默认 `process.cwd()`）下查找，**不会向上递归查找父目录**：
+配置文件在项目根目录（`root` 配置项，默认 `process.cwd()`）下查找，不会向上递归查找父目录：
 
-```javascript
-// 在 /home/user/project/app/ 下运行 vite
-// 只会查找：/home/user/project/app/vite.config.{js,mjs,ts,cjs,mts,cts}
-// 不会去 /home/user/project/ 或更上层找
+```text
+# 在 /home/user/project/app/ 下运行 vite
+# 只查找 /home/user/project/app/vite.config.{js,mjs,ts,cjs,mts,cts}
+# 不会去 /home/user/project/ 或更上层找
 ```
 
 ## 可选值与使用方式
 
-### 1. 指定配置文件路径
+### 1. 指定配置文件路径（通过 CLI）
 
-```javascript
-// 注意：此配置通常通过 CLI 指定，而非写在配置文件中
+`configFile` 通常通过命令行 `--config`（简写 `-c`）指定，而不是写在配置文件里：
 
-// 命令行方式（推荐）
+```bash
+# 指定其他文件名的配置
 vite --config vite.admin.config.js
-vite --config config/vite.config.js
-
-// 或使用短命令
 vite -c vite.admin.config.js
+
+# 指定子目录中的配置（相对当前工作目录解析）
+vite --config config/vite.config.js
 ```
 
-### 2. 禁用配置文件
+### 2. 禁用配置文件（`false`）
+
+`configFile: false` 主要用于 JS API 编程式调用（如测试环境、嵌入其他工具）：
 
 ```javascript
-// 方式一：通过配置文件
-export default {
+// 使用 Vite 默认配置，不加载任何配置文件
+import { createServer } from 'vite'
+
+const server = await createServer({
   configFile: false
-}
-
-// 方式二：通过命令行
-vite --configFile false
-
-// 效果：使用 Vite 默认配置，不加载任何配置文件
+})
 ```
 
-### 3. 在配置文件中指定（特殊用法）
-
-```javascript
-// vite.config.js
-export default {
-  // 指定另一个配置文件（较少使用）
-  configFile: './vite.prod.config.js'
-}
-```
+CLI 没有传 `false` 的写法；不需要配置文件的简单项目，直接不创建配置文件即可。
 
 ## 生效后的结果示例
 
 ### 使用自定义配置文件
 
-```javascript
-// 项目结构
+```text
 project/
 ├── config/
-│   ├── vite.dev.config.js     // 开发环境配置
-│   ├── vite.prod.config.js    // 生产环境配置
-│   └── vite.base.config.js    // 基础配置
+│   ├── vite.dev.config.js     # 开发配置
+│   └── vite.prod.config.js    # 生产配置
 ├── src/
 └── package.json
+```
 
+```javascript
 // config/vite.dev.config.js
 import { defineConfig } from 'vite'
 
@@ -98,7 +97,9 @@ export default defineConfig({
     }
   }
 })
+```
 
+```javascript
 // config/vite.prod.config.js
 import { defineConfig } from 'vite'
 
@@ -116,16 +117,8 @@ export default defineConfig({
 })
 ```
 
-使用方式：
-
-```bash
-# 开发环境
-vite --config config/vite.dev.config.js
-
-# 生产构建
-vite build --config config/vite.prod.config.js
-
-# 添加到 package.json
+```json
+// package.json
 {
   "scripts": {
     "dev": "vite --config config/vite.dev.config.js",
@@ -134,27 +127,9 @@ vite build --config config/vite.prod.config.js
 }
 ```
 
-### 禁用配置文件
+### Monorepo 共享基础配置
 
-```bash
-# 使用完全默认配置
-vite --configFile false
-
-# 或在代码中
-// vite.config.js
-export default {
-  configFile: false,
-  // 其他配置仍然可以生效
-  server: {
-    port: 3000
-  }
-}
-```
-
-### Monorepo 多配置文件
-
-```javascript
-// 项目结构
+```text
 monorepo/
 ├── apps/
 │   ├── web/
@@ -163,8 +138,10 @@ monorepo/
 │       └── vite.config.js
 ├── packages/
 │   └── shared/
-└── vite.base.config.js          // 共享基础配置
+└── vite.base.config.js        # 共享基础配置
+```
 
+```javascript
 // vite.base.config.js
 import { defineConfig } from 'vite'
 
@@ -173,12 +150,12 @@ export default defineConfig({
     alias: {
       '@shared': '/packages/shared'
     }
-  },
-  // 其他共享配置...
+  }
 })
+```
 
-// 在子应用中继承基础配置
-// apps/web/vite.config.js
+```javascript
+// apps/web/vite.config.js - 继承基础配置
 import { defineConfig } from 'vite'
 import baseConfig from '../../vite.base.config.js'
 
@@ -193,43 +170,7 @@ export default defineConfig({
 
 ## 使用场景
 
-### 1. 环境分离配置
-
-根据不同环境使用不同的配置文件：
-
-```javascript
-// config/vite.development.js
-export default {
-  server: {
-    host: true,
-    port: 5173,
-    open: true
-  },
-  define: {
-    __DEV__: true
-  }
-}
-
-// config/vite.production.js
-export default {
-  build: {
-    outDir: 'dist',
-    sourcemap: false,
-    minify: 'terser'
-  },
-  define: {
-    __DEV__: false
-  }
-}
-
-// config/vite.staging.js
-export default {
-  base: '/staging/',
-  build: {
-    outDir: 'dist-staging'
-  }
-}
-```
+### 1. 按环境拆分配置文件
 
 ```bash
 # package.json
@@ -242,88 +183,81 @@ export default {
 }
 ```
 
-### 2. Monorepo 应用配置
+### 2. 配置拆分与合并
+
+把公共配置抽成独立文件，用 Vite 内置的 `mergeConfig` 合并（能正确处理嵌套对象与数组）：
 
 ```javascript
-// apps/web/vite.config.js
+// config/vite.base.js
+import { fileURLToPath, URL } from 'node:url'
+
 export default {
-  base: '/web/',
-  server: { port: 5173 }
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('../src', import.meta.url))
+    }
+  }
 }
 
-// apps/admin/vite.config.js
+// config/vite.dev.js
 export default {
-  base: '/admin/',
-  server: { port: 5174 }
+  server: {
+    port: 5173,
+    open: true
+  }
 }
 
-// 根目录 package.json
-{
-  "scripts": {
-    "dev:web": "vite --config apps/web/vite.config.js",
-    "dev:admin": "vite --config apps/admin/vite.config.js"
+// config/vite.prod.js
+export default {
+  build: {
+    outDir: 'dist',
+    sourcemap: false
   }
 }
 ```
 
-### 3. 配置文件组织
-
-将配置文件放在专门目录中：
-
 ```javascript
-// 项目结构
-project/
-├── config/
-│   ├── vite/
-│   │   ├── base.js
-│   │   ├── development.js
-│   │   └── production.js
-│   └── webpack/
-├── src/
-└── vite.config.js
-
 // vite.config.js - 主入口
-import { defineConfig } from 'vite'
-import devConfig from './config/vite/development'
-import prodConfig from './config/vite/production'
+import { defineConfig, mergeConfig } from 'vite'
+import baseConfig from './config/vite.base.js'
+import devConfig from './config/vite.dev.js'
+import prodConfig from './config/vite.prod.js'
 
 export default defineConfig(({ mode }) => {
-  return mode === 'production' ? prodConfig : devConfig
+  const modeConfig = mode === 'production' ? prodConfig : devConfig
+  return mergeConfig(baseConfig, modeConfig)
 })
 ```
 
-### 4. 无配置模式
+### 3. 无配置模式
 
-使用 Vite 默认配置，适合简单项目：
+简单项目可以不写任何配置文件，直接使用 Vite 默认配置：
 
-```bash
-# 项目结构（无配置文件）
+```text
 simple-project/
 ├── index.html
 ├── package.json
 └── src/
     └── main.js
+```
 
-# 直接运行
+```bash
 vite
 ```
 
 ## 注意事项
 
-### 1. 配置文件必须是 ESM 格式
+### 1. 推荐使用 ESM 语法
+
+Vite 加载配置文件前会先用 esbuild 打包转译，因此即使 `package.json` 没有设置 `"type": "module"`，配置文件里也可以使用 ESM 语法。建议统一写 ESM 导出：
 
 ```javascript
-// ❌ 错误：CommonJS 格式（除非使用 .cjs 扩展名）
+// ❌ 不推荐：CommonJS 写法
 module.exports = {
   server: { port: 3000 }
 }
 
-// ✅ 正确：ESM 格式
-export default {
-  server: { port: 3000 }
-}
-
-// 或使用 defineConfig（推荐）
+// ✅ 推荐：ESM 写法，defineConfig 提供类型提示
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -334,88 +268,70 @@ export default defineConfig({
 ### 2. package.json 的 type 字段
 
 ```json
-// package.json
 {
-  "type": "module"  // 使用 ES Module
+  "type": "module"
 }
 ```
 
-当设置 `"type": "module"` 时，配置文件必须使用 ESM 格式。
+设置为 `"module"` 时，项目内的 `.js` 文件按 ESM 解析；确需 CommonJS 时使用 `.cjs` / `.cts` 扩展名（见「支持的配置文件名」表）。
 
-### 3. 配置文件的模块解析
+### 3. 条件配置与异步配置
+
+配置文件可以导出函数或 Promise，用于依赖运行时信息的场景：
 
 ```javascript
-// vite.config.ts 可以使用 TypeScript
+// vite.config.js
 import { defineConfig } from 'vite'
 
-export default defineConfig({
-  // 配置内容
+// 函数形式：读取 command / mode 等运行时信息
+export default defineConfig(({ command, mode }) => {
+  if (command === 'serve') {
+    return { /* 开发配置 */ }
+  }
+  return { /* 构建配置 */ }
+})
+
+// 异步形式：配置中可以 await
+export default defineConfig(async ({ command, mode }) => {
+  const data = await getSomeData()
+  return { /* 使用 data 的配置 */ }
 })
 ```
 
-TypeScript 配置文件会被 Vite 自动通过 esbuild 转译。
-
 ### 4. 禁用配置文件的影响
 
-```javascript
-// 禁用配置文件后
-export default {
-  configFile: false
-}
+`configFile: false` 后 Vite 完全使用内置默认值：开发服务器端口 `5173`、构建输出目录 `dist`，且不会加载任何插件。
 
-// 以下功能使用默认值：
-// - 开发服务器端口：5173
-// - 构建输出目录：dist
-// - 模块解析：基于浏览器原生 ESM
-// - HMR：默认配置
+### 5. 与 root 的区别
 
-// 但仍可以在配置文件中设置其他选项
-```
-
-### 5. 配置文件查找与 root 的区别
-
-```javascript
-// configFile 的查找
-// - 默认在项目根目录（root，默认 process.cwd()）下查找
-// - 不会向上递归查找父目录
-
-// root 的作用
-// - 指定项目根目录
-// - 影响 index.html 等文件查找位置
-
-export default {
-  configFile: './config/vite.config.js',  // 配置文件位置
-  root: './src'                           // 项目根目录
-}
-```
+`--config` 只决定「用哪个配置文件」，不改变项目根目录；`root` 决定 `index.html`、`publicDir` 等入口位置，配置文件默认也是从 `root` 下查找的。
 
 ## 与其他属性的关系
 
 | 属性 | 关系说明 |
 |------|----------|
 | `root` | 配置文件默认在 `root` 目录（默认 `process.cwd()`）下查找，不向上递归 |
-| `mode` | 配置文件可以通过函数参数获取当前 `mode` |
-| `envDir` | 环境变量目录查找基于 `root`，不受 `configFile` 位置影响 |
+| `mode` | 配置文件通过函数入参读取当前 `mode`，mode 在配置加载前已确定 |
+| `envDir` | 环境变量目录基于 `root`，与 `configFile` 的位置无关 |
 
 ## 完整示例
 
-### 基础配置文件
+### 基础配置文件（JS）
 
 ```javascript
 // vite.config.js
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import path from 'path'
 
-// https://vitejs.dev/config/
 export default defineConfig({
   // 插件
   plugins: [vue()],
 
-  // 路径解析
+  // 路径别名
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
 
@@ -437,16 +353,16 @@ export default defineConfig({
 
 ```typescript
 // vite.config.ts
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [vue()],
 
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src')
+      '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
 
@@ -461,112 +377,29 @@ export default defineConfig({
 })
 ```
 
-### 动态配置合并
-
-```javascript
-// config/vite.base.js
-export default {
-  resolve: {
-    alias: {
-      '@': require('path').resolve(__dirname, './src')
-    }
-  }
-}
-
-// config/vite.dev.js
-export default {
-  server: {
-    port: 5173,
-    open: true
-  }
-}
-
-// config/vite.prod.js
-export default {
-  build: {
-    outDir: 'dist',
-    sourcemap: false
-  }
-}
-
-// vite.config.js - 合并配置
-import { defineConfig } from 'vite'
-import { merge } = require('lodash/merge')
-import baseConfig from './config/vite.base.js'
-import devConfig from './config/vite.dev.js'
-import prodConfig from './config/vite.prod.js'
-
-export default defineConfig(({ mode }) => {
-  const config = mode === 'production' ? prodConfig : devConfig
-  return merge({}, baseConfig, config)
-})
-```
-
-### 环境变量控制配置文件
-
-```javascript
-// package.json
-{
-  "scripts": {
-    "dev": "vite --config $VITE_CONFIG",
-    "dev:web": "VITE_CONFIG=config/web.vite.config.js vite",
-    "dev:admin": "VITE_CONFIG=config/admin.vite.config.js vite"
-  }
-}
-
-// 或使用 cross-env（跨平台）
-{
-  "scripts": {
-    "dev:web": "cross-env VITE_CONFIG=config/web.vite.config.js vite --config $VITE_CONFIG"
-  }
-}
-```
-
 ## 常见问题
 
 ### 问题 1：配置文件不生效
 
-**原因**：配置文件格式错误或位置不对
+**原因一**：项目里同时存在多个配置文件，Vite 只加载优先级最高的那个（`vite.config.js` 优先于 `vite.config.ts`）。
 
-```javascript
-// ❌ 错误：CommonJS 格式（在 type: "module" 项目中）
-module.exports = {
-  port: 3000
-}
-
-// ✅ 正确：ESM 格式
-export default {
-  port: 3000
-}
+```bash
+# 删除多余文件，或明确指定
+vite --config vite.config.ts
 ```
+
+**原因二**：配置文件写法错误，如 CommonJS 导出（见「注意事项 1」）。
 
 ### 问题 2：TypeScript 配置文件报错
 
-**原因**：缺少必要的类型声明
+配置文件中使用 `__dirname` 等 Node API 时需要类型声明：
 
 ```bash
-# 安装类型声明
 npm install -D @types/node
-
-# vite.config.ts 中添加引用
-/// <reference types="node" />
 ```
 
-### 问题 3：配置文件查找错误
+推荐改用 `import.meta.url` 方案（见上方 TypeScript 示例），无需额外类型声明。
 
-**原因**：多个配置文件导致冲突
+### 问题 3：想按环境切换配置
 
-```javascript
-// 项目中存在多个配置文件时
-// vite.config.js
-// vite.config.ts
-
-// 明确指定使用哪一个
-vite --config vite.config.js
-```
-
-## 官方文档
-
-[Shared Config: configFile - Vite 官方文档](https://cn.vitejs.dev/config/shared-options.html#config-file)
-
-[Config File - Vite 官方文档](https://cn.vitejs.dev/config/)
+优先使用条件配置（函数形式）配合 `--mode`，而不是维护多份配置文件；确需多份文件时再用 `--config` 指定。

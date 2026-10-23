@@ -1,60 +1,63 @@
 # plugins 配置
 
+> 📖 [官方文档：插件 API](https://cn.vitejs.dev/guide/api-plugin.html)
+>
+> 📖 [官方文档：使用插件](https://cn.vitejs.dev/guide/using-plugins.html)
+
 ## 定义
 
-`plugins` 配置要使用的 Vite 插件数组，用于扩展 Vite 的功能。
+`plugins` 配置 Vite 要使用的插件数组。插件是带钩子的对象，Vite 直接兼容 Rollup 插件接口，并在此基础上提供专属属性与钩子。
 
 **类型**：
 
 ```typescript
-(
-  | Plugin
-  | []
-  | [Plugin, ...Plugin[]]
-  | [Plugin, { enforce?: 'pre' | 'post'; apply?: 'serve' | 'build' | ((config: UserConfig) => boolean) }]
-)[]
+plugins?: (PluginOption | Promise<PluginOption>)[]
+```
+
+数组中的插件支持：
+
+- **嵌套数组**：自动扁平化；
+- **falsy 值**：`false`、`null`、`undefined` 会被忽略（方便条件添加插件）；
+- **Promise**：异步插件会被等待（官方建议借此延迟加载插件）。
+
+```javascript
+// 条件添加插件的惯用写法（Vite 忽略 falsy 值）
+export default {
+  plugins: [vue(), isDev && debugPlugin()]
+}
 ```
 
 ## 插件格式
 
-完整的 Vite 插件接口：
+一个 Vite 插件是一个对象（官方类型为 `Plugin`，以下为简化示意）：
 
 ```typescript
-interface Plugin {
-  name: string
+import type { Plugin } from 'vite'
 
-  // 插件执行顺序
-  enforce?: 'pre' | 'post'
+const myPlugin = (): Plugin => ({
+  // 插件唯一名称（必需）
+  name: 'my-plugin',
 
-  // 应用条件
-  apply?: 'serve' | 'build' | ((config: UserConfig) => boolean)
+  // —— Vite 专属属性 ——
+  enforce: 'pre',   // 执行顺序：'pre' | 'post'
+  apply: 'serve',   // 应用条件：'serve' | 'build' | 函数
 
-  // 配置相关
-  config?: (config: UserConfig, env: { mode: string; command: string }) => UserConfig | null | void
-  configResolved?: (resolvedConfig: ResolvedConfig) => void
+  // —— Vite 专属钩子 ——
+  config(config, env) {},              // 修改配置
+  configResolved(resolvedConfig) {},   // 读取最终配置
+  configureServer(server) {},          // 配置开发服务器
+  configurePreviewServer(server) {},   // 配置预览服务器
+  transformIndexHtml(html, ctx) {},    // 转换 index.html
+  handleHotUpdate(ctx) {},             // 自定义 HMR 更新
 
-  // 开发服务器相关
-  configureServer?: (server: ViteDevServer) => void | (() => void)
-  configurePreviewServer?: (server: PreviewServer) => void | (() => void)
-  transformIndexHtml?: (html: string, ctx: TransformIndexHtmlContext) => string | HtmlTagDescriptor[] | null
-
-  // HMR 相关
-  handleHotUpdate?: (ctx: HmrContext) => void | Promise<void> | Array<ModuleNode>
-
-  // Rollup 构建钩子
-  buildStart?: (options: InputOptions) => void | Promise<void>
-  buildEnd?: () => void | Promise<void>
-  closeBundle?: () => void | Promise<void>
-
-  // 模块解析
-  resolveId?: (source: string, importer: string | undefined, options: { assertions: Record<string, string>; isEntry: boolean }) => string | null | void | Promise<string | null | void>
-  load?: (id: string) => string | null | void | Promise<string | null | void>
-  transform?: (code: string, id: string) => string | null | void | Promise<string | null | void>
-
-  // 其他
-  id?: string
-  api?: object
-}
+  // —— Rollup 通用钩子（Vite 直接兼容）——
+  buildStart() {},                     // 构建开始
+  resolveId(source, importer) {},      // 模块解析
+  load(id) {},                         // 模块加载
+  transform(code, id) {},              // 代码转换
+  buildEnd() {},                       // 构建结束
+  closeBundle() {}                     // 产物写入后收尾
+})
 ```
 
 ## 子属性详解
@@ -77,62 +80,43 @@ interface Plugin {
 
 **类型**：`'pre' | 'post'`
 
-**默认值**：`undefined`（在 Vite 核心插件之后执行）
+控制插件在 Vite 内部插件流水线中的位置。未设置 `enforce` 的插件属于"普通插件"层，同层按声明顺序执行。
 
-控制插件执行顺序。
+**插件应用顺序**（官方文档给出的完整顺序）：
+
+1. Alias
+2. 用户插件中 `enforce: 'pre'` 的插件
+3. Vite 核心插件
+4. 未设置 `enforce` 的用户插件（按声明顺序）
+5. Vite 构建插件
+6. 用户插件中 `enforce: 'post'` 的插件
+7. Vite 后置构建插件（压缩、报告等）
 
 ```javascript
-{
-  name: 'pre-plugin',
-  enforce: 'pre'    // 在 Vite 核心插件之前执行
-}
-
-{
-  name: 'post-plugin',
-  enforce: 'post'   // 在 Vite 核心插件之后执行
-}
-
-{
-  name: 'normal-plugin'  // 默认，在核心插件之后、post 插件之前
-}
+{ name: 'pre-plugin', enforce: 'pre' }   // 早于 Vite 核心插件
+{ name: 'normal-plugin' }                // 普通层
+{ name: 'post-plugin', enforce: 'post' } // 晚于 Vite 构建插件
 ```
-
-**执行顺序**：`pre` → Vite 核心 → 默认 → `post`
 
 ### apply
 
-**类型**：`'serve' | 'build' | ((config: UserConfig) => boolean)`
+**类型**：`'serve' | 'build' | ((config: UserConfig, env: { mode: string; command: string }) => boolean)`
 
-**默认值**：`undefined`（始终应用）
-
-控制插件在哪个模式下应用。
+限制插件只在开发（serve）或构建（build）时应用；函数形式可写更细的条件，`command` 与 `mode` 来自第二个参数 `env`（注意不要在第一个参数 `config` 上取）。
 
 ```javascript
 // 字符串形式
 {
-  name: 'serve-plugin',
-  apply: 'serve'    // 仅在开发环境应用
+  name: 'serve-only-plugin',
+  apply: 'serve'      // 仅开发服务器应用
 }
 
+// 函数形式（官方示例）
 {
-  name: 'build-plugin',
-  apply: 'build'    // 仅在生产构建时应用
-}
-
-// 函数形式
-{
-  name: 'conditional-plugin',
-  apply: (config) => {
-    // 自定义条件
-    return config.command === 'serve' && config.mode === 'development'
-  }
-}
-
-// 多条件
-{
-  name: 'multi-env-plugin',
-  apply: (config) => {
-    return config.mode === 'development' || process.env.ENABLE_PLUGIN === 'true'
+  name: 'build-only-no-ssr',
+  apply(config, { command }) {
+    // 仅在构建且非 SSR 时应用
+    return command === 'build' && !config.build?.ssr
   }
 }
 ```
@@ -141,13 +125,13 @@ interface Plugin {
 
 **类型**：`(config: UserConfig, env: { mode: string; command: string }) => UserConfig | null | void`
 
-在配置解析前修改配置。
+在配置解析前修改配置，返回值会被 Vite 深合并进最终配置。
 
 ```javascript
 {
   name: 'config-plugin',
   config(config, { mode, command }) {
-    // 返回要合并的配置
+    // 方式一：返回要合并的配置
     return {
       resolve: {
         alias: {
@@ -156,21 +140,17 @@ interface Plugin {
       }
     }
 
-    // 或返回 null 表示不修改
-    // return null
-
-    // 或直接修改（不返回）
+    // 方式二：直接修改 config 对象（不返回）
     // config.resolve ??= {}
-    // config.resolve.alias ??= {}
   }
 }
 ```
 
 ### configResolved
 
-**类型**：`(resolvedConfig: ResolvedConfig) => void`
+**类型**：`(config: ResolvedConfig) => void`
 
-在配置解析后执行。
+在配置解析完成后执行，用于读取最终配置（只读，不应再修改）。
 
 ```javascript
 {
@@ -186,13 +166,12 @@ interface Plugin {
 
 **类型**：`(server: ViteDevServer) => void | (() => void)`
 
-配置开发服务器。
+配置开发服务器（添加中间件等）。返回的函数会在服务器关闭时作为清理回调执行。
 
 ```javascript
 {
   name: 'server-plugin',
   configureServer(server) {
-    // 返回清理函数
     server.middlewares.use((req, res, next) => {
       if (req.url === '/api/custom') {
         res.end('Custom response')
@@ -201,6 +180,7 @@ interface Plugin {
       }
     })
 
+    // 返回清理函数
     return () => {
       console.log('Server closed')
     }
@@ -212,7 +192,7 @@ interface Plugin {
 
 **类型**：`(server: PreviewServer) => void | (() => void)`
 
-配置预览服务器。
+配置预览服务器（`vite preview`），用法与 `configureServer` 一致。
 
 ```javascript
 {
@@ -228,33 +208,45 @@ interface Plugin {
 
 ### transformIndexHtml
 
-**类型**：`(html: string, ctx: TransformIndexHtmlContext) => string | HtmlTagDescriptor[] | null`
+**类型**：`(html: string, ctx: TransformIndexHtmlContext) => string | HtmlTagDescriptor[] | null | void`
 
-转换 HTML 内容。
+转换 HTML 入口文件（如注入脚本、meta 标签）。上下文 `ctx` 包含 `path`、`filename`，开发时还有 `serverUrl`。
 
 ```javascript
 {
   name: 'html-plugin',
-  transformIndexHtml(html, { path, filename, serverId }) {
-    // 返回修改后的 HTML
-    return html.replace('<head>', '<head><meta name="custom" content="value">')
+  transformIndexHtml(html, { filename }) {
+    // 推荐：返回标签描述符，由 Vite 决定注入位置
+    return [
+      {
+        tag: 'meta',
+        attrs: { name: 'custom', content: 'value' },
+        injectTo: 'head' // 可选：head | body | head-prepend | body-prepend
+      }
+    ]
+  }
+}
+```
 
-    // 或返回要注入的标签
-    // return [
-    //   {
-    //     tag: 'meta',
-    //     attrs: { name: 'custom', content: 'value' }
-    //   }
-    // ]
+Vite 4 起支持对象形式，用 `order` 控制与 Vite 内置 HTML 处理的先后：
+
+```javascript
+{
+  name: 'html-plugin',
+  transformIndexHtml: {
+    order: 'pre', // 'pre' 在 Vite 核心插件之前，'post' 在其后
+    handler(html, ctx) {
+      return html.replace('<head>', '<head><meta name="custom" content="value">')
+    }
   }
 }
 ```
 
 ### handleHotUpdate
 
-**类型**：`(ctx: HmrContext) => void | Promise<void> | Array<ModuleNode>`
+**类型**：`(ctx: HmrContext) => void | Array<ModuleNode> | Promise<void | Array<ModuleNode>>`
 
-控制 HMR 行为。
+自定义 HMR 更新处理。`ctx`（`HmrContext`）包含 `file`、`timestamp`、`modules`、`read`、`server`；返回模块数组可覆盖受影响的模块列表。
 
 ```javascript
 {
@@ -262,40 +254,39 @@ interface Plugin {
   handleHotUpdate(ctx) {
     const { file, server, modules, read } = ctx
 
-    // 过滤受影响的模块
     if (file.endsWith('.custom')) {
       console.log('Custom file updated')
     }
 
-    // 返回过滤后的模块列表
+    // 返回过滤后的模块列表，控制本次 HMR 的更新范围
     // return modules.filter(m => !m.id.includes('exclude'))
   }
 }
 ```
 
-### resolveId
+### resolveId（Rollup 通用钩子）
 
-**类型**：`(source: string, importer: string | undefined, options: { assertions: Record<string, string>; isEntry: boolean }) => string | null | void | Promise<string | null | void>`
+**类型**：`(source: string, importer: string | undefined, options: { isEntry: boolean }) => string | false | null | void | Promise<string | false | null | void>`
 
-自定义模块解析。
+自定义模块解析。返回解析后的 ID；返回 `null` 交给后续插件继续解析；返回 `false` 表示外部依赖。
 
 ```javascript
 {
   name: 'resolve-plugin',
   resolveId(source, importer) {
     if (source === 'virtual:module') {
-      return '\0virtual:module'  // \0 前缀表示虚拟模块
+      return '\0virtual:module' // \0 前缀是虚拟模块的约定标记
     }
-    return null  // 继续正常解析
+    return null // 继续正常解析
   }
 }
 ```
 
-### load
+### load（Rollup 通用钩子）
 
-**类型**：`(id: string) => string | null | void | Promise<string | null | void>`
+**类型**：`(id: string) => string | { code: string; map?: unknown } | null | void | Promise<string | { code: string; map?: unknown } | null | void>`
 
-自定义模块加载。
+自定义模块加载，返回代码字符串或 `{ code, map }` 对象。
 
 ```javascript
 {
@@ -304,14 +295,14 @@ interface Plugin {
     if (id === '\0virtual:module') {
       return 'export const msg = "Hello from virtual module"'
     }
-    return null  // 继续正常加载
+    return null // 交给其他加载器
   }
 }
 ```
 
-### transform
+### transform（Rollup 通用钩子）
 
-**类型**：`(code: string, id: string) => string | null | void | Promise<string | null | void>`
+**类型**：`(code: string, id: string) => string | { code: string; map?: unknown } | null | void | Promise<string | { code: string; map?: unknown } | null | void>`
 
 转换模块代码。
 
@@ -320,13 +311,12 @@ interface Plugin {
   name: 'transform-plugin',
   transform(code, id) {
     if (id.endsWith('.custom')) {
-      // 转换代码
       return {
         code: `export default ${JSON.stringify(code)}`,
         map: null
       }
     }
-    return null  // 不转换
+    return null // 不转换
   }
 }
 ```
@@ -356,7 +346,8 @@ export default {
     vue({
       template: {
         compilerOptions: {
-          isCustomElement: (tag) => tag.includes('-')
+          // 把 x- 开头的标签视为自定义元素
+          isCustomElement: (tag) => tag.startsWith('x-')
         }
       }
     }),
@@ -371,7 +362,7 @@ export default {
 ### 条件插件
 
 ```javascript
-// 方式一：函数形式
+// 方式一：配置期判断，用 falsy 值过滤
 const plugins = [vue()]
 
 if (process.env.NODE_ENV === 'development') {
@@ -380,7 +371,7 @@ if (process.env.NODE_ENV === 'development') {
 
 export default { plugins }
 
-// 方式二：使用 apply
+// 方式二：声明式 apply，由 Vite 按 command/mode 过滤
 export default {
   plugins: [
     vue(),
@@ -400,7 +391,7 @@ export default {
 ```javascript
 export default {
   plugins: [
-    // 第一个执行
+    // 早于 Vite 核心插件
     {
       name: 'pre-plugin',
       enforce: 'pre',
@@ -409,10 +400,10 @@ export default {
       }
     },
 
-    // 默认顺序
+    // 普通层（按声明顺序）
     vue(),
 
-    // 最后执行
+    // 晚于 Vite 构建插件
     {
       name: 'post-plugin',
       enforce: 'post',
@@ -427,42 +418,41 @@ export default {
 ## 插件钩子执行顺序
 
 ```
-构建时：
-1. buildStart
-2. configResolved
-3. resolveId (每个模块)
-4. load (每个模块)
-5. transform (每个模块)
-6. buildEnd
-7. closeBundle
+启动阶段（启动时依次执行）：
+1. config（修改配置）
+2. configResolved（读取最终配置）
+3. 开发时：configureServer（配置开发服务器）
+   构建时：进入 Rollup 构建流程
 
-开发时：
-1. configResolved
-2. configureServer
-3. resolveId (按需)
-4. load (按需)
-5. transform (按需)
-6. handleHotUpdate (HMR 时)
+构建阶段（构建时执行，开发时按需触发）：
+1. buildStart
+2. 每个模块：resolveId → load → transform
+3. buildEnd
+4. closeBundle（产物写入后收尾）
+
+其他钩子：
+- transformIndexHtml：处理 index.html 时
+- handleHotUpdate：文件变化触发 HMR 时（仅开发服务器）
 ```
 
 ## 使用场景
 
 ### 1. 框架支持
 
-**场景**：使用 Vue、React 等框架
+**场景**：为 Vue 项目启用 SFC 与 JSX 支持。
 
 ```javascript
 import vue from '@vitejs/plugin-vue'
-import react from '@vitejs/plugin-react'
+import vueJsx from '@vitejs/plugin-vue-jsx'
 
 export default {
-  plugins: [vue()]  // 或 [react()]
+  plugins: [vue(), vueJsx()]
 }
 ```
 
 ### 2. 组件自动导入
 
-**场景**：自动导入 Vue 组件
+**场景**：模板中的组件按需自动导入。
 
 ```javascript
 import Components from 'unplugin-vue-components/vite'
@@ -480,7 +470,7 @@ export default {
 
 ### 3. API 自动导入
 
-**场景**：自动导入 Composition API
+**场景**：自动导入 Composition API。
 
 ```javascript
 import AutoImport from 'unplugin-auto-import/vite'
@@ -497,7 +487,7 @@ export default {
 
 ### 4. 自定义文件处理
 
-**场景**：处理特殊文件格式
+**场景**：处理特殊文件格式。
 
 ```javascript
 export default {
@@ -519,7 +509,7 @@ export default {
 
 ### 5. HTML 修改
 
-**场景**：注入 meta 标签或脚本
+**场景**：注入 meta 标签或脚本。
 
 ```javascript
 export default {
@@ -537,39 +527,13 @@ export default {
 }
 ```
 
-### 6. 虚拟模块
-
-**场景**：提供不存在的模块
-
-```javascript
-export default {
-  plugins: [
-    {
-      name: 'virtual-module',
-      resolveId(id) {
-        if (id === 'virtual:my-module') {
-          return '\0virtual:my-module'
-        }
-      },
-      load(id) {
-        if (id === '\0virtual:my-module') {
-          return 'export const value = "from virtual module"'
-        }
-      }
-    }
-  ]
-}
-```
-
 ## 常用插件
 
 | 插件 | 用途 |
 |------|------|
-| `@vitejs/plugin-vue` | Vue 3 支持 |
-| `@vitejs/plugin-react` | React 支持 |
-| `@vitejs/plugin-react-swc` | React 支持（SWC，更快） |
-| `@vitejs/plugin-legacy` | 浏览器兼容性支持 |
+| `@vitejs/plugin-vue` | Vue 3 SFC 支持 |
 | `@vitejs/plugin-vue-jsx` | Vue JSX 支持 |
+| `@vitejs/plugin-legacy` | 浏览器兼容性支持 |
 | `unplugin-vue-components` | Vue 组件自动导入 |
 | `unplugin-auto-import` | API 自动导入 |
 | `unplugin-icons` | 图标自动导入 |
@@ -577,55 +541,39 @@ export default {
 | `vite-plugin-windicss` | Windi CSS 支持 |
 | `vite-plugin-svg-icons` | SVG 图标注册 |
 | `vite-plugin-compression` | 生成压缩文件 |
-| `vite-plugin-imp` | Ant Design 按需加载 |
-| `vite-plugin-cesium` | Cesium 集成 |
 | `rollup-plugin-visualizer` | 打包分析 |
 
 ## 注意事项
 
 ### 1. 插件顺序
 
-```javascript
-// ✅ 正确：按顺序执行
-plugins: [
-  prePlugin(),
-  corePlugin(),
-  postPlugin()
-]
+数组中的声明顺序只决定同一层内的先后；跨层顺序由 `enforce` 控制（见上文"插件应用顺序"）。
 
-// enforce 控制更精确
+```javascript
+// enforce 控制跨层顺序
 plugins: [
   { name: 'pre', enforce: 'pre' },
   { name: 'post', enforce: 'post' }
 ]
 ```
 
-### 2. 插件应用条件
+### 2. 条件应用插件
 
 ```javascript
-// ❌ 错误：在插件内部使用环境变量
-export default {
-  plugins: [
-    process.env.NODE_ENV === 'development' ? devPlugin() : null
-  ].filter(Boolean)
+// 方式一：apply（声明式，Vite 按 command/mode 过滤）
+{
+  name: 'dev-plugin',
+  apply: 'serve'
 }
 
-// ✅ 正确：使用 apply
-export default {
-  plugins: [
-    {
-      name: 'dev-plugin',
-      apply: 'serve',
-      ...devPlugin()
-    }
-  ]
-}
+// 方式二：配置期用 falsy 值过滤（Vite 会忽略 false/null/undefined）
+plugins: [vue(), isProd && analyzerPlugin()]
 ```
 
 ### 3. 虚拟模块前缀
 
 ```javascript
-// ✅ 使用 \0 前缀标记虚拟模块
+// ✅ 用 \0 前缀标记虚拟模块，避免与真实文件 ID 冲突
 resolveId(id) {
   if (id === 'virtual:module') {
     return '\0virtual:module'
@@ -636,10 +584,10 @@ resolveId(id) {
 ### 4. 异步钩子
 
 ```javascript
-// ✅ 可以使用 async/await
-transform(code, id) {
+// ✅ 钩子可以直接声明为 async，或返回 Promise
+async transform(code, id) {
   if (id.endsWith('.async')) {
-    return processAsync(code)
+    return await processAsync(code) // 返回转换结果
   }
 }
 ```
@@ -648,9 +596,9 @@ transform(code, id) {
 
 | 属性 | 关系说明 |
 |------|----------|
-| `build.rollupOptions.plugins` | 仅构建时的 Rollup 插件 |
-| `resolve.alias` | 插件中可能需要配置别名 |
-| `server` | configureServer 钩子依赖服务器配置 |
+| `build.rollupOptions.plugins` | 仅构建时注入的 Rollup 插件（不参与开发服务器） |
+| `resolve.alias` | 插件中可能需要依赖别名解析 |
+| `server` | `configureServer` 钩子扩展的就是该服务器实例 |
 
 ## 完整示例
 
@@ -663,7 +611,7 @@ import vue from '@vitejs/plugin-vue'
 import Components from 'unplugin-vue-components/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-import { resolve } from 'path'
+import { resolve } from 'node:path'
 
 export default defineConfig({
   resolve: {
@@ -692,12 +640,7 @@ export default defineConfig({
 
     // API 自动导入
     AutoImport({
-      imports: [
-        'vue',
-        'vue-router',
-        'pinia',
-        '@vueuse/core'
-      ],
+      imports: ['vue', 'vue-router', 'pinia'],
       dts: 'src/auto-imports.d.ts',
       eslintrc: {
         enabled: true,
@@ -708,28 +651,18 @@ export default defineConfig({
 })
 ```
 
-### React 完整配置
+### 浏览器兼容配置
 
 ```javascript
 // vite.config.js
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
+import legacy from '@vitejs/plugin-legacy'
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, './src')
-    }
-  },
-
   plugins: [
-    react({
-      // 使用 SWC（更快）
-      jsxImportSource: undefined,
-      babel: {
-        plugins: ['babel-plugin-styled-components']
-      }
+    // 仅在构建时生效（内部通过 apply 区分），为旧浏览器注入 polyfill 与双份产物
+    legacy({
+      targets: ['defaults', 'not IE 11']
     })
   ]
 })
@@ -789,7 +722,7 @@ function devToolsPlugin() {
     apply: 'serve',
     configureServer(server) {
       server.httpServer?.once('listening', () => {
-        console.log('\n🚀 Server ready!\n')
+        console.log('Server ready')
       })
     }
   }
@@ -837,7 +770,7 @@ function createProdPlugins() {
     plugins.push({
       name: 'prod-optimizer',
       transform(code, id) {
-        if (id.includes('console.log')) {
+        if (id.endsWith('.js') && code.includes('console.log')) {
           // 移除 console.log
           return code.replace(/console\.log\([^)]*\);?/g, '')
         }
@@ -866,15 +799,23 @@ export default defineConfig(({ mode }) => {
 ### TypeScript 类型支持
 
 ```typescript
-// vite-env.d.ts
-import 'vite'
+// vite.config.ts
+import { defineConfig, type Plugin } from 'vite'
 
-declare module 'vite/config' {
-  interface Plugin {
-    // 自定义插件类型扩展
-    customOption?: string
+// 返回值标注为 Plugin 后，钩子名写错会在编译期报错
+function myPlugin(): Plugin {
+  return {
+    name: 'my-plugin',
+    apply: 'build',
+    transform(code, id) {
+      return null
+    }
   }
 }
+
+export default defineConfig({
+  plugins: [myPlugin()]
+})
 ```
 
 ## 自定义插件示例
@@ -885,7 +826,7 @@ declare module 'vite/config' {
 function myHtmlPlugin() {
   return {
     name: 'html-injector',
-    transformIndexHtml(html, { path }) {
+    transformIndexHtml(html, { filename }) {
       return html.replace(
         '</head>',
         '<script src="/custom-script.js"></script></head>'
@@ -944,6 +885,9 @@ function virtualModulePlugin() {
 ### SVG 组件转换
 
 ```javascript
+import { readFileSync } from 'node:fs'
+import { basename } from 'node:path'
+
 function svgComponentPlugin() {
   return {
     name: 'svg-component',
@@ -953,12 +897,10 @@ function svgComponentPlugin() {
       const content = readFileSync(id, 'utf-8')
 
       return {
-        code: `
-        export default {
-          name: '${path.basename(id, '.svg')}',
-          content: \`${content}\`
-        }
-        `,
+        code: `export default ${JSON.stringify({
+          name: basename(id, '.svg'),
+          content
+        })}`,
         map: null
       }
     }
@@ -970,14 +912,14 @@ function svgComponentPlugin() {
 
 ### 问题 1：插件不生效
 
-**原因**：插件顺序或应用条件错误
+**原因**：应用条件与当前阶段不匹配（如 `apply: 'serve'` 的插件在构建中不会运行）。
 
 ```javascript
 // ✅ 检查插件应用条件
 plugins: [
   {
     name: 'test',
-    apply: 'serve',  // 确认是否正确
+    apply: 'serve', // 确认与运行阶段匹配
     configureServer(server) {
       console.log('Plugin applied!')
     }
@@ -987,19 +929,13 @@ plugins: [
 
 ### 问题 2：虚拟模块找不到
 
-**原因**：resolveId 未返回正确的 ID
+**原因**：`resolveId` 未返回正确的 ID。
 
 ```javascript
-// ✅ 使用 \0 前缀
+// ✅ 用 \0 前缀返回虚拟模块 ID，并在 load 中按同一 ID 匹配
 resolveId(id) {
   if (id === 'virtual:module') {
-    return '\0virtual:module'  // 必须 \0 前缀
+    return '\0virtual:module'
   }
 }
 ```
-
-## 官方文档
-
-[Plugins: plugins - Vite 官方文档](https://cn.vitejs.dev/guide/using-plugins.html)
-
-[Plugin API - Vite 官方文档](https://cn.vitejs.dev/guide/api-plugin.html)

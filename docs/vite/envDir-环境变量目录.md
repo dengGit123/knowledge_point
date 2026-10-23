@@ -1,21 +1,23 @@
 # envDir 配置
 
+> 📖 [官方文档：Shared Options · envDir](https://cn.vitejs.dev/config/shared-options.html#envdir)
+
 ## 定义
 
-`envDir` 指定环境变量文件的存放目录，`.env` 等文件会从此目录加载。
+`envDir` 指定环境变量文件（`.env`、`.env.local`、`.env.[mode]` 等）的存放目录，Vite 会从这个目录加载它们。
 
 **类型**：`string`
 
-**默认值**：`root`（即项目根目录；未设置 `root` 时为 `process.cwd()`）
+**默认值**：`root`（即项目根目录；路径可以是绝对路径，也可以是相对项目根目录 `root` 的相对路径）
 
 ## 可选值与使用方式
 
 ### 1. 相对路径
 
 ```javascript
-// 默认值 - 项目根目录
+// vite.config.js
 export default {
-  envDir: './'
+  envDir: './' // 默认值：项目根目录
 }
 
 // 子目录
@@ -32,13 +34,14 @@ export default {
 ### 2. 绝对路径
 
 ```javascript
+// vite.config.js
 import path from 'path'
 
 export default {
   envDir: path.resolve(__dirname, './env')
 }
 
-// 或
+// 或直接写绝对路径
 export default {
   envDir: '/absolute/path/to/env'
 }
@@ -47,32 +50,16 @@ export default {
 ### 3. 环境变量动态配置
 
 ```javascript
+// vite.config.js
 export default {
+  // 可通过进程环境变量切换目录，常用于 CI/CD
   envDir: process.env.VITE_ENV_DIR || './'
 }
 ```
 
-## 环境变量文件
+## 与环境变量文件的关系
 
-### 文件命名规则
-
-| 文件名 | 加载时机 | 优先级 | Git 追踪 |
-|--------|----------|--------|----------|
-| `.env` | 所有模式 | 低 | ✅ 是 |
-| `.env.local` | 所有模式 | 高 | ❌ 否 |
-| `.env.[mode]` | 指定模式 | 中 | ✅ 是 |
-| `.env.[mode].local` | 指定模式 | 高 | ❌ 否 |
-
-### 加载优先级
-
-从高到低：
-
-```
-1. .env.[mode].local
-2. .env.local
-3. .env.[mode]
-4. .env
-```
+`envDir` 只决定"从哪里加载"。Vite 会从该目录中按当前 `mode` 加载四类文件：`.env`、`.env.local`、`.env.[mode]`、`.env.[mode].local`，优先级从高到低为 `.env.[mode].local` > `.env.[mode]` > `.env.local` > `.env`（模式专属优先于通用 local），且执行 Vite 时已存在的进程环境变量优先级最高。文件命名规则与 `.env` 语法详见《环境变量文件》一篇。
 
 ## 生效后的结果示例
 
@@ -81,18 +68,18 @@ export default {
 ```javascript
 // vite.config.js
 export default {
-  // envDir: './'  // 默认值
+  // envDir: './'  // 默认值，可省略
 }
 ```
 
-```
+```text
 project/
-├── .env                    # 所有环境加载
-├── .env.local              # 所有环境加载，优先级高（不提交）
+├── .env                    # 所有模式加载
+├── .env.local              # 所有模式加载，优先级高（不提交 Git）
 ├── .env.development        # 开发模式加载
-├── .env.development.local  # 开发模式加载，优先级最高（不提交）
+├── .env.development.local  # 开发模式加载，优先级最高（不提交 Git）
 ├── .env.production         # 生产模式加载
-├── .env.production.local   # 生产模式加载，优先级最高（不提交）
+├── .env.production.local   # 生产模式加载，优先级最高（不提交 Git）
 ├── src/
 ├── vite.config.js
 └── package.json
@@ -107,7 +94,7 @@ export default {
 }
 ```
 
-```
+```text
 project/
 ├── config/
 │   └── env/                ← 环境变量目录
@@ -120,10 +107,12 @@ project/
 └── package.json
 ```
 
-### 不同环境不同目录
+### 不同模式不同目录
 
 ```javascript
 // vite.config.js
+import { defineConfig } from 'vite'
+
 export default defineConfig(({ mode }) => {
   return {
     envDir: mode === 'test' ? './config/test-env' : './config/env'
@@ -135,7 +124,7 @@ export default defineConfig(({ mode }) => {
 
 ### 1. 集中管理环境变量
 
-将所有环境变量文件放在统一目录：
+将所有环境变量文件收进统一目录，避免项目根目录被 `.env` 系列文件占据：
 
 ```javascript
 // vite.config.js
@@ -144,7 +133,7 @@ export default {
 }
 ```
 
-```
+```text
 project/
 ├── env/
 │   ├── .env
@@ -156,34 +145,20 @@ project/
 └── vite.config.js
 ```
 
-### 2. 环境隔离
+### 2. Monorepo 共享环境变量
 
-开发环境和生产环境使用不同的环境变量目录：
-
-```javascript
-// vite.config.js
-export default defineConfig(({ mode }) => {
-  return {
-    envDir: `./config/env-${mode}`
-  }
-})
-```
-
-```
-project/
-├── config/
-│   ├── env-development/
-│   │   └── .env
-│   └── env-production/
-│       └── .env
-├── src/
-└── vite.config.js
-```
-
-### 3. Monorepo 共享环境变量
+多个子包指向同一份环境变量目录：
 
 ```javascript
-// 项目结构
+// packages/app1/vite.config.js
+import path from 'path'
+
+export default {
+  envDir: path.resolve(__dirname, '../../env')
+}
+```
+
+```text
 workspace/
 ├── packages/
 │   ├── app1/
@@ -193,30 +168,11 @@ workspace/
 └── env/                      ← 共享环境变量
     ├── .env
     └── .env.production
-
-// packages/app1/vite.config.js
-import path from 'path'
-
-export default {
-  envDir: path.resolve(__dirname, '../../env')
-}
 ```
 
-### 4. 多项目配置
+### 3. 多项目配置
 
 ```javascript
-// 项目结构
-services/
-├── web/
-│   ├── vite.config.js
-│   └── src/
-├── api/
-│   ├── vite.config.js
-│   └── src/
-└── shared-env/              ← 共享环境变量
-    ├── .env.base
-    └── .env.secrets
-
 // services/web/vite.config.js
 import path from 'path'
 
@@ -225,19 +181,36 @@ export default {
 }
 ```
 
+```text
+services/
+├── web/
+│   ├── vite.config.js
+│   └── src/
+├── api/
+│   ├── vite.config.js
+│   └── src/
+└── shared-env/               ← 共享环境变量
+    ├── .env
+    └── .env.production
+```
+
 ## 注意事项
 
-### 1. 相对路径基准
+### 1. 相对路径基于 root，而非配置文件位置
 
 ```javascript
 // vite.config.js
 export default {
-  envDir: './env',  // 相对于 root，而非配置文件目录
-  root: './app'      // 如果设置了 root，envDir 相对于 app/
+  envDir: './env',   // 相对于 root 解析，不是相对于 vite.config.js
+  root: './app'      // 设置了 root 后，实际读取 ./app/env/
 }
 ```
 
-### 2. .env.local 始终被 Git 忽略
+### 2. 文件名必须与 mode 值一致
+
+`vite build --mode staging` 只会加载 `.env.staging`。写成 `.env.stg`、`.env.prod` 这类"缩写"文件不会被加载，除非用同名 mode 运行（如 `--mode prod` 配合 `.env.prod`）。
+
+### 3. `.env.local` 始终不提交 Git
 
 ```bash
 # .gitignore
@@ -245,61 +218,28 @@ export default {
 .env.*.local
 ```
 
-### 3. 环境变量前缀限制
+### 4. envDir 改变不影响暴露规则
 
-只有以 `VITE_` 开头的变量才会暴露给客户端：
-
-```bash
-# .env.production
-VITE_API_URL=https://api.example.com  ✅ 可访问
-DATABASE_URL=xxx                      ❌ 仅服务端可访问
-```
-
-### 4. 模式文件命名
-
-```bash
-# ✅ 正确
-.env.development
-.env.production
-.env.staging
-
-# ❌ 错误
-.env.dev
-.env.prod
-```
-
-### 5. 空值和引号
-
-```bash
-# .env
-VITE_TITLE=My App          # ✅ 无引号
-VITE_MESSAGE="Hello"      # ✅ 双引号
-VITE_COUNT=5              # ✅ 数字
-VITE_EMPTY=               # ✅ 空值（=后面没有空格）
-VITE_WITH_SPACE=          # 空字符串
-# VITE_COMMENT=# Comment   # ❌ 整行注释
-```
+无论 `.env` 文件放在哪里，暴露给客户端的仍只有 `envPrefix` 指定前缀（默认 `VITE_`）的变量；变量值的语法规则（注释、引号、变量展开、值均为字符串）也与 `envDir` 无关。
 
 ## 与其他属性的关系
 
 | 属性 | 关系说明 |
 |------|----------|
-| `root` | `envDir` 相对路径基于 `root` |
-| `mode` | 决定加载 `.env.[mode]` 文件 |
+| `root` | `envDir` 相对路径基于 `root` 解析，默认值就是 `root` |
+| `mode` | 决定加载目录中的哪些 `.env.[mode]` 文件 |
 | `envPrefix` | 控制哪些变量暴露给客户端（默认 `VITE_`） |
-| `define` | 可手动定义全局变量替代环境变量 |
+| `define` | 可手动定义全局常量，替代 `.env` 变量 |
 
 ## 完整示例
-
-### 集中管理环境变量
 
 ```javascript
 // vite.config.js
 import { defineConfig, loadEnv } from 'vite'
 
 export default defineConfig(({ mode }) => {
-  // 加载环境变量
-  const env = loadEnv(mode, process.cwd())
+  // envDir 与 loadEnv 的目录参数保持一致，确保读到同一批文件
+  const env = loadEnv(mode, './config/env')
 
   return {
     // 指定环境变量目录
@@ -313,7 +253,7 @@ export default defineConfig(({ mode }) => {
 })
 ```
 
-```
+```text
 project/
 ├── config/
 │   └── env/
@@ -327,87 +267,28 @@ project/
 └── vite.config.js
 ```
 
-### Monorepo 共享环境变量
-
-```javascript
-// packages/web/vite.config.js
-import { defineConfig } from 'vite'
-import path from 'path'
-
-export default defineConfig({
-  // 使用根目录的 env 文件夹
-  envDir: path.resolve(__dirname, '../../env'),
-
-  // 其他配置...
-})
-```
-
-### 不同项目不同环境变量
-
-```javascript
-// apps/web/vite.config.js
-export default {
-  envDir: './env'
-}
-
-// apps/admin/vite.config.js
-export default {
-  envDir: './env'
-}
-```
-
-```
-workspace/
-├── apps/
-│   ├── web/
-│   │   ├── env/
-│   │   │   ├── .env
-│   │   │   └── .env.development
-│   │   └── vite.config.js
-│   └── admin/
-│       ├── env/
-│       │   ├── .env
-│       │   └── .env.development
-│       └── vite.config.js
-```
-
 ## 常见问题
 
-### 问题 1：环境变量未生效
+### 问题 1：环境变量文件不生效
 
-**原因**：文件命名错误
+依次排查：
 
-```bash
-# ❌ 错误
-.env.dev
-.env.prod
-
-# ✅ 正确
-.env.development
-.env.production
+```text
+1. 文件是否放在 envDir 指定的目录里
+2. 文件名是否与 mode 一致（--mode staging 对应 .env.staging）
+3. 变量是否带暴露前缀（默认 VITE_）
+4. 修改 .env 后是否重启了开发服务器（env 文件只在启动时加载）
 ```
 
-### 问题 2：客户端无法访问环境变量
+### 问题 2：客户端无法访问变量
 
-**原因**：变量前缀不正确
+变量前缀与 `envPrefix` 不匹配（如配置了 `envPrefix: 'APP_'` 却写 `VITE_API_URL`），统一前缀即可，详见《envPrefix-环境变量前缀》一篇。
 
-```bash
-# .env.production
-API_URL=https://api.example.com  ❌ 错误
-VITE_API_URL=https://api.example.com  ✅ 正确
-```
+### 问题 3：`.env.local` 被提交到 Git
 
-### 问题 3：.env.local 被提交到 Git
-
-**解决**：确保 `.gitignore` 包含
+确保 `.gitignore` 包含：
 
 ```text
 .env.local
 .env.*.local
 ```
-
-## 官方文档
-
-[Shared Config: envDir - Vite 官方文档](https://cn.vitejs.dev/config/shared-options.html#envdir)
-
-[Env Variables - Vite 官方文档](https://cn.vitejs.dev/guide/env-and-mode.html)

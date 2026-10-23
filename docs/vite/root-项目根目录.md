@@ -1,49 +1,63 @@
 # root 配置
 
+> 📖 [官方文档：Shared Options](https://cn.vitejs.dev/config/shared-options.html)
+
 ## 定义
 
-`root` 指定项目的根目录，所有相对路径解析的基准点，包括 `index.html` 的查找位置。
+`root` 指定项目根目录，即 `index.html` 所在的位置，也是所有相对路径解析的基准点。
 
 **类型**：`string`
 
-**默认值**：`process.cwd()`（当前工作目录，通常是运行 `vite` 命令的目录）
+**默认值**：`process.cwd()`（运行 `vite` 命令时的当前工作目录）
+
+取值可以是绝对路径，也可以是相对于配置文件自身所在目录的相对路径。
 
 ## 可选值与使用方式
 
-### 1. 相对路径
-
-相对于配置文件所在目录的路径：
+### 1. 相对路径（相对于配置文件所在目录）
 
 ```javascript
-// vite.config.js 位于项目根目录
+// vite.config.js
 export default {
-  root: './'           // 当前目录（默认）
-  root: './src'        // src 目录作为根目录
-  root: './app'        // app 目录作为根目录
-  root: '../'          // 父目录
+  // root 是单值属性，只能写一个；需要换用时直接替换值
+  root: './app' // 把 app 目录作为项目根目录
 }
 ```
 
 ### 2. 绝对路径
 
-使用绝对路径指定根目录：
-
 ```javascript
-import path from 'path'
+// vite.config.js（CommonJS 环境有 __dirname）
+import path from 'node:path'
 
 export default {
-  // 使用 path.resolve 生成绝对路径
-  root: path.resolve(__dirname, './src'),
-  root: path.resolve(__dirname, '../app'),
-
-  // 或直接使用绝对路径（不推荐，可移植性差）
-  root: '/Users/username/project/src'
+  // 推荐：用 path.resolve 生成绝对路径，避免相对路径歧义
+  root: path.resolve(__dirname, './app')
 }
 ```
 
-### 3. 环境变量动态配置
+```javascript
+// vite.config.js（"type": "module" 的 ESM 环境下没有 __dirname）
+import { fileURLToPath, URL } from 'node:url'
+
+export default {
+  root: fileURLToPath(new URL('./app', import.meta.url))
+}
+```
+
+### 3. 命令行指定
+
+`root` 是 CLI 的位置参数，此时相对路径基于当前工作目录解析：
+
+```bash
+vite serve ./app   # 以 app 目录为根启动开发服务器
+vite build ./app   # 以 app 目录为根构建
+```
+
+### 4. 环境变量动态配置
 
 ```javascript
+// vite.config.js
 export default {
   root: process.env.VITE_ROOT_DIR || './'
 }
@@ -53,311 +67,153 @@ export default {
 
 ### 默认情况（不设置 root）
 
-```javascript
-// 项目结构
+```text
 my-project/
-├── index.html
+├── index.html        # 入口：root/index.html
+├── public/           # publicDir 默认：root/public
 ├── vite.config.js
 ├── package.json
 └── src/
     └── main.js
-
-// vite.config.js
-export default {
-  // root 默认为 process.cwd()，即 my-project/
-}
-
-// 运行 vite 时
-// - index.html 查找位置：my-project/index.html
-// - publicDir 查找位置：my-project/public
-// - 相对路径解析基准：my-project/
 ```
+
+`root` 默认为 `process.cwd()`（即 `my-project/`），Vite 从 `my-project/index.html` 启动开发服务器。
 
 ### 自定义 root 目录
 
-```javascript
-// 项目结构
+```text
 my-project/
 ├── vite.config.js
 └── app/
-    ├── index.html
+    ├── index.html    # 入口移到 app/ 下
     ├── public/
     │   └── favicon.ico
     └── src/
         └── main.js
-
-// vite.config.js
-import path from 'path'
-
-export default {
-  root: path.resolve(__dirname, './app')
-  // 或简单写法：root: './app'
-}
-
-// 运行 vite 时
-// - index.html 查找位置：my-project/app/index.html
-// - publicDir 查找位置：my-project/app/public
-// - 相对路径解析基准：my-project/app/
 ```
-
-### Monorepo 多应用结构
 
 ```javascript
-// 项目结构
-monorepo/
-├── packages/
-│   ├── admin/
-│   │   ├── index.html
-│   │   ├── vite.config.js
-│   │   └── src/
-│   └── app/
-│       ├── index.html
-│       ├── vite.config.js
-│       └── src/
-├── package.json
-└── pnpm-workspace.yaml
-
-// packages/admin/vite.config.js
-import path from 'path'
-
+// vite.config.js
 export default {
-  // 将 admin 目录设为项目根
-  root: path.resolve(__dirname, './'),
-  build: {
-    outDir: '../../dist/admin'
-  }
-}
-
-// packages/app/vite.config.js
-import path from 'path'
-
-export default {
-  root: path.resolve(__dirname, './'),
-  build: {
-    outDir: '../../dist/app'
-  }
+  root: './app' // 项目根目录指向 app/
 }
 ```
+
+此时入口变为 `my-project/app/index.html`，`publicDir` 默认值也跟着变为 `my-project/app/public`。
 
 ## 影响范围
 
-`root` 配置会影响以下内容：
-
 | 影响项 | 说明 |
 |--------|------|
-| `index.html` 查找位置 | 在 `<root>/index.html` 查找 |
+| `index.html` 查找位置 | 入口为 `<root>/index.html` |
 | `publicDir` 默认路径 | 默认为 `<root>/public` |
 | `cacheDir` 默认路径 | 默认为 `<root>/node_modules/.vite` |
-| `envDir` 默认路径 | 默认为 `<root>` |
-| 相对路径解析 | 所有相对路径都基于 `root` 解析 |
-| 文件监听范围 | Vite 监听 `root` 下的文件变化 |
+| `envDir` 默认路径 | 环境变量文件默认从 `<root>` 读取 |
+| 相对路径解析 | 其他配置项的相对路径默认基于 `root` 解析 |
+| 配置文件查找 | Vite 在 `root` 下查找配置文件 |
 
 ## 使用场景
 
-### 1. 单仓库多应用
+### 1. 单仓库多应用（Monorepo）
 
-在 Monorepo 中管理多个独立应用：
-
-```javascript
-// 项目结构
-workspace/
-├── apps/
-│   ├── web/
-│   │   ├── index.html
-│   │   ├── src/
-│   │   └── vite.config.js
-│   └── admin/
-│       ├── index.html
-│       ├── src/
-│       └── vite.config.js
-├── packages/
-│   └── shared/
-└── package.json
-
-// apps/web/vite.config.js
-import { defineConfig } from 'vite'
-import path from 'path'
-
-export default defineConfig({
-  root: path.resolve(__dirname),  // apps/web/
-  base: '/web/',
-  build: {
-    outDir: path.resolve(__dirname, '../../dist/web')
-  }
-})
-
-// apps/admin/vite.config.js
-import { defineConfig } from 'vite'
-import path from 'path'
-
-export default defineConfig({
-  root: path.resolve(__dirname),  // apps/admin/
-  base: '/admin/',
-  build: {
-    outDir: path.resolve(__dirname, '../../dist/admin')
-  }
-})
-```
+每个子应用拥有独立的 `index.html` 与配置，把各自的目录设为 `root`，产物输出到统一目录。完整配置见下方「完整示例」。
 
 ### 2. 自定义目录结构
 
-当项目结构不符合 Vite 默认假设时：
+当项目把入口放在 `client/`、配置放在 `config/` 这类非默认结构时：
 
-```javascript
-// 项目结构
+```text
 my-project/
 ├── config/
-│   └── vite.config.js      // 配置文件不在根目录
+│   └── vite.config.js      # 配置文件不在根目录
 ├── client/
 │   ├── index.html
 │   ├── public/
 │   └── src/
 └── server/
+```
 
+```javascript
 // config/vite.config.js
-import path from 'path'
+import path from 'node:path'
 
 export default {
-  // 设置 client 目录为项目根
+  // 把 client 目录设为项目根
   root: path.resolve(__dirname, '../client'),
   build: {
+    // 输出目录想放在 root 之外时，用绝对路径
     outDir: path.resolve(__dirname, '../dist')
   }
 }
 ```
 
-### 3. 微前端架构
+### 3. 仅构建部分目录
 
 ```javascript
-// 项目结构
-micro-frontend/
-├── shell/
-│   ├── index.html
-│   └── vite.config.js
-├── module-a/
-│   ├── index.html
-│   └── vite.config.js
-└── module-b/
-    ├── index.html
-    └── vite.config.js
-
-// module-a/vite.config.js
-import path from 'path'
-
-export default {
-  root: path.resolve(__dirname),
-  base: '/modules/a/',
-  server: {
-    port: 3001
-  },
-  build: {
-    outDir: '../../dist/modules/a'
-  }
-}
-```
-
-### 4. 仅构建部分目录
-
-```javascript
-// 项目结构
-project/
-├── docs/              // 只想构建文档部分
-│   ├── index.html
-│   └── src/
-├── src/               // 主应用源码
-└── vite.config.js
-
 // vite.config.js
 export default {
-  // 将 docs 作为根目录
-  root: './docs',
+  root: './docs',           // 只把 docs 作为根目录参与构建
   build: {
-    outDir: '../dist-docs'
+    outDir: '../dist-docs'  // 相对 root，即 project/dist-docs
   }
 }
 ```
 
 ## 注意事项
 
-### 1. index.html 必须在 root 目录下
+### 1. 相对路径的基准
 
-```javascript
-// ❌ 错误配置
-export default {
-  root: './src'  // index.html 不在 src 目录下
-}
-// 会报错：Error: Cannot find index.html
-
-// ✅ 正确配置
-export default {
-  root: './'  // index.html 在根目录
-}
-```
-
-### 2. 相对路径的基准
+配置文件内的 `root` 相对于配置文件所在目录解析；其余路径类配置（如 `publicDir`、`build.outDir`）的相对值默认基于 `root` 解析：
 
 ```javascript
 // vite.config.js 位于 project/
 export default {
-  root: './src',  // 相对于 vite.config.js 所在目录解析
+  root: './src',             // 实际为 project/src/
 
-  // 其余路径配置都相对于 root（即 project/src/）
-  publicDir: './public',     // 实际指向 project/src/public
-  cacheDir: './.vite',       // 实际指向 project/src/.vite
-
-  // 如果想指向项目根目录之外，建议使用绝对路径
+  // 以下相对值都基于 project/src/ 解析
+  publicDir: './public',     // project/src/public
   build: {
+    // 想指向项目根目录之外时，建议用绝对路径
     outDir: path.resolve(__dirname, '../dist')  // project/dist
   }
 }
 ```
 
-### 3. 配置文件查找
+### 2. 配置文件查找与 root
 
-配置文件默认在项目根目录（即运行 `vite` 命令的目录，`process.cwd()`）下查找，**不会向上递归查找父目录**：
+Vite 在 `root` 目录下查找配置文件，不会向上递归查找父目录；`root` 通过 CLI 指定时，配置文件也从指定的 root 目录里找。因此把 root 指向子目录后，配置文件通常也要放到该目录下，或用 `--config` 明确指定。
 
-```javascript
-// 在 any-directory/ 下运行 vite
-// Vite 只会在 any-directory/ 下查找 vite.config.js
-// 找不到就使用默认配置（不会去父目录找）
-
-// 配置示例
-export default {
-  // root 不影响配置文件本身的查找
-  root: './app'
-}
-```
-
-### 4. 与 work 目录的区别
+### 3. 与工作目录（cwd）的区别
 
 ```javascript
-// process.cwd() = 运行 vite 命令的目录
-// root = 项目根目录（相对路径的解析基准）
+// process.cwd()：运行 vite 命令的目录
+// root：项目根目录（相对路径的解析基准）
 
-// 示例
 // 在 /home/user/projects/my-app/ 下运行 vite
 // process.cwd() = /home/user/projects/my-app/
+```
 
+```javascript
 // vite.config.js
 export default {
-  root: './src',  // 项目根目录设置为 src 子目录
-}
-
-// 此时
-// process.cwd() = /home/user/projects/my-app/
-// root = /home/user/projects/my-app/src/
-```
-
-### 5. TypeScript 类型声明
-
-```typescript
-// vite-env.d.ts 或 global.d.ts
-import { UserConfig } from 'vite'
-
-const config: UserConfig = {
-  root: './src'  // 自动类型提示
+  root: './src' // root = /home/user/projects/my-app/src/，cwd 不变
 }
 ```
+
+### 4. ESM 环境下没有 `__dirname`
+
+`package.json` 设置了 `"type": "module"` 时，配置文件按 ESM 加载，`__dirname` 未定义，改用 `import.meta.url`：
+
+```javascript
+// vite.config.js
+import { fileURLToPath, URL } from 'node:url'
+
+export default {
+  root: fileURLToPath(new URL('./app', import.meta.url))
+}
+```
+
+> 💡 **提示：** Node.js 20.11+ 也可以直接使用 `import.meta.dirname`。
 
 ## 与其他属性的关系
 
@@ -365,195 +221,165 @@ const config: UserConfig = {
 |------|----------|
 | `publicDir` | 默认值为 `<root>/public`，受 `root` 影响 |
 | `cacheDir` | 默认值为 `<root>/node_modules/.vite`，受 `root` 影响 |
-| `envDir` | 默认值为 `<root>`，环境变量文件查找位置 |
+| `envDir` | 默认值为 `root`，环境变量文件查找位置 |
 | `base` | `base` 是 URL 路径前缀，`root` 是文件系统路径，两者独立 |
 | `configFile` | 配置文件默认在 `root` 目录下查找，不向上递归 |
 | `build.outDir` | 相对路径时相对于 `root` |
-| `server.fs.allow` | 文件系统访问控制基于 `root` |
+| `server.fs.allow` | 默认基于工作区根目录计算，一般不等于 `root` |
 
 ## 完整示例
 
-### Monorepo 完整配置
+### Monorepo 多应用
 
-```javascript
-// 项目结构
+```text
 workspace/
 ├── apps/
 │   ├── web/
 │   │   ├── index.html
 │   │   ├── package.json
+│   │   ├── public/
 │   │   ├── src/
 │   │   │   ├── App.vue
 │   │   │   └── main.js
-│   │   ├── public/
-│   │   │   └── favicon.ico
 │   │   └── vite.config.js
 │   └── admin/
 │       ├── index.html
 │       ├── src/
 │       └── vite.config.js
 ├── packages/
-│   └── shared/
-│       └── utils/
+│   └── shared/               # 共享代码包
 └── package.json
+```
 
+```javascript
 // apps/web/vite.config.js
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import path from 'path'
 
 export default defineConfig({
-  // 1. 设置项目根目录
-  root: path.resolve(__dirname),
+  // 1. 当前子应用目录即项目根
+  root: fileURLToPath(new URL('.', import.meta.url)),
 
-  // 2. 配置路径别名（解析到 workspace/packages）
+  // 2. 路径别名：@ 指向本应用，@shared 指向共享包
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@shared': path.resolve(__dirname, '../../packages/shared')
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@shared': fileURLToPath(new URL('../../packages/shared', import.meta.url))
     }
   },
 
-  // 3. 输出配置
+  // 3. 部署路径与输出目录
   base: '/web/',
   build: {
-    outDir: path.resolve(__dirname, '../../dist/web'),
-    emptyOutDir: true,
-    rollupOptions: {
-      output: {
-        chunkFileNames: 'assets/js/[name]-[hash].js',
-        entryFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
-      }
-    }
-  },
-
-  // 4. 开发服务器
-  server: {
-    port: 5173,
-    open: true
-  },
-
-  // 5. 插件
-  plugins: [vue()]
-})
-
-// apps/admin/vite.config.js
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import path from 'path'
-
-export default defineConfig({
-  root: path.resolve(__dirname),
-
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@shared': path.resolve(__dirname, '../../packages/shared')
-    }
-  },
-
-  base: '/admin/',
-  build: {
-    outDir: path.resolve(__dirname, '../../dist/admin')
-  },
-
-  server: {
-    port: 5174
+    outDir: fileURLToPath(new URL('../../dist/web', import.meta.url)),
+    emptyOutDir: true
   },
 
   plugins: [vue()]
 })
 ```
 
-### 动态 Root 配置
+```javascript
+// apps/admin/vite.config.js
+import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+
+export default defineConfig({
+  root: fileURLToPath(new URL('.', import.meta.url)),
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@shared': fileURLToPath(new URL('../../packages/shared', import.meta.url))
+    }
+  },
+  base: '/admin/',
+  build: {
+    outDir: fileURLToPath(new URL('../../dist/admin', import.meta.url))
+  },
+  server: {
+    port: 5174
+  },
+  plugins: [vue()]
+})
+```
+
+### 动态 Root
 
 ```javascript
 // vite.config.js
+import path from 'node:path'
 import { defineConfig } from 'vite'
-import path from 'path'
 
-// 根据环境变量或命令行参数设置 root
+// 根据环境变量决定 root，便于一套配置构建多个子目录
 const getRoot = () => {
   const envRoot = process.env.VITE_ROOT
-  if (envRoot) {
-    return path.resolve(process.cwd(), envRoot)
-  }
-
-  // 默认使用当前目录
-  return process.cwd()
+  return envRoot ? path.resolve(process.cwd(), envRoot) : process.cwd()
 }
 
 export default defineConfig({
   root: getRoot(),
-
-  // 确保输出目录正确
   build: {
-    outDir: path.resolve(getRoot(), '../dist')
+    // 输出目录固定在 cwd 下的 dist，不随 root 变化
+    outDir: path.resolve(process.cwd(), 'dist')
   }
 })
 ```
 
 ```bash
-# 使用不同的 root
-VITE_ROOT=./client vite
-VITE_ROOT=./admin vite
+# 分别构建不同子目录
+VITE_ROOT=./client vite build
+VITE_ROOT=./admin vite build
 ```
 
 ## 常见问题
 
 ### 问题 1：找不到 index.html
 
-**原因**：`root` 设置错误，`index.html` 不在指定目录下
+**原因**：`root` 指向的目录里没有 `index.html`，而它是 Vite 的入口。
 
 ```javascript
-// ❌ 错误
+// ❌ 错误：index.html 在项目根目录，不在 src/ 里
 export default {
-  root: './src'  // index.html 在项目根目录，不在 src/
+  root: './src'
 }
 
-// ✅ 正确
+// ✅ 正确：root 指向 index.html 所在目录
 export default {
-  root: './'  // 使用项目根目录
+  root: './'
 }
 ```
 
 ### 问题 2：public 文件无法访问
 
-**原因**：`root` 改变后，`publicDir` 的默认位置也变了
+**原因**：`root` 改变后，`publicDir` 的默认位置随之变为 `<root>/public`，原 public 目录不再生效。
 
 ```javascript
-// 项目结构
-project/
-├── index.html
-├── public/
-│   └── favicon.ico
-└── vite.config.js (在 config/ 子目录)
-
+// 项目结构：public 在 project/public，配置文件在 config/ 子目录
 // config/vite.config.js
 export default {
-  root: path.resolve(__dirname, '..'),  // project/
-  // publicDir 默认为 project/public，正确
+  root: path.resolve(__dirname, '..') // 指回 project/，publicDir 默认 project/public
 }
 ```
 
-### 问题 3：Monorepo 中路径解析错误
+### 问题 3：Monorepo 中别名解析错误
 
-**原因**：别名配置与 `root` 不匹配
+**原因**：`resolve.alias` 写相对路径时基于 `root` 解析，容易指向错误位置。
 
 ```javascript
-// ❌ 错误
+// ❌ 错误：相对路径解析结果不可控
 export default {
   root: './apps/web',
   resolve: {
     alias: {
-      '@shared': '../packages/shared'  // 相对路径错误
+      '@shared': '../packages/shared'
     }
   }
 }
 
-// ✅ 正确 - 使用绝对路径
-import path from 'path'
+// ✅ 正确：别名统一用绝对路径
+import path from 'node:path'
 
 export default {
   root: path.resolve(__dirname, './apps/web'),
@@ -564,7 +390,3 @@ export default {
   }
 }
 ```
-
-## 官方文档
-
-[Shared Config: root - Vite 官方文档](https://cn.vitejs.dev/config/shared-options.html#root)

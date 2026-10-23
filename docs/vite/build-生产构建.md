@@ -1,100 +1,82 @@
 # build 配置
 
+> 📖 [官方文档：Build Options](https://cn.vitejs.dev/config/build-options.html)
+
 ## 定义
 
-`build` 配置生产环境的构建行为。
+`build` 用于配置生产构建（`vite build`）的行为，包括构建目标、产物输出、代码压缩、代码分割等。开发时的行为由 `server` 等配置控制，本页所有选项只对构建生效。
 
 ## 属性层级结构
 
 ```
 build
-├── target
-├── modulePreload
+├── target                      # 构建目标
+├── modulePreload               # 模块预加载
 │   └── polyfill
-├── polyfillModulePreload
-├── outDir
-├── assetsDir
-├── assetsInlineLimit
-├── cssCodeSplit
-├── cssTarget
-├── cssMinify
-├── sourcemap
-├── rollupOptions
-│   ├── input
+├── polyfillModulePreload       # （已废弃，改用 modulePreload.polyfill）
+├── outDir                      # 输出目录
+├── assetsDir                   # 静态资源目录
+├── assetsInlineLimit           # 资源内联阈值
+├── cssCodeSplit                # CSS 代码分割
+├── cssTarget                   # CSS 转换目标
+├── cssMinify                   # CSS 压缩器
+├── sourcemap                   # sourcemap
+├── rollupOptions               # Rollup 底层配置
+│   ├── input / external / plugins / onwarn
+│   ├── preserveEntrySignatures / preserveModules
 │   └── output
-│       ├── chunkFileNames
-│       ├── entryFileNames
-│       ├── assetFileNames
-│       ├── manualChunks
-│       ├── format
-│       ├── exports
-│       ├── globals
-│       ├── compact
-│       ├── interop
-│       ├── preserveModules
-│       ├── preserveModulesRoot
-│       ├── inlineDynamicImports
-│       └── sourcemap
-│   ├── external
-│   ├── plugins
-│   ├── onwarn
-│   ├── preserveEntrySignatures
-│   └── preserveModules
-├── minify
-├── terserOptions
-│   ├── compress
-│   └── format
-├── write
-├── emptyOutDir
-├── copyPublicDir
-├── manifest
-├── ssrManifest
-├── reportCompressedSize
-├── chunkSizeWarningLimit
-├── watch
-├── commonjsOptions
-├── dynamicImportVarsOptions
-├── lib
-│   ├── entry
-│   ├── name
-│   ├── fileName
-│   └── formats
-└── ssrEmitAssets
+│       ├── entryFileNames / chunkFileNames / assetFileNames
+│       ├── manualChunks / inlineDynamicImports
+│       ├── preserveModules / preserveModulesRoot
+│       └── format / exports / globals / compact / interop / sourcemap
+├── minify                      # JS 压缩器
+├── terserOptions               # Terser 选项
+├── write                       # 是否写盘
+├── emptyOutDir                 # 是否清空输出目录
+├── copyPublicDir               # 是否复制 public 目录
+├── manifest / ssrManifest      # 产物清单
+├── reportCompressedSize        # 报告压缩后体积
+├── chunkSizeWarningLimit       # chunk 体积警告阈值
+├── watch                       # 监听模式
+├── commonjsOptions             # CJS 转 ESM 选项
+├── dynamicImportVarsOptions    # 动态导入变量选项
+├── lib                         # 库模式
+│   ├── entry / name / fileName / formats
+└── ssrEmitAssets               # SSR 构建输出静态资源
 ```
 
 ## 用法
 
 ```javascript
 // vite.config.js
-export default {
+import { defineConfig } from 'vite'
+
+export default defineConfig({
   build: {
-    target: 'modules',
-    modulePreload: true,
-    polyfillModulePreload: true,
+    // 输出目录（默认 'dist'）
     outDir: 'dist',
+    // 静态资源目录，相对于 outDir（默认 'assets'）
     assetsDir: 'assets',
-    assetsInlineLimit: 4096,
-    cssCodeSplit: true,
-    cssTarget: 'es2015',
-    cssMinify: true,
-    sourcemap: false,
-    rollupOptions: {},
+    // 构建目标（Vite 7 起默认 'baseline-widely-available'）
+    target: 'baseline-widely-available',
+    // JS 压缩器（默认 'esbuild'，'terser' 需额外安装）
     minify: 'esbuild',
-    terserOptions: {},
-    write: true,
-    emptyOutDir: true,
-    copyPublicDir: true,
-    manifest: false,
-    ssrManifest: false,
-    reportCompressedSize: true,
-    chunkSizeWarningLimit: 500,
-    watch: false,
-    commonjsOptions: {},
-    dynamicImportVarsOptions: {},
-    lib: {},
-    ssrEmitAssets: false
+    // 生产构建默认不生成 sourcemap
+    sourcemap: false,
+    // 小于 4096 字节的资源内联为 base64 Data URL
+    assetsInlineLimit: 4096,
+    // 调整底层 Rollup 行为，例如手动分包
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            return 'vendor' // 第三方依赖单独分包
+          }
+        }
+      }
+    }
   }
-}
+})
 ```
 
 ## 子属性详解
@@ -103,59 +85,51 @@ export default {
 
 **类型**：`string | string[] | false`
 
-**默认值**：`'modules'`
+**默认值**：`'baseline-widely-available'`（Vite 7 起由 `'modules'` 改为该值）
 
-设置最终构建的浏览器兼容性目标。
+设置最终产物的浏览器兼容目标，esbuild 会据此决定哪些语法需要转译、哪些 polyfill 需要注入。
 
 | 值 | 说明 |
 |----|------|
-| `'modules'` | 支持原生 ESM 的浏览器（现代浏览器） |
-| `'esnext'` | 假设支持最新 ES 特性 |
-| `'es2015'` ~ `'es2023'` | 指定 ES 版本 |
-| `['chrome58', 'edge16']` | 浏览器列表（esbuild 目标格式） |
-| `false` | 不做任何转换 |
+| `'baseline-widely-available'` | 对应 Baseline「Widely Available」标准，即各主流浏览器已普遍支持 30 个月以上的特性（当前默认） |
+| `'modules'` | 支持原生 ESM 的浏览器，映射为 `['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14']`（旧版默认值） |
+| `'esnext'` | 不转译，假定支持最新 ES 特性 |
+| `'es2015'` ~ `'es2024'` | 指定 ES 年份版本 |
+| `['chrome100', 'safari18']` | esbuild 格式的浏览器列表 |
+| `'browserslist'` | 读取项目中的 browserslist 配置 |
+| `false` | 关闭语法转译（需自行保证兼容性） |
 
 ```javascript
-// 字符串形式
-target: 'modules'
-target: 'es2015'
-target: 'es2020'
-
-// 数组形式 - 指定多个浏览器目标
-target: ['chrome58', 'edge16', 'firefox57']
-target: ['ios11', 'safari11']
-
-// 禁用转换
-target: false
-
-// 结合 browserslist
-target: 'browserslist'
+// 常见写法
+build: {
+  target: 'es2020',                          // 指定 ES 版本
+  // target: ['chrome100', 'firefox100'],    // 多个浏览器目标
+  // target: 'browserslist',                 // 使用 browserslist 配置
+  // target: false                           // 不做语法转换
+}
 ```
+
+> ⚠️ **注意：** Vite 7 起 `target` 默认值变更为 `'baseline-widely-available'`，比旧的 `'modules'` 更现代。如果需要兼容更旧的浏览器（如 Safari 14/15），应显式设置该选项。
 
 ### modulePreload
 
-**类型**：`boolean | { polyfill?: boolean }`
+**类型**：`boolean | { polyfill?: boolean, resolveDependencies?: Function }`
 
-**默认值**：`true`
+**默认值**：`{ polyfill: true }`
 
-是否启用模块预加载功能。
+控制构建产物中 `<link rel="modulepreload">` 的注入行为。默认情况下 Vite 会注入一段 polyfill 脚本，用于处理直接 import 的 CSS 等非 ESM 资源的预加载。
 
 ```javascript
-// 启用（默认）
-modulePreload: true
-
-// 禁用
-modulePreload: false
-
-// 对象形式 - 精细控制
-modulePreload: {
-  polyfill: true   // 是否注入 polyfill 脚本
-}
-
-modulePreload: {
-  polyfill: false  // 假设浏览器原生支持
+build: {
+  modulePreload: true              // 启用（默认，等价于 { polyfill: true }）
+  // modulePreload: false          // 完全关闭模块预加载
+  // modulePreload: {
+  //   polyfill: false             // 关闭 polyfill 注入（假定浏览器原生支持）
+  // }
 }
 ```
+
+`resolveDependencies` 可自定义每个入口对应的预加载依赖列表（Vite 5.1 起支持），常用于 SSR 等需要干预依赖解析的场景。
 
 ### polyfillModulePreload
 
@@ -163,11 +137,20 @@ modulePreload: {
 
 **默认值**：`true`
 
-是否注入 module preload polyfill 脚本。
+**已废弃**：请改用 `build.modulePreload.polyfill`。
 
 ```javascript
-polyfillModulePreload: true   // 注入 polyfill
-polyfillModulePreload: false  // 不注入
+// ❌ 旧写法（已废弃）
+build: {
+  polyfillModulePreload: false
+}
+
+// ✅ 新写法
+build: {
+  modulePreload: {
+    polyfill: false
+  }
+}
 ```
 
 ### outDir
@@ -176,20 +159,17 @@ polyfillModulePreload: false  // 不注入
 
 **默认值**：`'dist'`
 
-输出目录路径。
+构建产物的输出目录，相对项目 `root` 解析；也可以写相对路径指向 root 之外，或写绝对路径。
 
 ```javascript
-// 相对路径
-outDir: 'dist'
-outDir: 'build'
-outDir: '../output'
-
-// 绝对路径
-outDir: '/path/to/dist'
-
-// 使用环境变量
-outDir: process.env.NODE_ENV === 'production' ? 'dist' : 'dev-dist'
+build: {
+  outDir: 'dist',          // 默认值
+  // outDir: 'build',                    // 自定义目录名
+  // outDir: fileURLToPath(new URL('./output', import.meta.url))  // 绝对路径
+}
 ```
+
+> ⚠️ **注意：** 当 `outDir` 位于项目 `root` 之外时，Vite 默认**不会**清空该目录（见 `emptyOutDir`），构建时会在终端给出提示，避免误删 root 外的文件。
 
 ### assetsDir
 
@@ -197,35 +177,36 @@ outDir: process.env.NODE_ENV === 'production' ? 'dist' : 'dev-dist'
 
 **默认值**：`'assets'`
 
-静态资源存放目录（相对于 `outDir`）。
+静态资源（JS 产物、CSS、图片等）的存放目录，相对于 `outDir`。
 
 ```javascript
-assetsDir: 'assets'
-assetsDir: 'static'
-assetsDir: 'public'
-assetsDir: ''  // 直接放在 outDir 根目录
+build: {
+  assetsDir: 'static'  // 产物输出到 dist/static/ 下
+}
 ```
+
+库模式下，JS 产物文件名由 `lib.fileName` 决定，`assetsDir` 只影响 CSS 等静态资源的位置。
 
 ### assetsInlineLimit
 
-**类型**：`number`
+**类型**：`number | ((filePath: string, content: Buffer) => boolean | undefined)`
 
-**默认值**：`4096` (4KB)
+**默认值**：`4096`（4KB）
 
-小于此阈值的资源会被转为 base64 Data URL 内联，单位字节。
+小于该阈值（单位：字节）的导入资源会被内联为 base64 Data URL，否则生成独立文件。内联能减少请求数，但会增大 bundle 体积。
 
 ```javascript
-// 禁用内联 - 所有资源都作为单独文件
-assetsInlineLimit: 0
-
-// 设置阈值
-assetsInlineLimit: 4096   // 4KB（默认）
-assetsInlineLimit: 8192   // 8KB
-assetsInlineLimit: 10240  // 10KB
-
-// 无限内联 - 所有资源都内联（不推荐）
-assetsInlineLimit: Infinity
+build: {
+  assetsInlineLimit: 0        // 不内联，所有资源都生成独立文件
+  // assetsInlineLimit: 8192  // 8KB 以内的资源内联
+  // assetsInlineLimit: (filePath, content) => {
+  //   // 自定义规则：SVG 一律内联，其余走默认阈值
+  //   if (filePath.endsWith('.svg')) return true
+  // }
+}
 ```
+
+> 💡 **提示：** 函数形式的返回值为 `true` / `false` 时强制内联 / 不内联，返回 `undefined` 时回落到数值阈值逻辑；函数内不能抛出异常。Git LFS 占位文件、显式带 `?url` / `?raw` 声明的资源不会被内联。
 
 ### cssCodeSplit
 
@@ -236,49 +217,43 @@ assetsInlineLimit: Infinity
 是否启用 CSS 代码分割。
 
 ```javascript
-// 启用（默认）- 每个 async chunk 的 CSS 会单独提取
-cssCodeSplit: true
-
-// 禁用 - 所有 CSS 打包到一个文件
-cssCodeSplit: false
+build: {
+  cssCodeSplit: true   // 默认：异步 chunk 引入的 CSS 单独拆成文件，按需加载
+  // cssCodeSplit: false  // 所有 CSS 合并成一个大文件，页面加载时一次性引入
+}
 ```
+
+> 💡 **提示：** 库模式下默认关闭 CSS 分割，所有样式会聚合到一个文件中。
 
 ### cssTarget
 
 **类型**：`string | string[]`
 
-**默认值**：与 `target` 相同
+**默认值**：与 `build.target` 一致
 
-CSS 的浏览器兼容目标。
+CSS 的降级 / 压缩目标，用于控制 CSS 语法（如嵌套、自定义属性降级）的处理程度。只有当产物面向非主流浏览器时才需要单独设置。
 
 ```javascript
-// 字符串
-cssTarget: 'es2015'
-cssTarget: 'chrome58'
-
-// 数组
-cssTarget: ['ios11', 'safari11']
-
-// 使用不同目标
-cssTarget: 'es2015'  // 即使 JS target 是 modules
+build: {
+  target: 'esnext',         // JS 保持最新语法
+  cssTarget: 'chrome61'     // CSS 单独降级到更旧的目标
+}
 ```
 
 ### cssMinify
 
 **类型**：`boolean | 'esbuild' | 'lightningcss'`
 
-**默认值**：`true` (使用 `esbuild`)
+**默认值**：`true`（使用 esbuild）
 
-是否压缩 CSS 代码。
+CSS 压缩器选择。`'lightningcss'` 需要安装 `lightningcss` 依赖。
 
 ```javascript
-// 布尔值
-cssMinify: true   // 压缩（使用 esbuild）
-cssMinify: false  // 不压缩
-
-// 指定压缩器
-cssMinify: 'esbuild'       // 使用 esbuild
-cssMinify: 'lightningcss'  // 使用 lightningcss
+build: {
+  cssMinify: true                // 默认：用 esbuild 压缩
+  // cssMinify: 'lightningcss'   // 改用 lightningcss（需 npm add -D lightningcss）
+  // cssMinify: false            // 不压缩 CSS
+}
 ```
 
 ### sourcemap
@@ -287,913 +262,333 @@ cssMinify: 'lightningcss'  // 使用 lightningcss
 
 **默认值**：`false`
 
-是否生成 sourcemap 文件。
+是否生成 sourcemap，便于定位生产环境报错。
 
 | 值 | 说明 |
 |----|------|
-| `false` | 不生成 sourcemap |
-| `true` | 生成独立的 `.map` 文件，并在代码中引用 |
-| `'inline'` | 将 sourcemap 作为 Data URI 内联到代码中 |
-| `'hidden'` | 生成 `.map` 文件但不引用（用于错误追踪工具） |
+| `false` | 不生成（默认，产物体积最小） |
+| `true` | 生成独立 `.map` 文件并在产物末尾引用 |
+| `'inline'` | 以 Data URI 形式内联到产物中（产物变大，但不会多发请求） |
+| `'hidden'` | 生成 `.map` 文件但不在产物中引用，适合交给错误监控平台 |
 
 ```javascript
-// 不生成
-sourcemap: false
-
-// 生成并引用
-sourcemap: true
-
-// 内联
-sourcemap: 'inline'
-
-// 生成但不引用
-sourcemap: 'hidden'
-
-// 不同模式不同配置
-sourcemap: process.env.NODE_ENV === 'development' ? true : false
-
-// 函数形式（高级）
-sourcemap: (config) => {
-  return config.command === 'serve' ? true : 'hidden'
+build: {
+  sourcemap: true       // 生成并引用 .map 文件
+  // sourcemap: 'hidden'  // 生成但不在代码中引用
 }
+```
+
+```javascript
+// vite.config.js
+import { defineConfig } from 'vite'
+
+export default defineConfig(({ mode }) => {
+  return {
+    build: {
+      // 按模式区分：预发/测试环境出问题需要排查时开启
+      sourcemap: mode === 'staging' ? 'hidden' : false
+    }
+  }
+})
 ```
 
 ### rollupOptions
 
 **类型**：`RollupOptions`
 
-直接配置底层的 Rollup 选项。
+直接透传给底层 Rollup 的选项，用于定制 Vite 默认没有覆盖的构建行为，例如多入口、外部化依赖、自定义输出等。常用子项：
 
 ```javascript
-rollupOptions: {
-  // 输入配置
-  input: {
-    main: 'src/main.js',
-    admin: 'src/admin.js'
-  },
+build: {
+  rollupOptions: {
+    // 多入口
+    input: {
+      main: 'src/main.js',
+      admin: 'src/admin.js'
+    },
 
-  // 输出配置
-  output: {
-    // 详见下方 "output 详解"
-  },
+    // 外部化依赖：不参与打包，运行时从外部获取
+    // external: ['vue', 'vue-router'],
+    external: (id) => id.startsWith('@my-scope/'),
 
-  // 外部依赖
-  external: ['vue', 'vue-router'],
-  // 或函数
-  external: (id) => id.startsWith('@my-scope/'),
+    // 追加 Rollup 插件（区别于 Vite 插件，缺少部分 Vite 专属钩子）
+    plugins: [],
 
-  // 插件
-  plugins: [],
+    // 过滤构建警告
+    onwarn(warning, warn) {
+      if (warning.code === 'CIRCULAR_DEPENDENCY') return // 忽略循环依赖警告
+      warn(warning)
+    },
 
-  // 其他 Rollup 选项
-  onwarn: (warning, warn) => {
-    // 忽略某些警告
-    if (warning.code === 'CIRCULAR_DEPENDENCY') return
-    warn(warning)
-  },
+    // 控制入口导出是否可被 tree-shaking（默认 'auto'）
+    preserveEntrySignatures: 'strict',
 
-  preserveEntrySignatures: 'strict',
-  preserveModules: false
+    // 保留原始模块结构，不打包成单文件（常用于发布未打包的库）
+    preserveModules: false,
+
+    // 输出配置，见下文
+    output: {}
+  }
 }
 ```
 
-### output 详解
+> ⚠️ **注意：** `rollupOptions` 会影响 Vite 内部的默认值合并（例如改掉 `output.entryFileNames` 会覆盖 Vite 生成 HTML 引用的文件名），修改前建议先了解 Rollup 对应文档。
+
+#### output 详解
 
 **类型**：`OutputOptions | OutputOptions[]`
 
-Rollup 输出配置，控制产物的文件名、格式、路径等。
+Rollup 输出配置，控制产物文件名、模块格式、分包策略等。
 
-#### 文件名配置
+##### entryFileNames / chunkFileNames / assetFileNames
 
-##### chunkFileNames
+三者分别控制入口文件、异步 chunk、静态资源的命名模板。
 
-**类型**：`string`
+| 选项 | 类型 | Vite 默认值（含 assetsDir 前缀） |
+|------|------|----------------------------------|
+| `entryFileNames` | `string \| ((chunkInfo) => string)` | `assets/[name]-[hash].js` |
+| `chunkFileNames` | `string \| ((chunkInfo) => string)` | `assets/[name]-[hash].js` |
+| `assetFileNames` | `string \| ((assetInfo) => string)` | `assets/[name]-[hash][extname]` |
 
-**默认值**：`"[name]-[hash].js"`
-
-_chunk_（非入口代码块）的文件名模板。
-
-```javascript
-// 基础用法
-chunkFileNames: '[name]-[hash].js'
-
-// 带目录
-chunkFileNames: 'js/[name]-[hash].js'
-
-// 自定义 hash 长度
-chunkFileNames: '[name]-[hash:8].js'  // 8 位 hash
-
-// 使用 contenthash
-chunkFileNames: '[name]-[contenthash].js'
-
-// 完整路径
-chunkFileNames: 'static/js/chunks/[name]-[hash:8].js'
-```
-
-**可用的占位符：**
-
-| 占位符 | 说明 | 示例 |
-|--------|------|------|
-| `[name]` | chunk 名称 | `vendor` |
-| `[hash]` | 内容哈希 | `abc123` |
-| `[hash:n]` | 指定长度的哈希 | `abc12345` |
-| `[contenthash]` | 内容哈希（同 hash） | `def456` |
-| `[format]` | 输出格式 | `es` |
-| `[ext]` | 扩展名 | `.js` |
-
-##### entryFileNames
-
-**类型**：`string`
-
-**默认值**：`"[name]-[hash].js"`
-
-入口文件的文件名模板。
+> 💡 **提示：** Rollup 本身的默认值是 `[name].js`（入口）与 `[name]-[hash].js`（chunk），Vite 会在其上加上 `assetsDir` 前缀并统一带内容 hash，这是产物能长期缓存的关键。
 
 ```javascript
-// 基础用法
-entryFileNames: '[name].js'
-entryFileNames: '[name]-[hash].js'
-
-// 带目录
-entryFileNames: 'js/[name]-[hash:8].js'
-
-// 多入口时保持原名称
-entryFileNames: '[name].js'
-
-// 添加前缀
-entryFileNames: 'entry-[name]-[hash].js'
+build: {
+  rollupOptions: {
+    output: {
+      // 入口文件命名
+      entryFileNames: 'js/[name]-[hash].js',
+      // 异步 chunk 命名
+      chunkFileNames: 'js/[name]-[hash:8].js',   // [hash:8] 限制哈希长度为 8 位
+      // 静态资源命名（字符串模板）
+      assetFileNames: 'static/[ext]/[name]-[hash:8][extname]'
+    }
+  }
+}
 ```
 
-##### assetFileNames
+可用占位符：
 
-**类型**：`string | (assetInfo: AssetInfo) => string`
+| 占位符 | 说明 | 示例值 |
+|--------|------|--------|
+| `[name]` | chunk / 资源名称 | `vendor`、`logo` |
+| `[hash]` | 内容哈希，内容不变则 hash 不变 | `B2HPk1mF` |
+| `[hash:n]` | 限制哈希长度为 n 位 | `B2HPk1mF` 的前 8 位 |
+| `[format]` | 输出格式（模块名） | `es`、`umd` |
+| `[ext]` | 扩展名（**不含**点） | `png` |
+| `[extname]` | 扩展名（**含**点） | `.png` |
 
-**默认值**：`"[name]-[hash][extname]"`
-
-静态资源（CSS、图片、字体等）的文件名模板。
-
-### 字符串形式
+`assetFileNames` 的函数形式常用于按类型分目录：
 
 ```javascript
-// 基础用法
-assetFileNames: '[name]-[hash][extname]'
+build: {
+  rollupOptions: {
+    output: {
+      assetFileNames(assetInfo) {
+        // Rollup 4 起资源名放在 names 数组中
+        const name = assetInfo.names?.[0] ?? ''
 
-// 按类型分目录
-assetFileNames: '[ext]/[name]-[hash:8].[ext]'
-
-// 自定义目录结构
-assetFileNames: 'static/assets/[name]-[hash:8][extname]'
-
-// 完整示例
-assetFileNames: 'static/[ext]/[name]-[hash:8].[ext]'
+        if (/\.css$/i.test(name)) {
+          return 'static/css/[name]-[hash:8][extname]'      // CSS
+        }
+        if (/\.(png|jpe?g|gif|svg|webp|avif|ico)$/i.test(name)) {
+          return 'static/images/[name]-[hash:8][extname]'   // 图片
+        }
+        if (/\.(woff2?|eot|ttf|otf)$/i.test(name)) {
+          return 'static/fonts/[name]-[hash:8][extname]'    // 字体
+        }
+        if (/\.(mp4|webm|ogg|mp3|wav)$/i.test(name)) {
+          return 'static/media/[name]-[hash:8][extname]'    // 媒体
+        }
+        return 'static/assets/[name]-[hash:8][extname]'     // 兜底，避免遗漏类型
+      }
+    }
+  }
+}
 ```
 
-**可用的占位符：**
-
-| 占位符 | 说明 | 示例 |
-|--------|------|------|
-| `[name]` | 资源名称（不含扩展名） | `logo` |
-| `[hash]` | 内容哈希值 | `abc123def456` |
-| `[hash:n]` | 指定长度的哈希值 | `abc123de` |
-| `[contenthash]` | 内容哈希（同 hash） | `def456` |
-| `[ext]` | 扩展名（含点） | `.png` |
-| `[extname]` | 扩展名（含点） | `.png` |
-
-### 函数形式
-
-```typescript
-assetFileNames: (assetInfo: AssetInfo) => string
-```
-
-#### assetInfo 参数详解
-
-**完整类型定义：**
+对应的 `AssetInfo` 关键字段：
 
 ```typescript
 interface AssetInfo {
-  name: string              // 文件名（含扩展名）
-  source: string | Buffer   // 文件内容
-  names: string[]           // 原始名称数组（可能是多个导入路径）
-  type: 'asset'             // 资源类型，固定为 'asset'
-  fileName?: string         // Rollup 内部使用的文件名
+  names: string[]               // 资源名列表（一般取 names[0]）
+  source: string | Uint8Array   // 文件内容，可能是二进制
+  type: 'asset'                 // 固定为 'asset'
 }
 ```
 
-**参数说明：**
-
-| 属性 | 类型 | 说明 | 示例值 |
-|------|------|------|--------|
-| `name` | `string` | 文件名，包含扩展名 | `logo.png`、`style.css` |
-| `source` | `string \| Buffer` | 文件的原始内容 | 二进制数据或文本 |
-| `names` | `string[]` | 所有导入该资源时使用的名称 | `['./logo.png', '@/assets/logo.png']` |
-| `type` | `'asset'` | 资源类型标识 | 固定为 `'asset'` |
-
-#### 函数调用时机
-
-Rollup 会对**每个静态资源**调用此函数，包括：
-- CSS 文件
-- 图片（png, jpg, gif, svg, webp, avif 等）
-- 字体（woff2, woff, ttf, otf, eot 等）
-- 媒体文件（mp4, webm, mp3 等）
-- 其他资源（json, wasm 等）
-
-#### 返回值说明
-
-**返回值类型：** `string`
-
-返回资源文件的输出路径（相对于 `outDir`）。
-
-```javascript
-// 返回相对路径
-return 'css/style.css'           // 输出到 css/style.css
-return 'static/images/logo.png'  // 输出到 static/images/logo.png
-
-// 返回包含占位符的路径
-return 'images/[name][extname]'  // 使用占位符动态生成
-```
-
-### 详细用法示例
-
-#### 按文件类型分类
-
-```javascript
-assetFileNames: (assetInfo) => {
-  const { name } = assetInfo
-
-  // CSS 文件
-  if (name.endsWith('.css')) {
-    return 'css/[name]-[hash:8][extname]'
-  }
-
-  // 图片文件
-  if (/\.(png|jpe?g|gif|svg|webp|avif|ico)$/i.test(name)) {
-    return 'images/[name]-[hash:8][extname]'
-  }
-
-  // 字体文件
-  if (/\.(woff2?|eot|ttf|otf)$/i.test(name)) {
-    return 'fonts/[name]-[hash:8][extname]'
-  }
-
-  // 媒体文件
-  if (/\.(mp4|webm|ogg|mp3|wav|flac)$/i.test(name)) {
-    return 'media/[name]-[hash:8][extname]'
-  }
-
-  // 其他资源
-  return 'assets/[name]-[hash:8][extname]'
-}
-```
-
-#### 根据文件名模式分类
-
-```javascript
-assetFileNames: (assetInfo) => {
-  const { name } = assetInfo
-
-  // 第三方库的资源
-  if (name.includes('node_modules')) {
-    return 'vendor/[name][extname]'
-  }
-
-  // SVG 图标
-  if (name.startsWith('icon-') && name.endsWith('.svg')) {
-    return 'icons/[name][extname]'
-  }
-
-  // 默认
-  return 'assets/[name]-[hash:8][extname]'
-}
-```
-
-#### 使用 names 数组判断来源
-
-```javascript
-assetFileNames: (assetInfo) => {
-  const { name, names } = assetInfo
-
-  // 检查是否来自特定目录
-  const fromComponents = names.some(n => n.includes('/components/'))
-  const fromAssets = names.some(n => n.includes('/assets/'))
-
-  if (name.endsWith('.css')) {
-    if (fromComponents) {
-      return 'css/components/[name][extname]'
-    }
-    return 'css/[name][extname]'
-  }
-
-  if (fromAssets) {
-    return 'assets/[name]-[hash:8][extname]'
-  }
-
-  return 'other/[name]-[hash:8][extname]'
-}
-```
-
-#### 根据文件大小分类
-
-```javascript
-assetFileNames: (assetInfo) => {
-  const { name, source } = assetInfo
-
-  // 获取文件大小
-  const size = typeof source === 'string'
-    ? source.length
-    : source.byteLength
-
-  const sizeKB = size / 1024
-
-  // 大文件单独处理
-  if (sizeKB > 100) {
-    return 'large-assets/[name]-[hash:8][extname]'
-  }
-
-  if (name.endsWith('.css')) {
-    return 'css/[name][extname]'
-  }
-
-  return 'assets/[name]-[hash:8][extname]'
-}
-```
-
-#### 完整的生产配置
-
-```javascript
-rollupOptions: {
-  output: {
-    assetFileNames: (assetInfo) => {
-      const { name } = assetInfo
-
-      // CSS 文件
-      if (/\.css$/i.test(name)) {
-        return 'static/css/[name]-[hash:8][extname]'
-      }
-
-      // 图片文件
-      if (/\.(png|jpe?g|gif|svg|webp|avif|bmp|ico)$/i.test(name)) {
-        return 'static/images/[name]-[hash:8][extname]'
-      }
-
-      // 字体文件
-      if (/\.(woff2?|eot|ttf|otf)$/i.test(name)) {
-        return 'static/fonts/[name]-[hash:8][extname]'
-      }
-
-      // 媒体文件
-      if (/\.(mp4|webm|ogg|mp3|wav|flac|aac)$/i.test(name)) {
-        return 'static/media/[name]-[hash:8][extname]'
-      }
-
-      // 其他文件
-      return 'static/assets/[name]-[hash:8][extname]'
-    }
-  }
-}
-```
-
-### 注意事项
-
-1. **路径分隔符**：始终使用 `/`，Windows 会自动转换
-   ```javascript
-   // ✅ 正确
-   return 'css/style.css'
-
-   // ❌ 错误（但在某些环境可能工作）
-   return 'css\\style.css'
-   ```
-
-2. **返回值不能为空**
-   ```javascript
-   // ❌ 错误：空字符串会导致问题
-   return ''
-
-   // ✅ 正确：至少返回文件名
-   return '[name][extname]'
-   ```
-
-3. **避免路径冲突**：不同类型资源应使用不同目录
-   ```javascript
-   // ❌ 可能冲突：所有资源都在同一目录
-   return '[name][extname]'
-
-   // ✅ 正确：按类型分目录
-   if (name.endsWith('.css')) return 'css/[name][extname]'
-   if (name.endsWith('.png')) return 'images/[name][extname]'
-   ```
-
-4. **占位符只能在字符串中使用**
-   ```javascript
-   // ✅ 正确
-   return 'images/[name][extname]'
-
-   // ❌ 错误：函数中不能直接使用占位符变量
-   return `images/${name}`  // 这是模板字符串，不是占位符
-   ```
-
-5. **hash 是内容哈希**：同一文件在不同构建中 hash 相同
-   ```javascript
-   // logo.png 内容不变 → hash 不变 → 缓存友好
-   return 'images/[name]-[hash:8][extname]'
-   ```
-
-6. **处理未知文件类型**：始终提供默认分支
-   ```javascript
-   assetFileNames: (assetInfo) => {
-     const { name } = assetInfo
-
-     if (name.endsWith('.css')) return 'css/[name][extname]'
-     if (/\.(png|jpg)$/.test(name)) return 'images/[name][extname]'
-
-     // ✅ 默认分支很重要
-     return 'assets/[name]-[hash:8][extname]'
-   }
-   ```
-
-7. **source 可能是 Buffer**：处理大文件时注意内存
-   ```javascript
-   assetFileNames: (assetInfo) => {
-     const { source } = assetInfo
-
-     // source 可能是 Buffer，不要直接转换成字符串
-     const size = Buffer.isBuffer(source)
-       ? source.byteLength
-       : source.length
-
-     // ...
-   }
-   ```
-
-8. **与 publicDir 的区别**
-   - `publicDir` 中的文件直接复制，不经过 `assetFileNames`
-   - `assetFileNames` 只处理通过 import 导入的资源
-
-### 调试技巧
-
-```javascript
-assetFileNames: (assetInfo) => {
-  // 打印所有资源信息（调试用）
-  console.log('Asset:', {
-    name: assetInfo.name,
-    names: assetInfo.names,
-    type: assetInfo.type
-  })
-
-  // 实际逻辑
-  if (assetInfo.name.endsWith('.css')) {
-    return 'css/[name][extname]'
-  }
-  return 'assets/[name][extname]'
-}
-```
-
-### 输出目录结构示例
-
-使用以下配置：
-```javascript
-assetFileNames: (assetInfo) => {
-  const { name } = assetInfo
-  if (name.endsWith('.css')) return 'static/css/[name]-[hash:8][extname]'
-  if (/\.(png|jpg|svg)$/.test(name)) return 'static/images/[name]-[hash:8][extname]'
-  if (/\.(woff2|ttf)$/.test(name)) return 'static/fonts/[name]-[hash:8][extname]'
-  return 'static/assets/[name]-[hash:8][extname]'
-}
-```
-
-**输出结构：**
-```
-dist/
-├── index.html
-├── js/
-│   ├── main-abc123.js
-│   └── vendor-def456.js
-└── static/
-    ├── css/
-    │   ├── main-ghi789.css
-    │   └── chunk-jkl012.css
-    ├── images/
-    │   ├── logo-mno345.png
-    │   └── icon-pqr678.svg
-    ├── fonts/
-    │   ├── inter-stu901.woff2
-    │   └── noto-vwx234.ttf
-    └── assets/
-        └── data-yza567.json
-```
-
-#### 格式配置
+使用注意：
+
+1. 路径分隔符统一写 `/`，Windows 下由 Vite 自动处理。
+2. 必须返回非空路径，且建议始终保留 `[hash]` 占位符——丢失 hash 会让内容不同的文件互相覆盖，缓存失效。
+3. 占位符只能写在**返回的字符串模板**里参与替换；函数内 `assetInfo.names[0]` 拿到的是真实文件名，可以直接拼进路径。
+4. `public/` 目录的文件是原样复制，不经过 `assetFileNames`。
 
 ##### format
 
-**类型**：`'es' | 'module' | 'cjs' | 'commonjs' | 'umd' | 'iife' | 'system' | 'amd'`
+**类型**：`'es' | 'cjs' | 'umd' | 'iife' | 'system' | 'amd'`
 
-**默认值**：`'es'``
+**默认值**：`'es'`
 
-输出模块格式。
+输出模块格式。应用构建使用默认 `'es'` 即可；`'umd'` / `'iife'` 主要用于库模式（需配合 `globals` / `lib.name`）。
 
 ```javascript
-format: 'es'           // ES Module（推荐）
-format: 'module'       // 同 'es'
-format: 'cjs'          // CommonJS
-format: 'commonjs'     // 同 'cjs'
-format: 'umd'          // UMD（浏览器 + CommonJS + AMD）
-format: 'iife'         // 立即执行函数（浏览器）
-format: 'system'       // SystemJS
-format: 'amd'          // AMD
+output: {
+  format: 'es'      // ES Module，浏览器与打包器通用（默认）
+  // format: 'cjs'     // CommonJS，Node.js 环境
+  // format: 'umd'     // UMD，兼容浏览器全局变量 / CJS / AMD
+  // format: 'iife'    // 立即执行函数，通过 script 标签直接引入
+}
 ```
 
 ##### exports
 
-**类型**：`'default' | 'named' | 'auto' | 'default-only'`
+**类型**：`'auto' | 'default' | 'named' | 'none'`
 
-**默认值**：`'auto'``
+**默认值**：`'auto'`
 
-控制导出方式。
+控制 CJS 环境消费 ESM 产物时的导出模式。`'auto'` 由 Rollup 根据入口的实际导出自动推断；`'none'` 表示不生成导出。
 
 ```javascript
-exports: 'auto'         // 自动检测
-exports: 'default'      // 使用 default 导出
-exports: 'named'        // 使用命名导出
-exports: 'default-only' // 仅使用 default 导出
+output: {
+  exports: 'named'   // 显式声明使用命名导出，避免 CJS 引用 default 多余一层
+}
 ```
-
-#### 全局变量配置
 
 ##### globals
 
-**类型**：`{ [packageName: string ]: string }`
+**类型**：`{ [packageName: string]: string }`
 
-**默认值**：`undefined``
+**默认值**：`undefined`
 
-UMD/IIFE 格式时，指定依赖包的全局变量名。
+`format` 为 `'umd'` / `'iife'` 时，把外部化依赖映射为全局变量名，否则产物会报「依赖未定义」。
 
 ```javascript
-// 对象形式
-globals: {
-  vue: 'Vue',
-  'vue-router': 'VueRouter',
-  axios: 'axios',
-  lodash: '_'
+output: {
+  format: 'umd',
+  globals: {
+    vue: 'Vue',                        // import vue → 访问全局 Vue
+    'vue-router': 'VueRouter',
+    axios: 'axios'
+  }
 }
-
-// 实际效果
-// 在 UMD 中变成：
-// define(['Vue', 'VueRouter'], function (Vue, VueRouter) { ... })
 ```
-
-#### 其他配置
 
 ##### compact
 
 **类型**：`boolean`
 
-**默认值**：`true`（生产环境）
+**默认值**：`false`
 
-是否压缩输出代码（格式化）。
+尽可能压缩输出的空白字符。真正的代码压缩由 `build.minify` 负责，一般无需改动此项。
 
 ```javascript
-compact: true   // 压缩（去除换行、空格）
-compact: false  // 保留格式（便于调试）
+output: {
+  compact: true   // 仅做有限空白压缩，不等于 minify
+}
 ```
 
 ##### interop
 
-**类型**：`boolean`
+**类型**：`'compat' | 'auto' | 'esModule' | 'default' | 'defaultOnly'`
 
-**默认值**：`true``
+**默认值**：`'default'`
 
-是否处理 interop（不同模块系统间的互操作）。
+控制 Rollup 如何处理 ESM 与 CJS 互操作时的 `default` 导出解析。通常保持默认即可，仅在产物被特殊环境消费时调整。
 
 ```javascript
-interop: true   // 启用 interop
-interop: false  // 禁用
+output: {
+  interop: 'default'   // 默认：把外部依赖的 default 导出当作模块本身
+}
 ```
 
 ##### preserveModules
 
 **类型**：`boolean`
 
-**默认值**：`false``
+**默认值**：`false`
 
-是否保留模块结构（不合并模块）。
-
-```javascript
-preserveModules: true   // 保留原始模块结构
-preserveModules: false  // 合并模块（默认）
-```
-
-当启用时，输出文件结构会保留原始模块结构：
-```
-src/
-  components/
-    Header.js
-    Footer.js
-  utils/
-    index.js
-```
-
-##### preserveModulesRoot
-
-**类型**：`string`
-
-**默认值**：`undefined`
-
-与 `preserveModules` 配合使用，指定保留模块的根目录。
+保留原始模块结构输出，每个模块生成一个文件，而不是打包合并。常用于发布需要保留文件结构的库，配合 `preserveModulesRoot` 去掉路径前缀。
 
 ```javascript
-preserveModules: true,
-preserveModulesRoot: 'src'
-// 输出时会保留 src 目录结构
+output: {
+  preserveModules: true,        // 保留模块结构
+  preserveModulesRoot: 'src'    // 去掉 src/ 前缀，产物从 src 下一级开始映射
+}
 ```
 
 ##### inlineDynamicImports
 
 **类型**：`boolean`
 
-**默认值**：`undefined``
+**默认值**：`false`
 
-是否内联动态导入。
-
-```javascript
-inlineDynamicImports: true   // 动态导入转为静态导入
-inlineDynamicImports: false  // 保持动态导入（默认）
-```
-
-#### 完整示例
+将动态 `import()` 内联为静态导入，产物合并为单文件。开启后不能再做代码分割，且与多入口配置互斥。库模式下单入口时 Vite 会自动开启。
 
 ```javascript
 output: {
-  // 文件名配置
-  chunkFileNames: 'static/js/chunks/[name]-[hash:8].js',
-  entryFileNames: 'static/js/[name]-[hash:8].js',
-  assetFileNames: (assetInfo) => {
-    const name = assetInfo.name
-    if (name.endsWith('.css')) {
-      return 'static/css/[name]-[hash:8][extname]'
-    }
-    if (/\.(png|jpe?g|gif|svg|webp)$/i.test(name)) {
-      return 'static/images/[name]-[hash:8][extname]'
-    }
-    if (/\.(woff2?|ttf|otf|eot)$/i.test(name)) {
-      return 'static/fonts/[name]-[hash:8][extname]'
-    }
-    return 'static/assets/[name]-[hash:8][extname]'
-  },
-
-  // 格式配置
-  format: 'es',
-  exports: 'auto',
-
-  // 其他配置
-  compact: true,
-  interop: true,
-
-  // 库模式时的全局变量
-  globals: {
-    vue: 'Vue',
-    'vue-router': 'VueRouter'
-  },
-
-  // 手动代码分割
-  manualChunks: (id) => {
-    if (id.includes('node_modules')) {
-      return 'vendor'
-    }
-  },
-
-  // 高级配置
-  sourcemap: true,
-  sourcemapExcludeSources: true,
-
-  // 实验性功能
-  experimentalMinChunkSize: 10000
+  inlineDynamicImports: true   // 适合只需单个产物文件的场景
 }
 ```
 
-### manualChunks 详解
+##### 其他常用 output 选项
 
-**类型**：`object | (id: string) => string | void`
+```javascript
+output: {
+  sourcemap: true,                    // 覆盖 build.sourcemap，仅对该输出生效
+  sourcemapExcludeSources: true,      // sourcemap 中不包含源码内容
+  minifyInternalExports: true,        // 压缩内部导出名
+  experimentalMinChunkSize: 20000     // 尝试合并过小的 chunk（字节，实验性）
+}
+```
+
+##### manualChunks
+
+**类型**：`{ [chunkName: string]: string[] } | ((id: string, ctx) => string | void)`
 
 **默认值**：`undefined`
 
-`manualChunks` 用于手动控制代码分割策略，将模块打包到指定的 chunk 中。
+手动控制分包，把指定模块归入同一个 chunk。
 
-#### 函数形式
-
-```typescript
-manualChunks: (id: string) => string | void
-```
-
-**参数说明：**
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `id` | `string` | **模块的绝对路径**，表示当前正在处理的模块文件路径 |
-
-**参数 `id` 示例值：**
-
-```
-/node_modules/.vite/deps/vue.js
-/Users/xxx/project/src/components/Header.vue
-/Users/xxx/project/node_modules/lodash-es/lodash.js
-/Users/xxx/project/src/utils/index.js
-```
-
-**返回值说明：**
-
-| 返回值 | 类型 | 作用 |
-|--------|------|------|
-| `string` | chunk 名称 | 将当前模块放入指定的 chunk，相同名称的模块会被打包到一起 |
-| `undefined` / `void` | 无返回值 | 不进行特殊处理，使用 Rollup 的默认分割策略 |
-
-**函数调用时机：**
-
-Rollup 会对**每个模块**调用此函数，根据返回值决定该模块归属于哪个 chunk。
+函数形式的 `id` 是**模块的绝对路径**，返回字符串即 chunk 名，返回 `undefined` 交给 Rollup 默认策略：
 
 ```javascript
-// 基础用法
-manualChunks: (id) => {
-  // id 是模块的绝对路径
-  console.log('processing:', id)
-
-  // 将所有 node_modules 中的模块打包到 vendor
-  if (id.includes('node_modules')) {
-    return 'vendor'  // 返回 chunk 名称
-  }
-
-  // 将 components 目录的模块打包到 components chunk
-  if (id.includes('src/components')) {
-    return 'components'
-  }
-
-  // 其他模块不处理，使用默认策略
-  // 等同于 return undefined
-}
-
-// 更精细的控制
-manualChunks: (id) => {
-  // Vue 生态单独打包
-  if (id.includes('node_modules/vue') ||
-      id.includes('node_modules/@vue') ||
-      id.includes('node_modules/vue-router') ||
-      id.includes('node_modules/pinia')) {
-    return 'vue-vendor'
-  }
-
-  // UI 库单独打包
-  if (id.includes('node_modules/element-plus') ||
-      id.includes('node_modules/element-plus/')) {
-    return 'ui-vendor'
-  }
-
-  // 工具库单独打包
-  if (id.includes('node_modules/lodash') ||
-      id.includes('node_modules/axios')) {
-    return 'utils-vendor'
-  }
-
-  // 其他第三方依赖
-  if (id.includes('node_modules')) {
-    return 'vendor'
-  }
-}
-
-// 使用 path 模块处理路径
-import path from 'path'
-
-manualChunks: (id) => {
-  // 获取 node_modules 中的包名
-  if (id.includes('node_modules')) {
-    const match = id.match(/node_modules\/([^/]+)/)
-    if (match) {
-      const packageName = match[1]
-      // 每个包单独一个 chunk（谨慎使用，chunk 数量会很多）
-      return `vendor-${packageName}`
+output: {
+  manualChunks(id) {
+    // Vue 生态单独分包，变化少、适合长期缓存
+    if (/node_modules\/(vue|@vue|vue-router|pinia)\//.test(id)) {
+      return 'vue-vendor'
     }
-    return 'vendor'
-  }
-}
-
-// 根据模块大小动态分割
-manualChunks: (id) => {
-  // 大型框架单独打包
-  const largeLibs = ['react-dom', 'vue', 'three']
-  for (const lib of largeLibs) {
-    if (id.includes(`node_modules/${lib}`)) {
-      return lib
+    // UI 库
+    if (/node_modules\/(element-plus|@element-plus)\//.test(id)) {
+      return 'ui-vendor'
     }
-  }
-
-  // 其他 node_modules
-  if (id.includes('node_modules')) {
-    return 'vendor'
-  }
-}
-
-// 结合 getManualChunk API（Rollup 高级用法）
-manualChunks: (id, { getModuleInfo, getModuleIds }) => {
-  // 获取模块信息
-  const moduleInfo = getModuleInfo(id)
-  if (moduleInfo && moduleInfo.isEntry) {
-    return  // 入口模块不处理
-  }
-
-  // 遍历所有模块
-  for (const moduleId of getModuleIds()) {
-    // ...
-  }
-}
-```
-
-#### 对象形式
-
-```javascript
-// 对象形式：指定包名到 chunk 的映射
-manualChunks: {
-  // chunk 名称: 依赖包名数组
-  vue: ['vue', 'vue-router', 'pinia'],
-  ui: ['element-plus', '@element-plus/icons-vue'],
-  utils: ['lodash-es', 'axios', 'dayjs']
-}
-
-// 效果：
-// - vue、vue-router、pinia 会被打包到 vue-[hash].js
-// - element-plus 相关打包到 ui-[hash].js
-// - lodash、axios、dayjs 打包到 utils-[hash].js
-```
-
-#### 完整示例
-
-```javascript
-rollupOptions: {
-  output: {
-    // 配合 chunk 文件名
-    chunkFileNames: 'js/[name]-[hash:8].js',
-
-    // 函数形式的 manualChunks
-    manualChunks: (id) => {
-      // 1. 处理 Vue 核心
-      if (/node_modules\/(vue|@vue|vue-router|pinia)/.test(id)) {
-        return 'vue-core'
-      }
-
-      // 2. 处理 UI 库
-      if (/node_modules\/(element-plus|ant-design-vue|@arco)/.test(id)) {
-        return 'ui-lib'
-      }
-
-      // 3. 处理工具库
-      if (/node_modules\/(lodash|axios|dayjs|clsx)/.test(id)) {
-        return 'utils'
-      }
-
-      // 4. 处理图表库（通常较大）
-      if (/node_modules\/(echarts|chart\.js|d3)/.test(id)) {
-        return 'charts'
-      }
-
-      // 5. 其他第三方依赖
-      if (id.includes('node_modules')) {
-        return 'vendor'
-      }
+    // 工具库
+    if (/node_modules\/(lodash-es|axios|dayjs)\//.test(id)) {
+      return 'utils-vendor'
     }
+    // 其余第三方依赖
+    if (id.includes('node_modules')) {
+      return 'vendor'
+    }
+    // 业务代码返回 undefined，走默认分割策略
   }
 }
 ```
 
-**注意事项：**
-
-1. **chunk 名称不能冲突**：不同的模块返回相同的 chunk 名称会被打包在一起
-2. **入口模块**：不要对入口模块进行分割，可能导致问题
-3. **循环依赖**：错误的分割策略可能导致循环依赖问题
-4. **HTTP 请求**：chunk 数量过多会导致 HTTP 请求增加，影响性能
-5. **缓存策略**：合理分割可以提高缓存命中率（如 vendor 变化较少）
-6. **路径检查**：使用 `includes` 时注意路径的唯一性，避免误判
-7. **性能**：函数会对每个模块调用，避免复杂计算
-
-**推荐分割策略：**
+对象形式按包名列出映射，更直观但灵活性低：
 
 ```javascript
-// 推荐配置：按功能和变化频率分割
-manualChunks: (id) => {
-  // 第三方依赖（变化少，适合长期缓存）
-  if (id.includes('node_modules')) {
-    // 大型框架单独分块
-    if (id.includes('node_modules/vue')) return 'vue'
-    if (id.includes('node_modules/react')) return 'react'
-
-    // UI 库单独分块
-    if (id.includes('node_modules/element-plus')) return 'ui'
-
-    // 其他依赖统一打包
-    return 'vendor'
+output: {
+  manualChunks: {
+    vue: ['vue', 'vue-router', 'pinia'],
+    ui: ['element-plus'],
+    utils: ['lodash-es', 'axios', 'dayjs']
   }
-
-  // 业务模块（变化频繁）
-  if (id.includes('src/pages')) return 'pages'
-  if (id.includes('src/components')) return 'components'
 }
 ```
+
+> ⚠️ **注意：** 不要把所有依赖塞进一个 vendor 大包，也不要按业务页面逐个强拆——前者让缓存失效更快，后者会产生过多小请求。分包后若出现「Cannot access xx before initialization」类报错，通常是手动分包引入了循环引用，应调整分组或改回默认策略。
 
 ### minify
 
@@ -1201,62 +596,47 @@ manualChunks: (id) => {
 
 **默认值**：`'esbuild'`
 
-代码压缩工具选择。
+JS 压缩器选择。
 
 | 值 | 说明 |
 |----|------|
-| `true` / `'esbuild'` | 使用 esbuild 压缩（快速） |
-| `'terser'` | 使用 terser 压缩（更多选项，但较慢） |
+| `true` / `'esbuild'` | esbuild 压缩，速度快（默认） |
+| `'terser'` | 压缩配置更丰富，但慢很多，需 `npm add -D terser` |
 | `false` | 不压缩 |
 
 ```javascript
-// 使用 esbuild（默认）
-minify: true
-minify: 'esbuild'
-
-// 使用 terser
-minify: 'terser'
-
-// 不压缩
-minify: false
-
-// 根据环境选择
-minify: process.env.NODE_ENV === 'production' ? 'terser' : false
+build: {
+  minify: 'esbuild'   // 默认
+  // minify: 'terser'  // 需要更细粒度的压缩控制时使用
+  // minify: false     // 调试构建产物时临时关闭
+}
 ```
 
 ### terserOptions
 
-**类型**：`TerserOptions`
+**类型**：`EsbuildTerserOptions`
 
-**默认值**：详见 Terser 文档
+**默认值**：`undefined`（由 Terser 自身默认行为决定）
 
-Terser 压缩选项（仅当 `minify: 'terser'` 时生效）。
+仅当 `minify: 'terser'` 时生效的 Terser 配置。
 
 ```javascript
-terserOptions: {
-  // 压缩选项
-  compress: {
-    drop_console: true,     // 删除 console
-    drop_debugger: true,    // 删除 debugger
-    pure_funcs: ['console.log'], // 仅删除特定函数
-    passes: 2               // 压缩次数
-  },
-
-  // 格式化选项
-  format: {
-    comments: false,        // 删除注释
-    preserve_annotations: false
-  },
-
-  // 其他选项
-  ecma: 2015,
-  keep_classnames: false,
-  keep_fnames: false,
-  module: true,
-  safari10: false,
-  toplevel: false
+build: {
+  minify: 'terser',
+  terserOptions: {
+    compress: {
+      drop_console: true,              // 移除所有 console.*
+      drop_debugger: true,             // 移除 debugger
+      passes: 2                        // 多跑一轮压缩，体积更小但更慢
+    },
+    format: {
+      comments: false                  // 删除注释
+    }
+  }
 }
 ```
+
+> 💡 **提示：** 只想移除特定函数（如 `console.log`）时用 `compress.pure_funcs: ['console.log']`，比 `drop_console: true` 更细。
 
 ### write
 
@@ -1264,28 +644,32 @@ terserOptions: {
 
 **默认值**：`true`
 
-是否将构建结果写入磁盘。
+是否把产物写入磁盘。设为 `false` 时只返回产物在内存中的描述，用于以编程方式消费构建结果的插件场景，日常项目无需改动。
 
 ```javascript
-write: true   // 写入磁盘（默认）
-write: false  // 不写入，用于插件模式
+build: {
+  write: true   // 默认写入磁盘
+  // write: false  // 程序化调用 build() 时只在内存中产出
+}
 ```
 
 ### emptyOutDir
 
 **类型**：`boolean`
 
-**默认值**：`true`（当 `outDir` 在 `root` 内时）
+**默认值**：`outDir` 位于项目 `root` 内时为 `true`，否则为 `false`
 
-构建前是否清空输出目录。
+构建前是否清空输出目录，防止上一次构建的旧文件残留。
 
 ```javascript
-emptyOutDir: true   // 清空输出目录
-emptyOutDir: false  // 保留已有文件
-
-// 自定义判断
-emptyOutDir: process.env.CI !== 'true'
+build: {
+  outDir: 'dist',
+  emptyOutDir: true    // 默认行为：构建前清空 dist
+  // emptyOutDir: false  // 保留输出目录中已有文件（增量式输出）
+}
 ```
+
+> ⚠️ **注意：** 当 `outDir` 在 `root` 之外时，出于安全考虑 Vite 不会自动清空，需要清空必须显式写 `emptyOutDir: true`。
 
 ### copyPublicDir
 
@@ -1293,11 +677,13 @@ emptyOutDir: process.env.CI !== 'true'
 
 **默认值**：`true`
 
-是否复制 `publicDir` 内容到输出目录。
+是否把 `public` 目录内容原样复制到 `outDir`。资源全部走构建管线（如打包进库的产物）时可以关闭。
 
 ```javascript
-copyPublicDir: true   // 复制
-copyPublicDir: false  // 不复制
+build: {
+  copyPublicDir: true   // 默认复制 public/ → dist/
+  // copyPublicDir: false  // 不复制
+}
 ```
 
 ### manifest
@@ -1306,26 +692,26 @@ copyPublicDir: false  // 不复制
 
 **默认值**：`false`
 
-是否生成 manifest.json 文件（包含原始文件名到哈希文件名的映射）。
+构建时生成一份「源文件 → 带哈希产物」的清单文件（默认为 `outDir/manifest.json`），供后端渲染层等外部服务查找真实产物路径。字符串形式可自定义文件名（相对 `outDir`）。
 
 ```javascript
-// 生成 manifest.json
-manifest: true
-
-// 自定义文件名
-manifest: 'manifest.json'
-manifest: 'assets/manifest.json'
-manifest: 'rev-manifest.json'
-
-// 不生成
-manifest: false
+build: {
+  manifest: true
+  // manifest: 'manifests/my-manifest.json'  // 自定义文件名
+}
 ```
 
-生成的 manifest 示例：
+生成的清单结构大致如下（键是源码模块 / 入口的 id）：
+
 ```json
 {
-  "main.js": "main-abc123.js",
-  "style.css": "style-def456.css"
+  "index.html": {
+    "file": "assets/index-B2HPk1mF.js",
+    "name": "index",
+    "src": "index.html",
+    "isEntry": true,
+    "css": ["assets/index-DmFfHl2k.css"]
+  }
 }
 ```
 
@@ -1335,12 +721,13 @@ manifest: false
 
 **默认值**：`false`
 
-是否生成 SSR manifest（用于 SSR 客户端 hydration）。
+生成 SSR 场景使用的清单文件（默认 `outDir/ssr-manifest.json`），记录客户端产物中的动态依赖信息，供服务端渲染时预加载和收集客户端资源使用。字符串形式可自定义文件名。
 
 ```javascript
-ssrManifest: true
-ssrManifest: 'ssr-manifest.json'
-ssrManifest: false
+build: {
+  ssrManifest: true
+  // ssrManifest: 'manifests/ssr-manifest.json'
+}
 ```
 
 ### reportCompressedSize
@@ -1349,55 +736,44 @@ ssrManifest: false
 
 **默认值**：`true`
 
-是否报告 gzip/brotli 压缩后的大小。
+构建结束时是否计算并输出每个文件的 gzip / brotli 压缩后体积。计算压缩体积在大项目中有明显开销，CI 中追求构建速度时可以关闭。
 
 ```javascript
-reportCompressedSize: true   // 报告（默认）
-reportCompressedSize: false  // 不报告（加快构建速度）
+build: {
+  reportCompressedSize: false   // 关闭体积报告，加快构建
+}
 ```
 
 ### chunkSizeWarningLimit
 
 **类型**：`number`
 
-**默认值**：`500`
+**默认值**：`500`（单位 kB）
 
-chunk 大小警告阈值，单位 KB。
+chunk 的体积警告阈值，超过该值时 Vite 会在构建日志中提示体积过大。
 
 ```javascript
-// 设置警告阈值
-chunkSizeWarningLimit: 500   // 500KB（默认）
-chunkSizeWarningLimit: 1000  // 1MB
-chunkSizeWarningLimit: 2000  // 2MB
-
-// 禁用警告
-chunkSizeWarningLimit: 0
+build: {
+  chunkSizeWarningLimit: 1000   // 提高到 1000 kB 再触发警告
+}
 ```
+
+> 💡 **提示：** 调大阈值只是隐藏警告，更好的做法是通过 `manualChunks` 或动态导入把大 chunk 拆小。
 
 ### watch
 
-**类型**：`boolean | null | WatcherOptions`
+**类型**：`object | null`
 
-**默认值**：`false`
+**默认值**：`null`
 
-是否启用监听模式（构建时监听文件变化并重新构建）。
+构建监听模式，文件变化后自动重新构建，适合「边改边构建产物」的集成场景。设为 `{}` 启用并使用默认监听选项；也可通过 CLI 的 `vite build --watch` 开启。
 
 ```javascript
-// 禁用（默认）
-watch: false
-
-// 启用（使用默认配置）
-watch: true
-
-// 禁用（与 false 相同）
-watch: null
-
-// 详细配置
-watch: {
-  buildDelay: 1000,        // 重建延迟（毫秒）
-  // 其他 chokidar 选项
-  ignoreInitial: true,
-  persistent: true
+build: {
+  watch: {
+    buildDelay: 100   // 变化触发重建的防抖延迟（毫秒）
+    // 其余为 Rollup 的 WatchOptions（基于 chokidar）
+  }
 }
 ```
 
@@ -1405,25 +781,19 @@ watch: {
 
 **类型**：`CommonJSOptions`
 
-CommonJS 转 ESM 的转换选项。
+**默认值**：`{ include: [/node_modules/], extensions: ['.js', '.cjs'] }`
+
+传递给 `@rollup/plugin-commonjs` 的选项，用于把 CommonJS 依赖转换为 ESM。
 
 ```javascript
-commonjsOptions: {
-  // 包含的文件
-  include: [/node_modules/],
-  // 排除的文件
-  exclude: [/node_modules\/lodash-es/],
-
-  // 扩展名
-  extensions: ['.js', '.cjs'],
-
-  // 其他选项
-  ignoreTryCatch: false,
-  ignoreGlobal: false,
-  requireReturnsDefault: 'preferred',
-
-  // ESMinify 选项
-  esmExternals: false
+build: {
+  commonjsOptions: {
+    include: [/node_modules/],             // 默认只处理 node_modules
+    exclude: [/node_modules\/some-pkg/],   // 排除特定包
+    extensions: ['.js', '.cjs'],           // 默认处理的扩展名
+    requireReturnsDefault: 'auto',         // require 一个 ESM 模块时的返回策略
+    esmExternals: true                     // ESM 形式的外部依赖处理方式
+  }
 }
 ```
 
@@ -1431,15 +801,16 @@ commonjsOptions: {
 
 **类型**：`DynamicImportVarsOptions`
 
-动态导入变量选项。
+**默认值**：`{ warnOnError: false, exclude: [] }`
+
+传递给 `@rollup/plugin-dynamic-import-vars` 的选项，处理 `import(变量表达式)` 这类动态导入。
 
 ```javascript
-dynamicImportVarsOptions: {
-  // 出错时是否警告
-  warnOnError: true,
-
-  // 排除的文件
-  exclude: [/node_modules\/@babel\//]
+build: {
+  dynamicImportVarsOptions: {
+    warnOnError: true,                     // 解析失败时输出警告而不是静默忽略
+    exclude: [/node_modules/]              // 排除不需要处理的路径
+  }
 }
 ```
 
@@ -1449,48 +820,47 @@ dynamicImportVarsOptions: {
 
 **默认值**：`false`
 
-库模式配置，用于构建可复用的库。
+库模式配置。设置后 Vite 以「发布一个库」为目标构建：入口不再要求是 `index.html`，产物按 `formats` 输出多种模块格式。
 
 ```javascript
-// 基本配置
-lib: {
-  entry: 'src/main.js',
-  name: 'MyLib',
-  fileName: 'my-lib',
-  formats: ['es', 'umd']
-}
-
-// 多入口
-lib: {
-  entry: {
-    main: 'src/main.js',
-    utils: 'src/utils.js'
+build: {
+  lib: {
+    // 入口：字符串、字符串数组或对象（多入口）
+    entry: 'src/index.js',
+    // UMD / IIFE 格式的全局变量名，仅输出 es/cjs 时可省略
+    name: 'MyLib',
+    // 产物文件名，默认取 name；字符串或 (format) => string
+    fileName: 'my-lib',
+    // 输出格式，默认 ['es', 'umd']（未设置 name 时默认 ['es']）
+    formats: ['es', 'umd']
   },
-  name: 'MyLib'
+  // 库的使用者自己安装依赖，因此外部化 peer 依赖
+  rollupOptions: {
+    external: ['vue'],
+    output: {
+      globals: {
+        vue: 'Vue'
+      }
+    }
+  }
 }
-
-// fileName 使用函数
-lib: {
-  entry: 'src/index.js',
-  name: 'MyComponentLib',
-  fileName: (format) => {
-    if (format === 'es') return 'my-lib.esm.js'
-    if (format === 'umd') return 'my-lib.umd.js'
-    return `my-lib.${format}.js`
-  },
-  formats: ['es', 'umd', 'cjs']
-}
-
-// 支持的格式
-formats: ['es']      // ES Module
-formats: ['cjs']     // CommonJS
-formats: ['umd']     // UMD
-formats: ['iife']    // 立即执行函数
-formats: ['es', 'cjs', 'umd']  // 多种格式
-
-// 禁用库模式
-lib: false
 ```
+
+```javascript
+// 多入口 + 自定义文件名
+build: {
+  lib: {
+    entry: {
+      main: 'src/index.js',
+      utils: 'src/utils.js'
+    },
+    name: 'MyLib',
+    fileName: (format) => `my-lib.${format}.js`   // 如 my-lib.es.js、my-lib.umd.js
+  }
+}
+```
+
+> ⚠️ **注意：** 库模式下 `index.html` 不参与构建；`lib.name` 在输出 `umd` / `iife` 格式时必须提供；CSS 默认聚合为单个文件随包发布。
 
 ### ssrEmitAssets
 
@@ -1498,38 +868,39 @@ lib: false
 
 **默认值**：`false`
 
-SSR 构建时是否输出静态资源（CSS、图片等）。
+SSR 构建时是否也输出 CSS、图片等静态资源文件。默认关闭是因为这些资源通常会由客户端构建产出，SSR 侧不需要重复输出；使用自定义 SSR 框架时按需开启。
 
 ```javascript
-ssrEmitAssets: true   // 输出静态资源
-ssrEmitAssets: false  // 仅输出 JS（默认）
+build: {
+  ssrEmitAssets: true   // SSR 构建也输出静态资源
+}
 ```
 
 ## 定义类型
 
 ```typescript
-{
+interface BuildOptions {
   target?: string | string[] | false
-  modulePreload?: boolean | { polyfill?: boolean }
-  polyfillModulePreload?: boolean
+  modulePreload?: boolean | { polyfill?: boolean, resolveDependencies?: Function }
+  polyfillModulePreload?: boolean          // 已废弃，改用 modulePreload.polyfill
   outDir?: string
   assetsDir?: string
-  assetsInlineLimit?: number
+  assetsInlineLimit?: number | ((filePath: string, content: Buffer) => boolean | undefined)
   cssCodeSplit?: boolean
   cssTarget?: string | string[]
   cssMinify?: boolean | 'esbuild' | 'lightningcss'
   sourcemap?: boolean | 'inline' | 'hidden'
   rollupOptions?: RollupOptions
   minify?: boolean | 'esbuild' | 'terser'
-  terserOptions?: TerserOptions
+  terserOptions?: EsbuildTerserOptions
   write?: boolean
-  emptyOutDir?: boolean | (() => boolean)
+  emptyOutDir?: boolean
   copyPublicDir?: boolean
   manifest?: boolean | string
   ssrManifest?: boolean | string
   reportCompressedSize?: boolean
   chunkSizeWarningLimit?: number
-  watch?: boolean | null
+  watch?: object | null
   commonjsOptions?: CommonJSOptions
   dynamicImportVarsOptions?: DynamicImportVarsOptions
   lib?: false | LibraryOptions
@@ -1537,151 +908,111 @@ ssrEmitAssets: false  // 仅输出 JS（默认）
 }
 ```
 
-**默认值**：
+**默认值对照：**
 
 ```javascript
 {
-  target: 'modules',
-  modulePreload: true,
-  polyfillModulePreload: true,
+  target: 'baseline-widely-available',   // Vite 7 起；旧版为 'modules'
+  modulePreload: { polyfill: true },
   outDir: 'dist',
   assetsDir: 'assets',
   assetsInlineLimit: 4096,
   cssCodeSplit: true,
-  cssTarget: undefined,
-  cssMinify: true,
+  cssTarget: undefined,                  // 实际取 build.target 的值
+  cssMinify: true,                       // 使用 esbuild
   sourcemap: false,
   rollupOptions: {},
   minify: 'esbuild',
-  terserOptions: {},
+  terserOptions: undefined,
   write: true,
-  emptyOutDir: undefined,
+  emptyOutDir: undefined,                // outDir 在 root 内时视为 true
   copyPublicDir: true,
   manifest: false,
   ssrManifest: false,
   reportCompressedSize: true,
-  chunkSizeWarningLimit: 500,
-  watch: false,
-  commonjsOptions: {},
-  dynamicImportVarsOptions: {},
+  chunkSizeWarningLimit: 500,            // 单位 kB
+  watch: null,
+  commonjsOptions: { include: [/node_modules/], extensions: ['.js', '.cjs'] },
+  dynamicImportVarsOptions: { warnOnError: false, exclude: [] },
   lib: false,
   ssrEmitAssets: false
 }
 ```
 
-## 作用
+## 作用与使用场景
 
-- 控制生产构建的输出
-- 优化打包产物
-- 配置代码分割策略
-- 生成 sourcemap 用于调试
-
-## 使用场景
-
-1. **库开发**：使用 `lib` 模式构建库
-2. **性能优化**：配置代码分割和 chunk 大小
-3. **调试**：生成 sourcemap
-4. **CDN 部署**：配置资源文件名和路径
-
-## 注意事项
-
-- `rollupOptions` 直接修改底层 Rollup 配置，需要了解 Rollup API
-- `minify: 'terser'` 需要额外安装 `terser`：`npm add -D terser`
-- `cssMinify: 'lightningcss'` 需要安装 `lightningcss`
-- 库模式下 `index.html` 不会被处理
-- `target` 的值会影响 `cssTarget` 的默认值
-
-## 与其他属性的关系
-
-| 属性 | 关系说明 |
-|------|----------|
-| `publicDir` | `copyPublicDir` 控制 public 内容是否复制 |
-| `base` | 影响 `rollupOptions.output.assetFileNames` 路径 |
-| `css` | CSS 相关配置优先于 `build` 中的 CSS 配置 |
-| `mode` | 根据模式可以配置不同的构建选项 |
+- **产出可部署的静态产物**：转译到指定 `target`、压缩、按 `outDir` / `assetsDir` 组织输出。
+- **性能优化**：通过 `rollupOptions.output.manualChunks` 与动态导入控制分包，用 `chunkSizeWarningLimit` 监控大 chunk。
+- **问题排查**：开启 `sourcemap` 把线上报错映射回源码。
+- **库开发**：`lib` 模式输出多格式产物，配合 `rollupOptions.external` / `globals` 处理依赖。
+- **与部署环境协作**：`manifest` 供后端或 CDN 系统查找哈希产物；`emptyOutDir` / `copyPublicDir` 控制输出目录行为。
 
 ## 示例
 
+### 应用构建完整配置
+
 ```javascript
-// 应用构建配置 - 完整版
-export default {
+// vite.config.js
+import { defineConfig } from 'vite'
+
+export default defineConfig({
   build: {
-    // 输出配置
+    // 输出
     outDir: 'dist',
     assetsDir: 'static',
     emptyOutDir: true,
-    copyPublicDir: true,
 
-    // 目标配置
-    target: 'es2015',
-
-    // SourceMap
-    sourcemap: false,
-
-    // 压缩配置
+    // 目标与压缩
+    target: 'es2020',
     minify: 'terser',
     terserOptions: {
       compress: {
         drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info']
+        drop_debugger: true
       }
     },
 
-    // 代码分割
+    // 产物命名与分包
     rollupOptions: {
       output: {
-        // 文件命名
         chunkFileNames: 'static/js/[name]-[hash:8].js',
         entryFileNames: 'static/js/[name]-[hash:8].js',
-        assetFileNames: 'static/[ext]/[name]-[hash:8].[ext]',
-
-        // 手动分割
-        manualChunks: (id) => {
-          // node_modules 打包成 vendor
+        assetFileNames: 'static/[ext]/[name]-[hash:8][extname]',
+        manualChunks(id) {
+          if (/node_modules\/(vue|@vue|vue-router|pinia)\//.test(id)) {
+            return 'vue-vendor'
+          }
           if (id.includes('node_modules')) {
             return 'vendor'
           }
-          // 组件单独打包
-          if (id.includes('src/components')) {
-            return 'components'
-          }
-        },
-
-        // 或对象形式的 manualChunks
-        manualChunks: {
-          vendor: ['vue', 'vue-router', 'pinia'],
-          ui: ['element-plus'],
-          utils: ['lodash-es', 'axios']
         }
       }
     },
 
-    // Chunk 大小
+    // 体积与调试
     chunkSizeWarningLimit: 1000,
-
-    // 是否生成 manifest
-    manifest: 'manifest.json',
-
-    // 是否报告压缩大小
+    sourcemap: false,
     reportCompressedSize: false
   }
-}
+})
+```
 
-// 库构建配置
-export default {
+### 库构建配置
+
+```javascript
+// vite.config.js
+import { defineConfig } from 'vite'
+
+export default defineConfig({
   build: {
     lib: {
       entry: 'src/index.js',
       name: 'MyComponentLib',
-      fileName: (format) => {
-        const ext = format === 'es' ? 'mjs' : 'js'
-        return `my-lib.${format}.${ext}`
-      },
+      fileName: (format) => `my-lib.${format}.js`,
       formats: ['es', 'umd']
     },
     rollupOptions: {
-      // 外部依赖不打包
+      // 依赖由使用者提供，不打包进库
       external: ['vue', 'vue-router'],
       output: {
         globals: {
@@ -1690,26 +1021,46 @@ export default {
         }
       }
     },
-    // 库通常不需要压缩，由使用者处理
+    // 库产物一般不压缩，交给使用方按需处理
     minify: false
   }
-}
+})
+```
 
-// 开发环境配置
+### 按模式区分构建行为
+
+```javascript
+// vite.config.js
+import { defineConfig } from 'vite'
+
 export default defineConfig(({ mode }) => {
-  const isDev = mode === 'development'
+  const isProd = mode === 'production'
 
   return {
     build: {
-      // 开发环境生成 sourcemap
-      sourcemap: isDev,
-
-      // 开发环境不压缩
-      minify: isDev ? false : 'terser',
-
-      // 开发环境更详细的 chunk 信息
-      chunkSizeWarningLimit: isDev ? 100 : 500
+      // 生产不压缩产物？仅在灰度排查时临时使用
+      minify: isProd ? 'esbuild' : false,
+      sourcemap: !isProd,
+      chunkSizeWarningLimit: isProd ? 500 : 2000
     }
   }
 })
 ```
+
+## 注意事项
+
+- `rollupOptions` 直接操作底层 Rollup，改动 `output` 相关默认值可能影响 HTML 引用与分包行为，修改前先确认影响面。
+- `minify: 'terser'` 与 `cssMinify: 'lightningcss'` 都需要额外安装对应依赖：`npm add -D terser` / `npm add -D lightningcss`。
+- `emptyOutDir` 在 `outDir` 位于 `root` 外时默认为 `false`，避免误删目录外文件。
+- 库模式下 `index.html` 不参与构建，CSS 会聚合为单文件。
+- `build.target` 的取值决定 `cssTarget` 的默认值；`target: false` 时不做语法转译，兼容性自行负责。
+- 生产构建只在 `vite build` 时生效，`vite`（dev server）行为不受本节选项影响。
+
+## 与其他配置的关系
+
+| 配置 | 关系说明 |
+|------|----------|
+| `publicDir` | 是否复制由 `build.copyPublicDir` 控制，文件本身不经构建管线处理 |
+| `base` | 决定产物中资源引用的 URL 前缀，与 `assetFileNames` 的相对路径叠加 |
+| `css.*` | `css.preprocessorOptions` 等控制预处理行为，构建期同样生效；压缩由 `build.cssMinify` 控制 |
+| `mode` | 通过 `defineConfig(({ mode }) => ...)` 按模式返回不同的 `build` 配置 |

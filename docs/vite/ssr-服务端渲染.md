@@ -1,5 +1,9 @@
 # ssr 配置
 
+> 📖 [官方文档：SSR Options](https://cn.vitejs.dev/config/ssr-options.html)
+>
+> 📖 [官方文档：SSR 服务端渲染指南](https://cn.vitejs.dev/guide/ssr.html)
+
 ## 定义
 
 `ssr` 配置服务端渲染（SSR）相关选项，控制 SSR 构建的行为和依赖处理方式。
@@ -10,11 +14,11 @@
 {
   noExternal?: string | RegExp | (string | RegExp)[] | true
   external?: string[] | true
-  target?: 'node' | 'webworker'
-  optimizeDeps?: {}   // SSR 场景的依赖优化配置（实验性）
+  target?: string                      // SSR 构建目标，默认 'node'
+  optimizeDeps?: OptimizeDepsOptions   // SSR 依赖预构建（实验性），仅部分字段生效
   resolve?: {
-    conditions?: string[]
-    externalConditions?: string[]
+    conditions?: string[]              // SSR 解析导入时追加的条件
+    externalConditions?: string[]      // 解析外部化依赖时使用的条件
   }
 }
 ```
@@ -23,8 +27,8 @@
 
 ```javascript
 {
-  noExternal: undefined,
-  external: undefined,
+  noExternal: undefined,  // 默认只有 linked 依赖（file: 协议、workspace 符号链接）被打包
+  external: undefined,    // 默认 node_modules 中的依赖全部外部化（不打包）
   target: 'node'
 }
 ```
@@ -37,50 +41,111 @@
 
 **默认值**：`undefined`
 
-强制将依赖进行 SSR 打包（即不外部化，打进产物）。
+在 SSR 构建中阻止依赖被外部化，即强制打包进产物。设为 `true` 表示打包全部依赖（包括 linked 依赖）。
 
 ```javascript
-// 字符串数组
-noExternal: ['vue', 'vue-router'],
+// vite.config.js
+export default {
+  ssr: {
+    // 字符串数组：按包名匹配，强制打包
+    noExternal: ['vue', 'vue-router'],
 
-// 全部打包
-noExternal: true,
+    // 也可以用正则，例如打包 @scope 下所有包：
+    // noExternal: /^@scope\/.*/
 
-// 正则匹配
-noExternal: /^@scope\/.*/
+    // 或设为 true，打包全部依赖（包括 linked 依赖）：
+    // noExternal: true
+  }
+}
 ```
+
+> ⚠️ **注意：** 同一个包同时命中 `noExternal` 与 `external` 时，`noExternal` 优先级更高。
 
 ### external
 
 **类型**：`string[] | true`
 
-**默认值**：`undefined`（自动外部化——linked 依赖/Node 内置模块默认外部化）
+**默认值**：`undefined`（默认行为：`node_modules` 中的依赖全部外部化，linked 依赖被打包）
 
-强制将依赖标记为外部依赖（不打包）。
+强制将依赖外部化（跳过打包），运行时由 Node 从 `node_modules` 原生加载。设为 `true` 表示外部化所有依赖（包括 linked 依赖）。
 
 ```javascript
-external: ['koa', 'express', 'pg']
+// vite.config.js
+export default {
+  ssr: {
+    // 服务端专用库无需 Vite 转换，保持外部化可加快构建
+    external: ['koa', 'express', 'pg']
+  }
+}
 ```
+
+> 💡 **提示：** 外部化依赖在开发时通过 Node 原生 `import`/`require` 加载，不经过 Vite 转换管线，因此修改这些包的代码不会触发热更新。需要即时调试时改用 `noExternal` 打包。
 
 ### target
 
-**类型**：`'node' | 'webworker'`
+**类型**：`string`（常用 `'node'` | `'webworker'`）
 
 **默认值**：`'node'`
 
 SSR 构建目标环境。
 
 ```javascript
-// Node.js 环境（默认）
-target: 'node',
-
-// Web Worker 环境
-target: 'webworker'
+// vite.config.js
+export default {
+  ssr: {
+    // Node.js 环境（默认）
+    target: 'node'
+  }
+}
 ```
 
-### 关于 ssrLoadModule
+```javascript
+// vite.config.js
+export default {
+  ssr: {
+    // Web Worker 运行时（如 Cloudflare Workers）
+    target: 'webworker'
+  }
+}
+```
 
-> ⚠️ **注意**：`ssrLoadModule` **不是** `ssr` 配置项，而是开发服务器（`ViteDevServer`）实例上的**方法**，用于在 Node 环境中按需加载 SSR 模块：
+### resolve.conditions
+
+**类型**：`string[]`
+
+**默认值**：`[]`
+
+在 SSR 解析导入时额外生效的解析条件，只影响 SSR 构建，不影响客户端构建。
+
+```javascript
+// vite.config.js
+export default {
+  ssr: {
+    resolve: {
+      // 让包优先命中 package.json exports 中带 "production" 条件的导出
+      conditions: ['production']
+    }
+  }
+}
+```
+
+### resolve.externalConditions
+
+**类型**：`string[]`
+
+**默认值**：`['node']`
+
+加载与解析外部化依赖时使用的条件：开发时 Node 原生导入、构建时解析包导出都会参考它。
+
+### optimizeDeps
+
+**类型**：`OptimizeDepsOptions`（实验性）
+
+为 SSR 场景单独配置依赖预构建（如 `include`、`esbuildOptions`），与顶层的 `optimizeDeps` 相互独立。
+
+### ssrLoadModule（不是 ssr 配置项）
+
+> ⚠️ **注意：** `ssrLoadModule` 不是 `ssr` 配置项，而是开发服务器（`ViteDevServer`）实例上的**方法**，用于在 Node 环境中按需加载并执行 SSR 模块：
 
 ```javascript
 // server.js（自定义 SSR 服务器）
@@ -99,6 +164,8 @@ const { render } = await vite.ssrLoadModule('/src/entry-server.js')
 // const { render } = await import('./dist/server/entry-server.js')
 ```
 
+Vite 内部会缓存已执行的 SSR 模块，并随 HMR 自动失效，无需自己再封装缓存。生产环境则直接 `import` 构建产物。
+
 ## 可选值与使用方式
 
 ### 默认配置
@@ -115,9 +182,10 @@ export default {
 ### 强制打包所有依赖
 
 ```javascript
+// vite.config.js
 export default {
   ssr: {
-    noExternal: true  // 打包所有依赖
+    noExternal: true
   }
 }
 ```
@@ -125,6 +193,7 @@ export default {
 ### 指定打包的依赖
 
 ```javascript
+// vite.config.js
 export default {
   ssr: {
     noExternal: ['vue', 'vue-router', 'pinia']
@@ -135,6 +204,7 @@ export default {
 ### 指定外部依赖
 
 ```javascript
+// vite.config.js
 export default {
   ssr: {
     external: ['express', 'koa', 'pg', 'redis']
@@ -145,6 +215,7 @@ export default {
 ### Web Worker SSR
 
 ```javascript
+// vite.config.js
 export default {
   ssr: {
     target: 'webworker'
@@ -152,41 +223,22 @@ export default {
 }
 ```
 
-### 自定义模块加载
-
-如需自定义 SSR 模块加载，请在服务器侧直接调用 `vite.ssrLoadModule()` 方法（见上文说明），或使用 `createViteRuntime` 等高级 API，而不是通过 `ssr` 配置项。
-
 ## 生效后的结果示例
 
-### Nuxt/Astro 应用
+### 典型产物布局
 
 ```javascript
 // vite.config.js
 export default {
   ssr: {
-    // Vue 生态系统通常需要打包
-    noExternal: ['vue', '@vue/', 'vue-router']
-  }
-}
-```
-
-```bash
-# SSR 构建命令
-vite build --ssr src/entry-server.js
-```
-
-### Node.js 服务
-
-```javascript
-// vite.config.js
-export default {
-  ssr: {
-    // 框架依赖打包，服务端库外置
+    // 框架依赖打包，服务端库外部化
     noExternal: ['vue', 'vue-router'],
     external: ['express', 'mongodb']
   }
 }
 ```
+
+典型手动 SSR 项目的产物布局（具体路径取决于各次构建的 `outDir` 与入口配置）：
 
 ```
 dist/
@@ -202,11 +254,15 @@ dist/
 // vite.config.js
 export default {
   ssr: {
-    // 匹配 @my-scope 下所有包（支持正则）
+    // 打包 @my-scope 下所有包
     noExternal: /^@my-scope\/.*/
   }
 }
 ```
+
+### 框架托管的 SSR
+
+Nuxt、Astro 等框架已内置并自动管理 SSR 相关配置（依赖外部化、入口产物等），一般不需要手动设置 `ssr` 选项。
 
 ## 使用场景
 
@@ -216,7 +272,8 @@ export default {
 // vite.config.js
 export default {
   ssr: {
-    noExternal: ['vue', '@vue/', 'vue-router', 'pinia']
+    // Vue 生态包打包进 SSR 产物：统一模块实例，并让代码走 Vite 转换管线
+    noExternal: ['vue', 'vue-router', 'pinia']
   }
 }
 ```
@@ -227,95 +284,99 @@ export default {
 // vite.config.js
 export default {
   ssr: {
-    noExternal: ['react', 'react-dom'],
+    // 框架依赖打包，服务端库外部化
+    noExternal: ['vue', 'vue-router'],
     external: ['express', 'compression']
-  }
-}
-```
-
-### 3. Monorepo SSR
-
-```javascript
-// vite.config.js
-export default {
-  ssr: {
-    // 打包内部包，外部化 npm 包
-    noExternal: /^@my-app\//,
-    external: ['express', 'lodash']
-  }
-}
-```
-
-### 4. 开发时快速重新加载
-
-```javascript
-// vite.config.js
-export default {
-  ssr: {
-    // 开发时打包，生产时外部化
-    noExternal: process.env.NODE_ENV === 'development' ? ['vue'] : []
   }
 }
 ```
 
 ## 注意事项
 
-### 1. noExternal 与 external 互斥
+### 1. noExternal 与 external 的优先级
+
+两者并不互斥，但不要给同一个包同时配置（可读性差）。若同时命中，`noExternal` 优先：
 
 ```javascript
-// 同一个依赖不能同时配置
-// ❌ 错误
-ssr: {
-  noExternal: ['express'],
-  external: ['express']
-}
-
-// ✅ 正确：二选一
-ssr: {
-  external: ['express']  // 不打包 express
+// vite.config.js
+export default {
+  ssr: {
+    // express 同时命中两者，noExternal 优先 → express 会被打包
+    noExternal: ['express'],
+    external: ['express']
+  }
 }
 ```
 
-### 2. ESM 与 CJS 依赖
+```javascript
+// ✅ 推荐：每个包只在一处声明
+export default {
+  ssr: {
+    external: ['express']  // express 保持外部化
+  }
+}
+```
+
+### 2. 外部化依赖不经过 Vite 转换
+
+外部化依赖由 Node 原生加载，ESM-only 包需要运行环境支持原生 ESM；遇到加载报错时改用 `noExternal` 打包：
 
 ```javascript
-// ESM 依赖默认会外部化
-// 需要打包时使用 noExternal
-ssr: {
-  noExternal: ['some-esm-package']
+// vite.config.js
+export default {
+  ssr: {
+    noExternal: ['some-esm-package']
+  }
 }
 ```
 
 ### 3. 目标环境差异
 
 ```javascript
-// Node.js 环境（默认）——Node 内置模块（fs、path 等）自动被外部化，无需手动配置
-ssr: {
-  target: 'node'
+// vite.config.js
+export default {
+  ssr: {
+    // Node.js（默认）：依赖默认外部化，Node 内置模块（fs、path 等）始终外部化，无需手动配置
+    target: 'node'
+  }
 }
+```
 
-// Web Worker 环境（如 Cloudflare Workers）——依赖会被打包进产物而非外部化
-ssr: {
-  target: 'webworker'
+```javascript
+// vite.config.js
+export default {
+  ssr: {
+    // Web Worker 运行时（如 Cloudflare Workers）：没有 Node 运行时与内置模块，
+    // 通常配合 noExternal: true 将依赖全部打进产物
+    target: 'webworker',
+    noExternal: true
+  }
 }
 ```
 
 ### 4. CSS 处理
 
-SSR 构建不处理 CSS（由框架处理）：
+SSR 构建会跳过 CSS（及其它资源）的处理，样式需要在框架/服务端层面组织：
 
 ```javascript
-// Vite SSR 构建会忽略 CSS
-// CSS 需要在框架层面处理
+// vite.config.js
+export default {
+  build: {
+    // 生成 SSR 清单：记录客户端产物中样式、预加载与资源链接的映射，
+    // 供服务端在 hydration 前注入对应标签
+    ssrManifest: true
+  }
+}
 ```
 
 ## 与其他属性的关系
 
 | 属性 | 关系说明 |
 |------|----------|
-| `optimizeDeps.disabled` | SSR 构建时通常禁用依赖预构建 |
-| `build.ssr` | 是否生成 SSR 构建产物 |
-| `build.ssrManifest` | 生成 CSS 资源清单 |
+| `build.ssr` | 指定 SSR 构建入口（也可用 CLI `--ssr` 指定） |
+| `build.ssrManifest` | 生成收集样式、预加载与资源链接的 SSR 清单 |
+| `optimizeDeps` | 顶层预构建配置；SSR 场景由 `ssr.optimizeDeps` 单独控制（实验性） |
+| `resolve.conditions` | 客户端与公共解析条件；SSR 专用条件用 `ssr.resolve.conditions` |
 
 ## 完整示例
 
@@ -331,11 +392,11 @@ export default defineConfig({
 
   ssr: {
     // 打包 Vue 生态
-    noExternal: ['vue', '@vue/', 'vue-router', 'pinia']
+    noExternal: ['vue', 'vue-router', 'pinia']
   },
 
   build: {
-    // 生成 CSS 资源清单（供 hydration 时加载客户端资源）
+    // 生成 SSR 清单，供服务端注入客户端样式与资源链接
     ssrManifest: true
   }
 })
@@ -349,25 +410,23 @@ vite build
 vite build --ssr src/entry-server.js
 ```
 
-### 全栈应用
+### 开发/生产不同配置
 
 ```javascript
 // vite.config.js
-export default defineConfig({
-  ssr: {
-    // 框架打包
-    noExternal: ['react', 'react-dom', 'react-router-dom'],
+import { defineConfig } from 'vite'
 
-    // 服务端库外部化
-    external: [
-      'express',
-      'compression',
-      'mongoose',
-      'jsonwebtoken',
-      'nodemailer'
-    ],
+export default defineConfig(({ mode }) => {
+  const isDev = mode === 'development'
 
-    target: 'node'
+  return {
+    ssr: {
+      // 开发时打包更多依赖：获得 Vite 转换与热更新，便于调试
+      noExternal: isDev ? ['vue', 'vue-router', 'pinia'] : [],
+
+      // 生产时外部化服务端库：产物更小、构建更快
+      external: isDev ? [] : ['express', 'compression']
+    }
   }
 })
 ```
@@ -376,115 +435,52 @@ export default defineConfig({
 
 ```javascript
 // packages/app/vite.config.js
+import { defineConfig } from 'vite'
+
 export default defineConfig({
   ssr: {
-    // 打包内部包
+    // workspace 内部包是 linked 依赖，默认就会被打包，这里显式声明更清晰
     noExternal: /^@my-monorepo\//,
 
     // 外部化第三方服务包
-    external: ['express', 'microservice-client']
+    external: ['express']
   }
 })
-```
-
-### 开发/生产不同配置
-
-```javascript
-// vite.config.js
-export default defineConfig(({ mode }) => {
-  const isDev = mode === 'development'
-
-  return {
-    ssr: {
-      // 开发时打包更多依赖便于调试
-      noExternal: isDev
-        ? ['vue', '@vue/', 'vue-router', 'pinia']
-        : ['vue', '@vue/'],
-
-      // 生产时外部化更多依赖
-      external: isDev
-        ? []
-        : ['express', 'compression']
-    }
-  }
-})
-```
-
-### 自定义 SSR 加载器（带缓存）
-
-在服务器代码中使用 `vite.ssrLoadModule()` 并自行封装缓存：
-
-```javascript
-// server.js
-import { createServer as createViteServer } from 'vite'
-
-const vite = await createViteServer({
-  server: { middlewareMode: true },
-  appType: 'custom'
-})
-
-// 带缓存的模块加载
-const cache = new Map()
-
-async function loadSsrModule(url) {
-  if (cache.has(url)) {
-    return cache.get(url)
-  }
-  const module = await vite.ssrLoadModule(url)
-  cache.set(url, module)
-  return module
-}
-
-const { render } = await loadSsrModule('/src/entry-server.js')
 ```
 
 ## 常见问题
 
 ### 问题 1：SSR 构建后模块找不到
 
-**原因**：依赖被外部化但运行时不可用
+**原因**：依赖被外部化，但运行环境中不存在该包（例如 linked 的内部包被手动 external）。
 
 ```javascript
-// ❌ 错误配置
+// ❌ 错误：包不在 node_modules 中，原生加载时找不到
 ssr: {
-  external: ['some-custom-lib']  // 该库不在 node_modules 中
-}
-
-// ✅ 正确配置
-ssr: {
-  noExternal: ['some-custom-lib']  // 打包进去
+  external: ['some-custom-lib']
 }
 ```
 
-### 问题 2：ESM 依赖报错
+```javascript
+// ✅ 正确：打包进产物
+ssr: {
+  noExternal: ['some-custom-lib']
+}
+```
 
-**原因**：ESM 依赖默认被外部化
+### 问题 2：ESM 依赖加载报错
+
+**原因**：外部化依赖由 Node 原生加载，ESM-only 包在 CJS 环境下无法被 `require`。
 
 ```javascript
-// ❌ 报错：Cannot find module
-// ✅ 解决：打包 ESM 依赖
+// ✅ 解决：打包该依赖，由 Rollup 完成 ESM/CJS 互操作
 ssr: {
   noExternal: ['some-esm-package']
 }
 ```
 
-### 问题 3：CSS 未加载
+### 问题 3：样式未加载
 
-**原因**：SSR 构建不处理 CSS
+**原因**：SSR 构建跳过 CSS 处理，服务端不知道客户端产物里有哪些样式文件。
 
-**解决**：使用框架的 SSR 处理或构建清单
-
-```javascript
-export default {
-  build: {
-    // 生成资源清单（记录客户端构建的 JS/CSS 产物映射，供 SSR 框架注入 <link>/<script>）
-    ssrManifest: true
-  }
-}
-```
-
-## 官方文档
-
-[SSR Config: ssr - Vite 官方文档](https://cn.vitejs.dev/config/ssr-options.html)
-
-[SSR: Source Maps - Vite 官方文档](https://cn.vitejs.dev/guide/ssr.html)
+**解决**：开启 `build.ssrManifest` 生成清单，由服务端在 HTML 中注入样式链接（见上文「CSS 处理」）。

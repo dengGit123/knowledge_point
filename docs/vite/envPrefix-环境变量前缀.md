@@ -1,8 +1,10 @@
 # envPrefix 配置
 
+> 📖 [官方文档：Shared Options · envPrefix](https://cn.vitejs.dev/config/shared-options.html#envprefix)
+
 ## 定义
 
-`envPrefix` 指定暴露给客户端的环境变量前缀，只有以该前缀开头的环境变量才能通过 `import.meta.env` 访问。
+`envPrefix` 指定暴露给客户端的环境变量前缀：只有以该前缀开头的变量，才会通过 `import.meta.env` 暴露给客户端代码。
 
 **类型**：`string | string[]`
 
@@ -13,130 +15,127 @@
 ### 1. 单个前缀
 
 ```javascript
-// 默认值
-export default {
-  envPrefix: 'VITE_'
-}
+// vite.config.js
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  envPrefix: 'VITE_' // 默认值，可省略
+})
 
 // 自定义前缀
-export default {
+export default defineConfig({
   envPrefix: 'APP_'
-}
-
-// 使用 public 前缀
-export default {
-  envPrefix: 'PUBLIC_'
-}
+})
 ```
 
 ### 2. 多个前缀
 
-```javascript
-// 数组形式 - 支持多个前缀
-export default {
-  envPrefix: ['VITE_', 'APP_']
-}
+数组形式可同时启用多个前缀：
 
-// 更多前缀
-export default {
+```javascript
+// vite.config.js
+export default defineConfig({
   envPrefix: ['VITE_', 'PUBLIC_', 'CLIENT_']
-}
+})
 ```
 
-### 3. 空字符串（不推荐）
+### 3. 空字符串（禁止）
 
 ```javascript
-// 暴露所有环境变量（安全隐患）
-export default {
-  envPrefix: ''
-}
+// vite.config.js
+export default defineConfig({
+  envPrefix: '' // ❌ 危险！
+})
+```
+
+> ⚠️ **注意：** 官方文档明确警告不要把 `envPrefix` 设为空字符串——它会暴露**所有**环境变量，把数据库密码、私钥等敏感信息一起打进客户端产物，Vite 检测到空字符串时会直接报错拦截。如果确实需要暴露一个无前缀变量，官方推荐改用 `define` 配置项注入全局常量（构建期静态文本替换，与 `envPrefix` 的前缀机制无关）：
+
+```javascript
+// vite.config.js
+export default defineConfig({
+  define: {
+    APP_VERSION: JSON.stringify('1.0.0')
+  }
+})
 ```
 
 ## 生效后的结果示例
 
-### 默认配置
-
-```javascript
-// vite.config.js
-export default {
-  envPrefix: 'VITE_'  // 默认值
-}
-```
+### 默认配置（`VITE_`）
 
 ```bash
 # .env
-VITE_API_URL=https://api.example.com     ✅ 可访问
-VITE_APP_TITLE=My App                    ✅ 可访问
-DATABASE_URL=postgresql://...            ❌ 不可访问
-SECRET_KEY=abc123                        ❌ 不可访问
+VITE_API_URL=https://api.example.com     # ✅ 以 VITE_ 开头，可访问
+VITE_APP_TITLE=My App                    # ✅ 可访问
+DATABASE_URL=postgresql://...            # ❌ 无前缀，不可访问
+SECRET_KEY=abc123                        # ❌ 不可访问
+```
+
+```javascript
+// src/main.js
+console.log(import.meta.env.VITE_API_URL) // → "https://api.example.com"
+console.log(import.meta.env.SECRET_KEY)   // → undefined
 ```
 
 ### 自定义前缀
 
 ```javascript
 // vite.config.js
-export default {
+export default defineConfig({
   envPrefix: 'APP_'
-}
+})
 ```
 
 ```bash
 # .env
-APP_API_URL=https://api.example.com     ✅ 可访问
-APP_VERSION=1.0.0                        ✅ 可访问
-VITE_API_URL=https://api.example.com    ❌ 不可访问（前缀不匹配）
+APP_API_URL=https://api.example.com      # ✅ 前缀匹配，可访问
+APP_VERSION=1.0.0                        # ✅ 可访问
+VITE_API_URL=https://api.example.com     # ❌ 前缀不再是 VITE_，不可访问
 ```
 
-### 多前缀配置
+### 多前缀
 
 ```javascript
 // vite.config.js
-export default {
+export default defineConfig({
   envPrefix: ['VITE_', 'PUBLIC_']
-}
+})
 ```
 
 ```bash
 # .env
-VITE_API_URL=https://api.example.com     ✅ 可访问
-PUBLIC_API_URL=https://api.example.com    ✅ 可访问
-APP_API_URL=https://api.example.com      ❌ 不可访问
-```
-
-### 运行时访问
-
-```javascript
-// 在代码中访问
-console.log(import.meta.env.VITE_API_URL)
-console.log(import.meta.env.VITE_APP_TITLE)
-
-// TypeScript 类型需要声明
+VITE_API_URL=https://api.example.com     # ✅ 可访问
+PUBLIC_CDN_URL=https://cdn.example.com   # ✅ 可访问
+APP_API_URL=https://api.example.com      # ❌ 前缀不在列表中，不可访问
 ```
 
 ## 使用场景
 
-### 1. 自定义前缀
+### 1. 从 vue-cli 迁移
+
+vue-cli 约定使用 `VUE_APP_` 前缀，迁移到 Vite 时保留它可以让存量代码零改动：
 
 ```javascript
 // vite.config.js
-export default {
-  envPrefix: 'MYAPP_'
-}
+export default defineConfig({
+  envPrefix: ['VITE_', 'VUE_APP_'] // 兼容旧的 VUE_APP_ 变量
+})
 ```
 
 ```bash
 # .env
-MYAPP_API_URL=https://api.example.com
-MYAPP_VERSION=1.0.0
+VUE_APP_API_URL=https://api.example.com  # 旧代码中的 import.meta.env 写法继续可用
 ```
 
-### 2. 多项目共用的环境变量
+### 2. 多项目共用一套变量
+
+共享配置用统一前缀，各项目自己的变量仍用 `VITE_`：
 
 ```javascript
 // vite.config.js
-export default {
+export default defineConfig({
   envPrefix: ['VITE_', 'SHARED_']
-}
+})
 ```
 
 ```bash
@@ -145,82 +144,65 @@ VITE_API_URL=https://api.example.com
 SHARED_CONFIG_URL=https://config.example.com
 ```
 
-### 3. 明确区分客户端和服务端变量
+### 3. 明确区分客户端与私有变量
+
+用一个语义化前缀标记"允许进客户端"的变量，其余一律不暴露：
 
 ```javascript
 // vite.config.js
-export default {
+export default defineConfig({
   envPrefix: 'CLIENT_'
-}
+})
 ```
 
 ```bash
 # .env
-CLIENT_API_URL=https://api.example.com     # 客户端可访问
-SERVER_DATABASE_URL=postgresql://...       # 仅服务端
-SERVER_SECRET_KEY=abc123                   # 仅服务端
+CLIENT_API_URL=https://api.example.com   # 客户端可访问
+DATABASE_URL=postgresql://...            # 仅服务端可访问
+SECRET_KEY=abc123                        # 仅服务端可访问
 ```
 
 ## 安全原则
 
-### 1. 仅暴露必要变量
+所有被暴露的变量都会**原样打进客户端产物**，任何访问者都能在浏览器里看到，因此只暴露公开信息：
 
 ```bash
-# ❌ 错误：暴露敏感信息
+# ❌ 错误：敏感信息一旦带上暴露前缀就会泄露
 VITE_SECRET_KEY=abc123
 VITE_DATABASE_PASSWORD=secret
+VITE_ADMIN_PASSWORD=123456
 
-# ✅ 正确：仅暴露公开信息
+# ✅ 正确：带前缀的只有公开变量
 VITE_API_URL=https://api.example.com
 VITE_APP_NAME=My App
 ```
 
-### 2. 前缀规范
-
-```javascript
-// 推荐前缀
-'VITE_'      // Vite 默认
-'APP_'       // 应用相关
-'PUBLIC_'    // 公开信息
-'CLIENT_'    // 客户端相关
-'GATSBY_'    // Gatsby 迁移（兼容）
-```
+> ⚠️ **注意：** 第三方公开密钥（如地图 Key、Stripe 可发布密钥 `pk_` 开头）可以暴露；私密密钥（`sk_` 开头）、密码、Token 绝不能加前缀。
 
 ## 注意事项
 
-### 1. 客户端可访问
+### 1. 大小写敏感
 
-```javascript
-// 所有暴露的环境变量都会打包到客户端代码中
-// 不要存储敏感信息
+前缀匹配区分大小写，`.env` 中的键必须与 `envPrefix` 完全一致：
 
-// .env.production
-VITE_STRIPE_KEY=pk_xxx        ✅ 公开密钥可以
-VITE_STRIPE_SECRET=sk_xxx     ❌ 私密密钥不行
-VITE_ADMIN_PASSWORD=123456    ❌ 密码不行
+```bash
+# envPrefix: 'VITE_' 时
+VITE_API_URL=...    # ✅ 可访问
+vite_api_url=...    # ❌ 大小写不匹配
+Vite_Api_Url=...    # ❌ 大小写不匹配
 ```
 
-### 2. 空字符串的风险
+### 2. TypeScript 类型声明
 
-```javascript
-// envPrefix: '' 会暴露所有环境变量
-export default {
-  envPrefix: ''  // 危险！包括 NODE_ENV 等所有变量
-}
-```
-
-### 3. TypeScript 类型声明
+自定义前缀后，同步更新类型声明才能获得完整提示：
 
 ```typescript
 // src/vite-env.d.ts
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  // 自定义前缀的类型声明
   readonly APP_API_URL: string
   readonly APP_VERSION: string
-
-  // 默认 VITE_ 前缀
   readonly VITE_API_URL: string
 }
 
@@ -229,114 +211,36 @@ interface ImportMeta {
 }
 ```
 
-### 4. 大小写敏感
-
-```javascript
-// vite.config.js
-export default {
-  envPrefix: 'VITE_'  // 大写
-}
-```
-
-```bash
-# .env
-VITE_API_URL=...    ✅ 可访问
-vite_api_url=...     ❌ 不可访问（大小写不匹配）
-Vite_Api_Url=...     ❌ 不可访问（大小写不匹配）
-```
-
 ## 与其他属性的关系
 
 | 属性 | 关系说明 |
 |------|----------|
-| `envDir` | 环境变量文件所在目录 |
-| `mode` | 决定加载哪个 `.env.[mode]` 文件 |
-| `define` | `define` 可以手动注入非前缀变量 |
+| `envDir` | 决定从哪个目录加载 `.env` 文件 |
+| `mode` | 决定加载哪些 `.env.[mode]` 文件 |
+| `define` | 可注入无前缀的全局常量（官方推荐的无前缀暴露方式） |
 
 ## 完整示例
-
-### 自定义前缀配置
 
 ```javascript
 // vite.config.js
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  envPrefix: 'APP_'
+  // 用 PUBLIC_ 明确标记"允许进客户端"的变量
+  envPrefix: 'PUBLIC_'
 })
 ```
 
 ```bash
 # .env
-APP_API_URL=https://api.example.com
-APP_VERSION=1.0.0
-APP_DEBUG=true
-
-# .env.production
-APP_API_URL=https://production-api.example.com
-APP_DEBUG=false
-```
-
-```javascript
-// src/main.js
-const apiUrl = import.meta.env.APP_API_URL
-const version = import.meta.env.APP_VERSION
-const isDebug = import.meta.env.APP_DEBUG === 'true'
-```
-
-### 多前缀配置
-
-```javascript
-// vite.config.js
-export default {
-  envPrefix: ['VITE_', 'PUBLIC_', 'CLIENT_']
-}
-```
-
-```bash
-# .env
-VITE_APP_TITLE=My App
-PUBLIC_CDN_URL=https://cdn.example.com
-CLIENT_THEME=dark
-```
-
-### 迁移其他项目
-
-从其他构建工具迁移时保持兼容：
-
-```javascript
-// vite.config.js
-export default {
-  envPrefix: ['VITE_', 'GATSBY_']  // 兼容 Gatsby 变量
-}
-```
-
-```bash
-# .env
-VITE_API_URL=...
-GATSBY_API_URL=...  # 兼容旧代码
-```
-
-### 完整的安全配置
-
-```javascript
-// vite.config.js
-export default defineConfig({
-  envPrefix: 'PUBLIC_',  // 明确使用 PUBLIC_ 前缀
-})
-```
-
-```bash
-# .env - 环境变量文件
 # 公开变量（客户端可访问）
 PUBLIC_API_URL=https://api.example.com
 PUBLIC_APP_NAME=My App
 PUBLIC_VERSION=1.0.0
 
-# 私有变量（仅服务端可访问）
+# 私有变量（仅服务端可访问，不带前缀）
 DATABASE_URL=postgresql://...
 SECRET_KEY=abc123
-ADMIN_PASSWORD=secret123
 ```
 
 ```javascript
@@ -355,72 +259,36 @@ export default config
 无论 `envPrefix` 设置为何值，以下内置变量始终可用：
 
 ```javascript
-import.meta.env.BASE_URL    // 基础路径
-import.meta.env.MODE        // 运行模式
-import.meta.env.PROD        // 是否生产环境
-import.meta.env.DEV         // 是否开发环境
-import.meta.env.SSR         // 是否 SSR 构建
+import.meta.env.MODE     // 运行模式
+import.meta.env.BASE_URL // 部署基础路径
+import.meta.env.PROD     // 是否生产环境
+import.meta.env.DEV      // 是否开发环境
+import.meta.env.SSR      // 是否 SSR 环境
 ```
 
 ## 常见问题
 
-### 问题 1：客户端无法访问环境变量
+### 问题 1：客户端读不到变量
 
-**原因**：前缀不匹配
+前缀不匹配导致的，两种解法任选其一：
 
 ```bash
-# .env
+# .env 中写的是
 APP_API_URL=https://api.example.com
-
-# vite.config.js
-envPrefix: 'VITE_'  # ❌ 前缀不匹配
 ```
 
-**解决**：统一前缀
+```javascript
+// 方案一：改配置，匹配现有前缀
+export default defineConfig({ envPrefix: 'APP_' })
 
-```bash
-# 方案一：修改 .env
-VITE_API_URL=https://api.example.com
-
-# 方案二：修改配置
-envPrefix: 'APP_'
+// 方案二：改变量名，匹配默认前缀 VITE_
+// .env → VITE_API_URL=https://api.example.com
 ```
 
-### 问题 2：TypeScript 报错
+### 问题 2：TypeScript 提示属性不存在
 
-**原因**：缺少类型声明
-
-**解决**：
-
-```typescript
-// src/vite-env.d.ts
-interface ImportMetaEnv {
-  readonly APP_API_URL: string
-  readonly APP_VERSION: string
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv
-}
-```
+缺少 `ImportMetaEnv` 类型声明，按「注意事项 2」在 `src/vite-env.d.ts` 中补齐即可。
 
 ### 问题 3：敏感信息泄露
 
-**原因**：将敏感变量设置为可访问前缀
-
-**解决**：使用不同前缀区分
-
-```bash
-# 客户端变量
-PUBLIC_API_URL=https://api.example.com
-
-# 服务端变量（不使用 PUBLIC_ 前缀）
-DATABASE_URL=postgresql://...
-SECRET_KEY=abc123
-```
-
-## 官方文档
-
-[Shared Config: envPrefix - Vite 官方文档](https://cn.vitejs.dev/config/shared-options.html#envprefix)
-
-[Env Variables - Vite 官方文档](https://cn.vitejs.dev/guide/env-and-mode.html)
+检查带暴露前缀的变量里是否混入了密钥、密码；把敏感变量改成无前缀（或改用服务端读取），只保留公开变量带前缀。

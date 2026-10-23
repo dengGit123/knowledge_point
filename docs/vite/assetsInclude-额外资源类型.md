@@ -1,39 +1,47 @@
 # assetsInclude 配置
 
+> 📖 [官方文档：Shared Options](https://cn.vitejs.dev/config/shared-options.html)
+
 ## 定义
 
-`assetsInclude` 指定额外的静态资源文件类型，这些文件会被作为资源导入并返回 URL。
+`assetsInclude` 通过 [picomatch](https://github.com/micromatch/picomatch) 模式指定**额外的**静态资源类型。命中的文件会被当作静态资源处理：
+
+- 导入时返回解析后的 URL（小于 `build.assetsInlineLimit` 的文件内联为 data URL）
+- 从插件的转换管线中排除，不会被当作 JS 等模块解析
+- 在 HTML 中引用或被 fetch/XHR 直接请求时也不会经过插件处理
 
 **类型**：`string | RegExp | (string | RegExp)[]`
 
-**默认值**：`undefined`（内置列表已包含常见类型）
+**默认值**：`[]`（未配置时使用 Vite 内置资源类型列表）
 
 ## 可选值与使用方式
 
-### 1. 字符串 / 字符串数组（picomatch 模式）
+### 1. 字符串 / 字符串数组（picomatch 通配模式）
 
 ```javascript
-// glob 模式匹配
+// vite.config.js
 export default {
+  // 常见写法：**/*.扩展名，匹配任意层级
   assetsInclude: ['**/*.gltf', '**/*.glb', '**/*.hdr']
 }
+```
 
+```javascript
 // 单个字符串也可以
 export default {
-  assetsInclude: '**/*.gltf'
+  assetsInclude: '**/*.gql'
 }
 ```
 
 ### 2. 正则 / 正则数组
 
 ```javascript
-// 正则匹配
 export default {
   assetsInclude: [/\.(gltf|glb|hdr)$/]
 }
 ```
 
-### 3. 混合配置
+### 3. 字符串与正则混用
 
 ```javascript
 export default {
@@ -45,40 +53,41 @@ export default {
 }
 ```
 
-## Vite 默认资源类型
+> 💡 **提示：** 只支持字符串（通配模式）与正则两种形式，不支持函数。
 
-Vite 内置支持的资源类型（无需配置）：
+## Vite 内置资源类型
 
-```
-图片：.png, .jpg, .jpeg, .gif, .webp, .avif, .svg, .ico
-字体：.woff, .woff2, .eot, .ttf, .otf
-媒体：.mp4, .webm, .ogg, .mp3, .wav, .flac, .aac
-其他：.wasm, .pdf, .webmanifest
+以下类型无需配置即可作为资源导入（来自 Vite 源码的 `KNOWN_ASSET_TYPES`，不同版本可能略有增补）：
+
+```text
+图片：.png  .jpg/.jpeg  .jfif  .pjpeg  .pjp  .gif  .svg  .ico  .webp  .avif
+字体：.woff  .woff2  .eot  .ttf  .otf
+音视频：.mp4  .webm  .ogg  .mp3  .wav  .flac  .aac  .opus  .mov  .m4a  .vtt
+其他：.webmanifest  .pdf  .txt
 ```
 
 ## 生效后的结果示例
 
-### 添加 3D 模型支持
+### 导入 3D 模型
 
 ```javascript
 // vite.config.js
 export default {
-  assetsInclude: ['**/*.gltf', '**/*.glb', '**/*.fbx']
+  assetsInclude: ['**/*.gltf', '**/*.glb']
 }
 ```
 
 ```javascript
 // src/main.js
 import modelUrl from './models/car.glb'
-import sceneUrl from './models/scene.gltf'
 
-// 使用 Three.js 加载
+// 拿到的是 URL，交给 Three.js 等库加载
 loader.load(modelUrl, (gltf) => {
   scene.add(gltf.scene)
 })
 ```
 
-### 自定义资源类型
+### 自定义扩展名
 
 ```javascript
 // vite.config.js
@@ -98,102 +107,58 @@ console.log(myAssetUrl) // /assets/file-abc123.myasset
 ```javascript
 // vite.config.js
 export default {
-  // 用正则匹配特定目录或扩展名（不支持函数形式）
   assetsInclude: [
-    /\/assets\/special\//,   // 匹配特定目录下的所有文件
-    /\.bin$/                 // 匹配 .bin 扩展名
+    /\/assets\/special\//,   // 特定目录下的所有文件
+    /\.bin$/                 // 特定扩展名
   ]
 }
 ```
 
-## 导入语法
-
-### 默认导入（返回 URL）
+## 导入语法（对资源文件通用）
 
 ```javascript
+// 默认导入：返回 URL（构建后带哈希）
 import imgUrl from './image.png'
-console.log(imgUrl) // /assets/image-abc123.png
-```
 
-### 显式 URL 导入
+// 显式 URL 导入
+import url from './file.bin?url'
 
-```javascript
-import imgUrl from './image.png?url'
-```
+// 原始内容（字符串）
+import raw from './file.bin?raw'
 
-### 获取原始内容
+// 强制内联为 base64 data URL
+import inline from './icon.png?inline'
 
-```javascript
-import rawContent from './data.txt?raw'
-```
-
-### 内联为 base64
-
-```javascript
-import img from './icon.png?inline'
-```
-
-### Worker 脚本
-
-```javascript
-import Worker from './worker.js?worker'
+// Worker 脚本
+import MyWorker from './worker.js?worker'
 ```
 
 ## 使用场景
 
-### 1. 3D 模型
+### 1. 3D 模型与贴图
 
 ```javascript
-// vite.config.js
 export default {
-  assetsInclude: ['**/*.gltf', '**/*.glb', '**/*.hdr', '**/*.exr']
+  assetsInclude: ['**/*.gltf', '**/*.glb', '**/*.hdr', '**/*.exr', '**/*.vrm']
 }
 ```
 
-### 2. 特殊数据格式
+### 2. 数据文件（JSON 除外）
 
 ```javascript
-// vite.config.js
 export default {
-  // ⚠️ .json 不要加进来！JSON 有专门的导入处理（见 json 配置），
-  // 想要 URL 时用显式后缀：import url from './data.json?url'
-  assetsInclude: ['**/*.vrm', '**/*.csv', '**/*.yaml']
+  assetsInclude: ['**/*.csv', '**/*.xml', '**/*.yaml', '**/*.yml']
 }
 ```
 
-### 3. 字体文件
+> ⚠️ **注意：** 不要把 `.json` 加进 `assetsInclude`。JSON 由 `json` 配置专门处理（解析为对象、支持具名导出）；想拿到 JSON 文件的 URL，用显式后缀 `import url from './data.json?url'` 即可，无需任何配置。
+
+### 3. 补充音视频格式
 
 ```javascript
-// vite.config.js
 export default {
-  assetsInclude: ['**/*.otf', '**/*.ttf']  // 通常已内置
-}
-```
-
-### 4. 数据文件
-
-```javascript
-// vite.config.js
-export default {
-  assetsInclude: [
-    '**/*.csv',
-    '**/*.xml',
-    '**/*.yaml',
-    '**/*.yml'
-  ]
-}
-```
-
-### 5. 音视频
-
-```javascript
-// vite.config.js
-export default {
-  assetsInclude: [
-    '**/*.mov',
-    '**/*.avi',
-    '**/*.flv'
-  ]
+  // 内置列表之外的封装格式
+  assetsInclude: ['**/*.avi', '**/*.flv', '**/*.wmv', '**/*.mkv']
 }
 ```
 
@@ -203,65 +168,55 @@ export default {
 
 ```javascript
 export default {
-  assetsInclude: ['**/*.svg'],
+  assetsInclude: ['**/*.bin'],
   build: {
-    // 小于此值的资源会被内联为 base64
-    assetsInlineLimit: 4096  // 4kb
+    // 小于该值（字节）的资源会被内联为 base64 data URL
+    assetsInlineLimit: 4096
   }
 }
 ```
 
 ### 2. 与 publicDir 的区别
 
-| 特性 | assetsInclude | publicDir |
-|------|----------------|------------|
-| 处理方式 | 被打包处理 | 直接复制 |
-| 哈希化 | 自动添加哈希 | 不添加哈希 |
-| 引用方式 | import 导入 | 绝对路径引用 |
-| 转换 | 可被插件处理 | 不处理 |
+| 特性 | assetsInclude 命中的文件 | publicDir 目录 |
+|------|--------------------------|----------------|
+| 处理方式 | 参与打包 | 原样复制 |
+| 文件名 | 自动加哈希 | 不加哈希 |
+| 引用方式 | import 导入 | 根绝对路径引用 |
+| 插件处理 | 排除在转换管线外（作为资源） | 不处理 |
 
 ```javascript
-// public/logo.png → 直接复制，无哈希
-// src/assets/logo.png → 打包处理，添加哈希
+// public/logo.png      → 复制到 dist 根目录，用 /logo.png 引用
+// src/assets/logo.png  → import 导入，产物带哈希
 ```
 
-### 3. Glob 模式匹配
+### 3. 通配模式要匹配完整路径
 
 ```javascript
-// ✅ 正确
-assetsInclude: ['**/*.gltf']           // 所有 .gltf 文件
-assetsInclude: ['src/models/**']      // models 目录下所有文件
+// ✅ 正确：匹配任意层级
+assetsInclude: ['**/*.gltf']
 
-// ❌ 错误
-assetsInclude: ['*.gltf']             // 缺少 **/
-```
-
-### 4. JSON 文件特殊处理
-
-```javascript
-// JSON 文件默认有专门处理（转换为 JS 对象，支持具名导出）
-// 如果想作为 URL 导入，显式加 ?url 后缀即可，无需配置 assetsInclude
-import jsonFileUrl from './data.json?url'
+// ❌ 错误：单层 * 不能跨越路径分隔符，匹配不到子目录中的文件
+assetsInclude: ['*.gltf']
 ```
 
 ## 与其他属性的关系
 
 | 属性 | 关系说明 |
 |------|----------|
-| `build.assetsInlineLimit` | 影响资源是否被内联为 base64 |
+| `build.assetsInlineLimit` | 小于阈值的资源内联为 base64 |
 | `build.assetsDir` | 资源输出目录 |
-| `publicDir` | 不处理的静态资源目录 |
+| `publicDir` | 静态复制目录，不参与打包 |
 
 ## 完整示例
 
-### 3D 应用完整配置
+### 3D 应用
 
 ```javascript
 // vite.config.js
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  // 扩展资源类型
   assetsInclude: [
     '**/*.gltf',
     '**/*.glb',
@@ -270,12 +225,9 @@ export default defineConfig({
     '**/*.vrm',
     '**/*.fbx'
   ],
-
   build: {
-    // 3D 资源通常较大，禁用内联
+    // 3D 资源通常较大，不内联
     assetsInlineLimit: 0,
-
-    // 单独输出目录
     rollupOptions: {
       output: {
         assetFileNames: 'assets/models/[name]-[hash][extname]'
@@ -289,76 +241,27 @@ export default defineConfig({
 
 ```javascript
 // vite.config.js
+import { defineConfig } from 'vite'
+
 export default defineConfig({
   assetsInclude: [
-    // 音频
-    '**/*.flac',
-    '**/*.wav',
-    '**/*.aac',
-    // 视频
-    '**/*.mov',
     '**/*.avi',
     '**/*.flv',
-    '**/*.wmv'
+    '**/*.wmv',
+    '**/*.mkv'
   ],
-
   build: {
-    assetsInlineLimit: 0  // 大文件不内联
-  }
-})
-```
-
-### 自定义类型处理
-
-```javascript
-// vite.config.js
-export default defineConfig({
-  assetsInclude: [
-    '**/*.custom',
-    // 正则匹配特定目录（不支持函数形式）
-    /\/src\/assets\/special\//
-  ]
-})
-```
-
-### 完整资源配置
-
-```javascript
-// vite.config.js
-export default defineConfig({
-  // 额外资源类型
-  assetsInclude: [
-    '**/*.gltf',
-    '**/*.glb',
-    '**/*.hdr',
-    '**/*.exr'
-  ],
-
-  build: {
-    // 资源目录
-    assetsDir: 'assets',
-
-    // 内联阈值
-    assetsInlineLimit: 4096,
-
-    rollupOptions: {
-      output: {
-        // 资源文件命名
-        assetFileNames: 'assets/[name]-[hash][extname]',
-        // 图片单独目录
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js'
-      }
-    }
+    // 大文件不内联
+    assetsInlineLimit: 0
   }
 })
 ```
 
 ## 常见问题
 
-### 问题 1：资源导入失败
+### 问题 1：导入自定义类型文件报错
 
-**原因**：未配置到 `assetsInclude`
+**原因**：类型未加入 `assetsInclude`，Vite 尝试把它当作模块解析。
 
 ```javascript
 // ❌ 报错
@@ -370,20 +273,20 @@ export default {
 }
 ```
 
-### 问题 2：资源未被哈希化
+### 问题 2：文件名没有哈希
 
-**原因**：文件放在 `publicDir` 中
+**原因**：文件放在 `publicDir` 目录中，该目录只做原样复制。
 
-**解决**：移到 `src` 目录并通过 import 导入
+**解决**：移到 `src` 下通过 import 导入。
 
 ```javascript
-// public/model.glb → 不哈希化
-// src/assets/model.glb + import → 哈希化
+// public/model.glb      → 无哈希
+// src/assets/model.glb  → import 后带哈希
 ```
 
-### 问题 3：Glob 匹配无效
+### 问题 3：通配匹配无效
 
-**原因**：Glob 模式不正确
+**原因**：模式没有覆盖到文件的完整路径。
 
 ```javascript
 // ❌ 错误
@@ -392,9 +295,3 @@ assetsInclude: ['*.gltf']
 // ✅ 正确
 assetsInclude: ['**/*.gltf']
 ```
-
-## 官方文档
-
-[Shared Config: assetsInclude - Vite 官方文档](https://cn.vitejs.dev/config/shared-options.html#assetsinclude)
-
-[Static Assets - Vite 官方文档](https://cn.vitejs.dev/guide/assets.html)

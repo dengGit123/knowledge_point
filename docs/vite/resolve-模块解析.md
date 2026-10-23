@@ -1,10 +1,12 @@
 # resolve 配置
 
+> 📖 [官方文档：Shared Options](https://cn.vitejs.dev/config/shared-options.html)
+
 ## 定义
 
-`resolve` 配置模块解析行为，包括别名、扩展名、入口文件、导出条件等，控制 Vite 如何查找和处理模块。
+`resolve` 配置模块解析行为，包括别名、扩展名、入口字段、导出条件等，控制 Vite 如何把一个导入语句定位到磁盘上的具体文件。
 
-**类型**：
+官方按子项分别定义，常用子项及类型汇总如下：
 
 ```typescript
 {
@@ -14,21 +16,23 @@
   conditions?: string[]
   dedupe?: string[]
   preserveSymlinks?: boolean
+  tsconfigPaths?: boolean
 }
 ```
 
-**默认值**：
+**默认值**（仅列出官方文档给出的默认值）：
 
 ```javascript
 {
-  alias: {},
   extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
   mainFields: ['browser', 'module', 'jsnext:main', 'jsnext'],
-  conditions: [],
-  dedupe: [],
-  preserveSymlinks: false
+  conditions: ['module', 'browser', 'development|production'],
+  preserveSymlinks: false,
+  tsconfigPaths: false
 }
 ```
+
+> ⚠️ **注意：** 官方未给 `alias` 和 `dedupe` 定义默认值，不配置即不启用对应能力。`mainFields` 与 `conditions` 的默认值仅在客户端（浏览器）解析时生效，SSR 构建有独立配置（见下文）。
 
 ## 子属性详解
 
@@ -36,66 +40,52 @@
 
 **类型**：`Record<string, string> | Array<{ find: string | RegExp; replacement: string }>`
 
-**默认值**：`{}`
+定义用于替换 `import` 或 `require` 语句中值的别名，工作方式类似 [rollup-plugin-alias](https://github.com/rollup/plugins/tree/master/packages/alias)。
 
-定义路径别名，简化模块导入。
+官方明确两条规则：
+
+- **条目的顺序很重要**，最先定义的规则会首先应用。
+- **别名值使用文件系统路径时，必须用绝对路径**。相对路径的别名值会原封不动地被使用，无法被正常解析。
 
 #### 对象形式
 
 ```javascript
-// 简单别名
-alias: {
-  '@': '/src',
-  '@components': '/src/components',
-  '@assets': '/src/assets',
-  '@utils': '/src/utils',
-  '@api': '/src/api'
-}
+// vite.config.js
+import { defineConfig } from 'vite'
+import path from 'node:path'
 
-// 覆盖依赖路径
-alias: {
-  vue: 'vue/dist/vue.esm-bundler.js'  // 使用完整版 Vue
-}
-
-// 使用 path 模块
-import path from 'path'
-alias: {
-  '@': path.resolve(__dirname, './src'),
-  '@components': path.resolve(__dirname, './src/components')
-}
+export default defineConfig({
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@components': path.resolve(__dirname, './src/components'),
+      // 覆盖依赖入口：使用完整版 Vue（含模板编译器）
+      vue: 'vue/dist/vue.esm-bundler.js'
+    }
+  }
+})
 ```
 
-#### 数组形式（正则表达式）
+#### 数组形式（可配合正则）
 
 ```javascript
-// 单个正则别名
-alias: [
-  {
-    find: /^@\/(.*)$/,
-    replacement: '/src/$1'
-  }
-]
+// vite.config.js
+import { defineConfig } from 'vite'
+import path from 'node:path'
 
-// 多个正则别名
-alias: [
-  {
-    find: /^@components\/(.*)$/,
-    replacement: path.resolve(__dirname, 'src/components/$1')
-  },
-  {
-    find: /^@utils\/(.*)$/,
-    replacement: path.resolve(__dirname, 'src/utils/$1')
+export default defineConfig({
+  resolve: {
+    alias: [
+      // 把 @/xxx 解析到 src/xxx，$1 引用正则的第一个捕获组
+      { find: /^@\/(.*)$/, replacement: path.resolve(__dirname, './src/$1') },
+      // 官方示例：把 .js 结尾的导入替换为 .alias 结尾
+      { find: /^(.*)\.js$/, replacement: '$1.alias' }
+    ]
   }
-]
-
-// 处理带扩展名的导入
-alias: [
-  {
-    find: /\.vue$/,
-    replacement: '.vue'
-  }
-]
+})
 ```
+
+> 💡 **提示：** 需要精确控制匹配顺序（例如多个别名互为前缀），或需要正则捕获时，使用数组形式；简单的键值映射用对象形式即可。
 
 ### extensions
 
@@ -103,23 +93,21 @@ alias: [
 
 **默认值**：`['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']`
 
-导入模块时自动尝试的扩展名列表。
+导入时省略扩展名后依次尝试的扩展名列表，列表顺序即匹配优先级。
 
 ```javascript
-// 默认配置（通常不需要修改）
-extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']
+// vite.config.js
+import { defineConfig } from 'vite'
 
-// 添加自定义扩展名（如 .vue）
-extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json', '.vue']
-
-// 常用扩展名放在前面提高解析速度
-extensions: ['.vue', '.js', '.ts', '.json']
-
-// 仅包含需要的扩展名（性能优化）
-extensions: ['.js', '.ts', '.json']
+export default defineConfig({
+  resolve: {
+    // 在默认列表后追加自定义扩展名
+    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json', '.vue']
+  }
+})
 ```
 
-> ⚠️ **注意**：默认列表中**不含 `.vue` / `.cts` / `.cjs`**。Vue 项目需要按上面的方式把 `.vue` 加进去（不过 `@vitejs/plugin-vue` 会自动处理 `.vue` 文件，通常无需手动添加）。
+> ⚠️ **注意：** 官方**不建议**省略 `.vue` 这类自定义导入类型的扩展名，否则会影响 IDE 提示和类型支持。默认列表已覆盖常见场景，通常无需修改。
 
 ### mainFields
 
@@ -127,22 +115,18 @@ extensions: ['.js', '.ts', '.json']
 
 **默认值**：`['browser', 'module', 'jsnext:main', 'jsnext']`
 
-从 package.json 中读取的字段优先级。
-
-> ⚠️ **注意**：默认值中**不含 `main`**（Vite 3 起移除）。如果依赖包只提供 CommonJS 的 `main` 入口且解析失败，需要手动补上：`mainFields: ['browser', 'module', 'jsnext:main', 'jsnext', 'main']`
+解析包入口时尝试的 `package.json` 字段及优先级。官方说明：**它的优先级低于 `exports` 字段的条件导出**——只要能从 `exports` 成功解析出入口，`mainFields` 就会被忽略。
 
 ```javascript
-// 默认配置
-mainFields: ['browser', 'module', 'jsnext:main', 'jsnext']
+// vite.config.js
+import { defineConfig } from 'vite'
 
-// 兼容只提供 main 入口的包
-mainFields: ['browser', 'module', 'jsnext:main', 'jsnext', 'main']
-
-// 仅使用 ES Module
-mainFields: ['module', 'browser']
-
-// Node.js 环境（SSR）
-mainFields: ['module', 'jsnext:main', 'jsnext', 'main']
+export default defineConfig({
+  resolve: {
+    // 兼容只提供 CommonJS main 入口的包：在默认值基础上补充 main 做兜底
+    mainFields: ['browser', 'module', 'jsnext:main', 'jsnext', 'main']
+  }
+})
 ```
 
 **package.json 示例**：
@@ -150,71 +134,72 @@ mainFields: ['module', 'jsnext:main', 'jsnext', 'main']
 ```json
 {
   "name": "my-package",
+  "browser": "dist/index.browser.js",
   "module": "dist/index.esm.js",
-  "main": "dist/index.cjs.js",
-  "browser": "dist/index.browser.js"
+  "main": "dist/index.cjs.js"
 }
 ```
+
+> 💡 **提示：** 默认列表不含 `main`。若某个依赖只提供 CommonJS 的 `main` 入口且解析失败，按上面的方式手动补上即可。SSR 构建的入口字段由 `ssr.resolve.mainFields` 单独控制，默认 `['module', 'jsnext:main', 'jsnext']`。
 
 ### conditions
 
 **类型**：`string[]`
 
-**默认值**：`[]`（由 `build.target` 决定）
+**默认值**：`['module', 'browser', 'development|production']`
 
-导出条件字段，用于 package.json 的 `exports` 字段解析。
+解析包的条件导出（`exports` 字段）时，**额外允许**的条件。默认值之外的要点：
 
-```javascript
-// 开发环境
-conditions: ['development', 'module']
+- `development|production` 是特殊值，会根据 `process.env.NODE_ENV` 替换为 `production` 或 `development`。
+- `import`、`require`、`default` 条件在满足要求时始终会被应用。
+- 解析样式导入（如 `@import 'my-library'`）时会应用 `style` 条件；Sass、Less 分别还会应用 `sass`、`less` 条件。
 
-// 生产环境
-conditions: ['production', 'module']
-
-// 浏览器环境
-conditions: ['browser', 'module']
-
-// Node.js 环境
-conditions: ['node', 'module']
-
-// 多个条件
-conditions: ['module', 'browser', 'production']
-```
-
-**对应的 package.json exports 示例**：
+**package.json exports 示例**：
 
 ```json
 {
   "exports": {
     ".": {
-      "development": "./src/index.js",
-      "production": "./dist/index.js",
-      "browser": "./dist/browser.js",
-      "node": "./dist/node.js",
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs.js",
+      "custom": "./dist/custom.js",
       "default": "./dist/index.js"
     }
   }
 }
 ```
 
+```javascript
+// vite.config.js
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  resolve: {
+    // 追加自定义条件后，上面的 "custom" 出口才会被命中
+    conditions: ['custom']
+  }
+})
+```
+
 ### dedupe
 
 **类型**：`string[]`
 
-**默认值**：`[]`
-
-去重，强制将特定依赖解析为同一副本。
+当应用中出现同一依赖的多份副本（常见于 monorepo 的依赖提升或 link 包）时，强制 Vite 始终把列出的依赖解析为同一份副本（从项目根目录解析）。
 
 ```javascript
-// Vue 生态去重
-dedupe: ['vue', 'vue-router', 'pinia', '@vue/runtime-core']
+// vite.config.js
+import { defineConfig } from 'vite'
 
-// UI 库去重
-dedupe: ['element-plus', 'element-plus/es']
-
-// 多个依赖
-dedupe: ['vue', 'vue-router', 'axios', 'lodash']
+export default defineConfig({
+  resolve: {
+    // 保证整个应用只加载一份 Vue 运行时
+    dedupe: ['vue', 'vue-router', 'pinia']
+  }
+})
 ```
+
+> ⚠️ **注意：** SSR 构建输出为 ESM 时，去重可能不生效，必要时可改用 CJS 输出。仅在确实出现多副本问题（如 "Invalid hook call"、组件实例判断失败类报错）时使用。
 
 ### preserveSymlinks
 
@@ -222,220 +207,107 @@ dedupe: ['vue', 'vue-router', 'axios', 'lodash']
 
 **默认值**：`false`
 
-是否保留符号链接。
+启用后，Vite 用**原始文件路径**（不跟随符号链接）而不是**真实文件路径**（跟随符号链接后）来确定文件身份。
 
 ```javascript
-// 默认：解析符号链接的真实路径
-preserveSymlinks: false
-
-// 保留符号链接：使用符号链接路径
-preserveSymlinks: true
+// 默认 false：跟随符号链接，解析到链接指向的真实路径
+// 设为 true：保留符号链接路径本身作为文件身份
 ```
 
-## 可选值与使用方式
+典型场景是 pnpm workspace、`npm link` 调试本地包时，希望 Vite 保留链接路径。相关实现与 esbuild 的 `preserveSymlinks`、webpack 的 `resolve.symlinks` 对应。
 
-### 默认配置
+### tsconfigPaths
+
+**类型**：`boolean`
+
+**默认值**：`false`
+
+启用后，Vite 直接使用 `tsconfig.json` 中的 `paths` 选项来解析导入，省去在 `vite.config.js` 里重复写一份别名。
 
 ```javascript
 // vite.config.js
-export default {
-  resolve: {
-    alias: {},
-    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
-    mainFields: ['browser', 'module', 'jsnext:main', 'jsnext'],
-    conditions: [],
-    dedupe: [],
-    preserveSymlinks: false
-  }
-}
-```
-
-### 基础别名配置
-
-```javascript
 import { defineConfig } from 'vite'
-import path from 'path'
 
 export default defineConfig({
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@components': path.resolve(__dirname, './src/components'),
-      '@assets': path.resolve(__dirname, './src/assets'),
-      '@utils': path.resolve(__dirname, './src/utils'),
-      '@views': path.resolve(__dirname, './src/views'),
-      '@api': path.resolve(__dirname, './src/api')
-    }
+    // 使用 tsconfig.json 的 paths 解析导入
+    tsconfigPaths: true
   }
 })
 ```
 
-### 正则别名配置
-
-```javascript
-export default defineConfig({
-  resolve: {
-    alias: [
-      {
-        find: /^@\/(.*)$/,
-        replacement: path.resolve(__dirname, './src/$1')
-      }
-    ]
-  }
-})
-```
-
-### Vue 完整版配置
-
-```javascript
-export default defineConfig({
-  resolve: {
-    alias: {
-      vue: 'vue/dist/vue.esm-bundler.js'
-    }
-  }
-})
-```
-
-### Monorepo 配置
-
-```javascript
-export default defineConfig({
-  resolve: {
-    // 解析 workspace 包
-    alias: {
-      '@workspace/package': path.resolve(__dirname, '../../packages/package/src')
-    },
-    // 去重共享依赖
-    dedupe: ['vue', 'vue-router', 'pinia']
-  }
-})
-```
+> ⚠️ **注意：** `paths` 只作用于被该 `tsconfig.json` 的 `include`/`files` 匹配到的文件；CSS 等非 JS 文件需要显式列在 `include` 中（如 `"include": ["src", "src/**/*.css"]`）才会生效。
 
 ## 生效后的结果示例
 
-### 别名生效前
+### 别名生效前后
 
 ```javascript
-// src/components/Header.vue 导入组件
+// src/components/Header.vue —— 配置前：深层相对路径难维护
 import Button from '../../../components/Button.vue'
 import { formatDate } from '../../../utils/date.js'
-import logoUrl from '../../../assets/logo.png'
-```
 
-### 别名生效后
-
-```javascript
-// src/components/Header.vue 使用别名
-import Button from '@components/Button.vue'
-import { formatDate } from '@utils/date.js'
-import logoUrl from '@assets/logo.png'
-
-// 或者使用更简洁的路径
+// 配置后：统一从项目 src 根出发
 import Button from '@/components/Button.vue'
 import { formatDate } from '@/utils/date.js'
 ```
 
-### 扩展名解析
-
-```javascript
-// 配置前需要写扩展名
-import { utils } from './utils/index.js'
-
-// 配置 extensions 后可省略
-import { utils } from './utils/index'
-```
-
 ### dedupe 生效
 
-```javascript
-// 配置前：可能存在多个 Vue 副本
-// node_modules/vue
-// node_modules/dependency-a/node_modules/vue
-// node_modules/dependency-b/node_modules/vue
+```text
+配置前：依赖各自携带 Vue 副本，运行时存在多份 Vue
+node_modules/vue
+node_modules/dependency-a/node_modules/vue
+node_modules/dependency-b/node_modules/vue
+```
 
-// 配置后
-dedupe: ['vue']
-// 所有引用都指向同一个 Vue 副本
+```javascript
+// vite.config.js —— 配置后：所有 import vue 都指向项目根下的同一份
+resolve: {
+  dedupe: ['vue']
+}
 ```
 
 ### conditions 生效
 
-```javascript
-// package.json
+```json
 {
   "exports": {
     ".": {
-      "development": "./dev.js",
-      "production": "./prod.js"
+      "custom": "./dist/custom.js",
+      "default": "./dist/index.js"
     }
   }
 }
-
-// vite.config.js
-resolve: {
-  conditions: ['production']  // 使用 ./prod.js
-}
 ```
+
+配置 `resolve.conditions: ['custom']` 后，导入该包会解析到 `./dist/custom.js`；不配置则落到 `default` 出口。
 
 ## 使用场景
 
-### 1. 简化导入路径
-
-**场景**：深层级目录的模块导入路径冗长
+### 1. Monorepo 引用 workspace 包
 
 ```javascript
 // vite.config.js
-export default {
+import { defineConfig } from 'vite'
+import path from 'node:path'
+
+export default defineConfig({
   resolve: {
+    // 指向其他 workspace 包的源码，改动即时生效、无需先构建
     alias: {
-      '@': '/src',
-      '@components': '/src/components',
-      '@utils': '/src/utils',
-      '@api': '/src/api',
-      '@hooks': '/src/hooks',
-      '@store': '/src/store'
-    }
-  }
-}
-```
-
-```javascript
-// 使用前
-import Button from '../../../../components/Button.vue'
-import { fetchData } from '../../../../api/user.js'
-
-// 使用后
-import Button from '@components/Button.vue'
-import { fetchData } from '@api/user.js'
-```
-
-### 2. Monorepo 项目
-
-**场景**：Monorepo 中需要引用其他 workspace 包
-
-```javascript
-// vite.config.js
-import path from 'path'
-
-export default {
-  resolve: {
-    alias: {
-      // UI 包
       '@my-app/ui': path.resolve(__dirname, '../../packages/ui/src'),
-      // 工具包
-      '@my-app/utils': path.resolve(__dirname, '../../packages/utils/src'),
-      // 组件库
-      '@my-app/components': path.resolve(__dirname, '../../packages/components/src')
+      '@my-app/utils': path.resolve(__dirname, '../../packages/utils/src')
     },
+    // 共享依赖去重，避免各包安装的副本不一致
     dedupe: ['vue', 'vue-router', '@my-app/shared']
   }
-}
+})
 ```
 
-### 3. Vue 完整版
+### 2. 使用完整版 Vue
 
-**场景**：需要使用 Vue 模板编译器
+需要运行时编译组件模板（如收到字符串模板、动态组件）时，把 `vue` 别名指向含编译器的构建产物：
 
 ```javascript
 // vite.config.js
@@ -448,27 +320,25 @@ export default {
 }
 ```
 
-### 4. TypeScript 项目
+### 3. TypeScript 项目同步别名
 
-**场景**：TypeScript 项目配置类型支持
+Vite 侧与 `tsconfig.json` 侧各配一份，编辑器的类型跳转才能生效：
 
 ```javascript
 // vite.config.ts
 import { defineConfig } from 'vite'
-import path from 'path'
+import path from 'node:path'
 
 export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src')
-    },
-    extensions: ['.ts', '.tsx', '.js', '.jsx', '.json', '.vue']
+    }
   }
 })
 ```
 
-```typescript
-// tsconfig.json
+```json
 {
   "compilerOptions": {
     "baseUrl": ".",
@@ -479,64 +349,29 @@ export default defineConfig({
 }
 ```
 
-### 5. 库开发
+若不想维护两份，可改用 `resolve.tsconfigPaths: true`（见上文子项详解）。
 
-**场景**：开发 npm 库时配置模块解析
+### 4. 库开发
 
 ```javascript
 // vite.config.js
 export default {
   resolve: {
-    // 优先使用 ES Module（在默认值基础上补充 main 做兜底）
+    // 兼容只提供 main 入口的消费方依赖
     mainFields: ['browser', 'module', 'jsnext:main', 'jsnext', 'main'],
-    // 支持多种扩展名
-    extensions: ['.mjs', '.js', '.mts', '.ts', '.json'],
-    // 导出条件
-    conditions: ['module', 'browser']
+    // 按需精简扩展名，减少无效的文件尝试
+    extensions: ['.mjs', '.js', '.mts', '.ts', '.json']
   }
 }
 ```
 
-### 6. 条件导出
-
-**场景**：根据环境使用不同代码
-
-```javascript
-// vite.config.js
-export default defineConfig(({ mode }) => {
-  return {
-    resolve: {
-      conditions: mode === 'development'
-        ? ['development', 'module']
-        : ['production', 'module']
-    }
-  }
-})
-```
-
-```json
-// package.json
-{
-  "exports": {
-    ".": {
-      "development": "./src/index.ts",
-      "production": "./dist/index.js",
-      "module": "./dist/index.esm.js",
-      "default": "./dist/index.js"
-    }
-  }
-}
-```
-
-### 7. 符号链接处理
-
-**场景**：使用 pnpm workspace 或 npm link
+### 5. 符号链接调试
 
 ```javascript
 // vite.config.js
 export default {
   resolve: {
-    // 保留符号链接路径
+    // npm link / pnpm link 调试本地包时，保留链接路径
     preserveSymlinks: true
   }
 }
@@ -547,189 +382,143 @@ export default {
 ### 1. 别名路径格式
 
 ```javascript
-// ✅ 正确：使用绝对路径
-alias: {
-  '@': path.resolve(__dirname, './src')
+// 以下均为 resolve 节选，path 需在文件顶部自行导入
+
+// ✅ 正确：绝对路径（官方推荐）
+resolve: {
+  alias: {
+    '@': path.resolve(__dirname, './src')
+  }
 }
 
-// ✅ 正确：以 / 开头表示项目根目录
-alias: {
-  '@': '/src'
+// ✅ 可用：以 / 开头，Vite 按项目根目录解析
+resolve: {
+  alias: {
+    '@': '/src'
+  }
 }
 
-// ❌ 错误：相对路径可能失效
-alias: {
-  '@': './src'
+// ❌ 错误：相对路径会原样保留，无法解析
+resolve: {
+  alias: {
+    '@': './src'
+  }
 }
 ```
 
-### 2. TypeScript 配置同步
+> 💡 **提示：** `/src` 形式在开发与客户端构建中可用，但跨环境（SSR、Node 脚本）不如绝对路径稳定，优先用 `path.resolve` 或 `fileURLToPath(new URL('./src', import.meta.url))`。
+
+### 2. 对象形式与顺序
 
 ```javascript
-// vite.config.js
-export default {
-  resolve: {
-    alias: {
-      '@': '/src',
-      '@components': '/src/components'
+// ⚠️ 两个别名互为前缀：'@foo/bar' 会被先命中的 '@foo' 规则处理
+// 对象形式无法保证顺序，结果可能不符合预期
+resolve: {
+  alias: {
+    '@foo': '/src/foo',
+    '@foo/bar': '/src/foo/bar'
+  }
+}
+
+// ✅ 正确：用数组形式，把更具体的规则放在前面
+resolve: {
+  alias: [
+    { find: /^@foo\/(.*)$/, replacement: '/src/foo/$1' },
+    { find: /^@foo$/, replacement: '/src/foo' }
+  ]
+}
+```
+
+### 3. 正则别名的特殊字符
+
+```javascript
+// ✅ 正确：转义正则特殊字符
+resolve: {
+  alias: [
+    {
+      find: /^@components\/(.*)$/,
+      replacement: '/src/components/$1'
     }
-  }
+  ]
 }
-```
 
-```json
-// tsconfig.json - 必须同步配置
-{
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "@components/*": ["src/components/*"]
+// ❌ 错误：/ 未转义，直接是非法正则，代码无法运行
+resolve: {
+  alias: [
+    {
+      find: /^@components/(.*)$/,
+      replacement: '/src/components/$1'
     }
+  ]
+}
+```
+
+### 4. dedupe 按需使用
+
+```javascript
+// ✅ 建议：仅在出现多副本问题时，针对出问题的依赖启用
+resolve: {
+  dedupe: ['vue']
+}
+```
+
+### 5. Vue 别名覆盖
+
+```javascript
+// 指向完整版后，所有 vue 导入都被改写，产物体积会变大
+// 仅在确实需要运行时模板编译时使用
+resolve: {
+  alias: {
+    vue: 'vue/dist/vue.esm-bundler.js'
   }
 }
-```
-
-### 3. 扩展名顺序
-
-```javascript
-// ✅ 正确：常用扩展名放前面
-extensions: ['.vue', '.js', '.ts', '.json']
-
-// ❌ 错误：不常用的扩展名放前面会影响性能
-extensions: ['.json', '.wasm', '.vue', '.js', '.ts']
-```
-
-### 4. 正则别名的特殊字符
-
-```javascript
-// ✅ 正确：转义特殊字符
-alias: [
-  {
-    find: /^@components\/(.*)$/,
-    replacement: '/src/components/$1'
-  }
-]
-
-// ❌ 错误：未转义会导致匹配失败
-alias: [
-  {
-    find: /^@components/(.*)$/,
-    replacement: '/src/components/$1'
-  }
-]
-```
-
-### 5. dedupe 的性能影响
-
-```javascript
-// ⚠️ 谨慎使用：dedupe 会增加构建时的解析成本
-dedupe: ['vue', 'vue-router', 'pinia']
-
-// ✅ 建议：仅对确实需要去重的依赖使用
-dedupe: ['vue']  // 只在出现多重副本问题时使用
-```
-
-### 6. 循环别名
-
-```javascript
-// ❌ 错误：可能导致循环引用
-alias: {
-  '@foo': '/src/foo',
-  '@foo/bar': '/src/foo/bar'  // 重复定义
-}
-
-// ✅ 正确：使用更具体的模式
-alias: {
-  '@': '/src'
-}
-```
-
-### 7. Vue 别名覆盖
-
-```javascript
-// ✅ 正确：明确指定 Vue 路径
-alias: {
-  vue: 'vue/dist/vue.esm-bundler.js'
-}
-
-// ⚠️ 注意：这会覆盖默认的 Vue 解析
-// 仅在需要完整版 Vue 时使用
 ```
 
 ## 与其他属性的关系
 
 | 属性 | 关系说明 |
 |------|----------|
-| `server.fs.strict` | 严格文件系统检查时，别名需要指向允许的目录 |
-| `optimizeDeps` | `resolve.alias` 影响依赖预构建 |
-| `build.rollupOptions.external` | 与 `resolve.dedupe` 配合处理外部依赖 |
-| `css.preprocessorOptions` | CSS 预处理器的路径解析受 `resolve` 影响 |
+| `server.fs.strict` / `server.fs.allow` | 开发服务器限制可访问目录时，别名指向的目录需在允许范围内 |
+| `optimizeDeps` | 依赖预构建同样遵循 `resolve.alias` 等解析配置 |
+| `ssr.resolve.mainFields` / `ssr.resolve.conditions` | SSR 构建的入口字段与导出条件需单独配置 |
+| `css.preprocessorOptions` | Sass、Less 的 `@import` 同样遵循 `resolve.alias` |
 
 ## 完整示例
 
-### 标准应用配置
+### 标准 Vue 应用
 
 ```javascript
 // vite.config.js
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import path from 'path'
+import path from 'node:path'
 
 export default defineConfig({
   plugins: [vue()],
 
   resolve: {
-    // 路径别名
+    // 路径别名：统一从 src 出发
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@assets': path.resolve(__dirname, './src/assets'),
       '@components': path.resolve(__dirname, './src/components'),
       '@views': path.resolve(__dirname, './src/views'),
       '@utils': path.resolve(__dirname, './src/utils'),
-      '@api': path.resolve(__dirname, './src/api'),
-      '@hooks': path.resolve(__dirname, './src/hooks'),
-      '@store': path.resolve(__dirname, './src/store')
+      '@api': path.resolve(__dirname, './src/api')
     },
 
-    // 扩展名
-    extensions: ['.vue', '.js', '.ts', '.jsx', '.tsx', '.json'],
+    // 多副本时强制使用同一份 Vue
+    dedupe: ['vue', 'vue-router', 'pinia'],
 
-    // package.json 字段优先级
-    mainFields: ['module', 'browser', 'main'],
-
-    // 导出条件
-    conditions: ['module', 'browser'],
-
-    // Vue 生态去重
-    dedupe: ['vue', '@vue/runtime-core']
+    // 其余子项保持默认即可
+    // extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
+    // mainFields: ['browser', 'module', 'jsnext:main', 'jsnext'],
+    // conditions: ['module', 'browser', 'development|production'],
+    // preserveSymlinks: false
   }
 })
 ```
 
-### TypeScript + Vue 配置
-
-```javascript
-// vite.config.ts
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import path from 'path'
-
-export default defineConfig({
-  plugins: [vue()],
-
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@types': path.resolve(__dirname, './src/types')
-    },
-    extensions: ['.ts', '.tsx', '.vue', '.js', '.jsx', '.json']
-  }
-})
-```
-
-```typescript
-// tsconfig.json
+```json
 {
   "compilerOptions": {
     "target": "ES2020",
@@ -738,45 +527,14 @@ export default defineConfig({
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@types/*": ["src/types/*"]
+      "@components/*": ["src/components/*"],
+      "@views/*": ["src/views/*"],
+      "@utils/*": ["src/utils/*"],
+      "@api/*": ["src/api/*"]
     },
     "types": ["vite/client"]
-  },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
-}
-```
-
-### Monorepo 配置
-
-```javascript
-// vite.config.js
-import { defineConfig } from 'vite'
-import path from 'path'
-
-export default defineConfig({
-  resolve: {
-    // 内部包别名
-    alias: {
-      '@my-app/ui': path.resolve(__dirname, '../../packages/ui/src'),
-      '@my-app/utils': path.resolve(__dirname, '../../packages/utils/src'),
-      '@my-app/shared': path.resolve(__dirname, '../../packages/shared/src')
-    },
-
-    // 去重共享依赖
-    dedupe: [
-      'vue',
-      'vue-router',
-      'pinia',
-      '@my-app/shared'
-    ],
-
-    // 扩展名
-    extensions: ['.js', '.ts', '.json', '.vue'],
-
-    // 优先 ES Module
-    mainFields: ['module', 'browser', 'main']
   }
-})
+}
 ```
 
 ### 环境相关配置
@@ -784,7 +542,7 @@ export default defineConfig({
 ```javascript
 // vite.config.js
 import { defineConfig } from 'vite'
-import path from 'path'
+import path from 'node:path'
 
 export default defineConfig(({ mode }) => {
   const isDev = mode === 'development'
@@ -794,80 +552,26 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, './src')
       },
-
-      // 开发环境优先 development 条件
-      conditions: isDev
-        ? ['development', 'module', 'browser']
-        : ['production', 'module', 'browser'],
-
-      // 开发环境保留符号链接便于调试
+      // 按模式追加导出条件，让依赖给出对应的构建产物
+      conditions: isDev ? ['development'] : ['production'],
+      // 开发期保留符号链接，便于调试 link 的本地包
       preserveSymlinks: isDev
     }
   }
 })
 ```
 
-### 完整正则别名配置
-
-```javascript
-// vite.config.js
-import { defineConfig } from 'vite'
-import path from 'path'
-
-export default defineConfig({
-  resolve: {
-    alias: [
-      // 基础别名
-      {
-        find: /^@$/,
-        replacement: path.resolve(__dirname, './src')
-      },
-      // 匹配 @/xxx/* 路径
-      {
-        find: /^@\/(.*)$/,
-        replacement: path.resolve(__dirname, './src/$1')
-      },
-      // 匹配 @components/xxx/*
-      {
-        find: /^@components\/(.*)$/,
-        replacement: path.resolve(__dirname, './src/components/$1')
-      },
-      // 匹配 @utils/xxx/*
-      {
-        find: /^@utils\/(.*)$/,
-        replacement: path.resolve(__dirname, './src/utils/$1')
-      }
-    ],
-
-    extensions: ['.js', '.ts', '.vue', '.json'],
-    mainFields: ['module', 'browser', 'main']
-  }
-})
-```
-
 ## 常见问题
 
-### 问题 1：别名不生效
+### 问题 1：别名不生效（编辑器报找不到模块）
 
-**原因**：TypeScript 配置未同步
+**原因**：只配置了 Vite，`tsconfig.json` 未同步，编辑器按 TypeScript 的规则解析。
 
-**解决**：
+**解决**：在 `tsconfig.json` 的 `compilerOptions.paths` 中配置同样的映射；或改用 `resolve.tsconfigPaths: true` 让 Vite 直接读取 `paths`。
 
-```json
-// tsconfig.json
-{
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]  // 必须与 Vite 配置一致
-    }
-  }
-}
-```
+### 问题 2：Vue 模板编译报错（提示运行时版本不含编译器）
 
-### 问题 2：Vue 模板编译报错
-
-**原因**：使用的是运行时版本 Vue
+**原因**：默认的 `vue` 入口是仅运行时构建，不含模板编译器。
 
 **解决**：
 
@@ -876,7 +580,7 @@ export default defineConfig({
 export default {
   resolve: {
     alias: {
-      vue: 'vue/dist/vue.esm-bundler.js'  // 使用完整版
+      vue: 'vue/dist/vue.esm-bundler.js'
     }
   }
 }
@@ -884,36 +588,17 @@ export default {
 
 ### 问题 3：Monorepo 包找不到
 
-**原因**：别名路径配置错误
+**原因**：别名相对路径或层级写错。
 
-**解决**：
+**解决**：用绝对路径指向包源码目录，并打印确认：
 
 ```javascript
-// ✅ 正确配置
-alias: {
-  '@my-package': path.resolve(__dirname, '../../packages/my-package/src')
-}
-
-// 检查路径是否正确
+import path from 'node:path'
 console.log(path.resolve(__dirname, '../../packages/my-package/src'))
 ```
 
-### 问题 4：扩展名解析失败
+### 问题 4：导入 `.vue` 文件解析失败
 
-**原因**：扩展名未添加到 `extensions` 列表
+**原因**：导入时省略了 `.vue` 扩展名，而它不在默认 `extensions` 列表中。
 
-**解决**：
-
-```javascript
-export default {
-  resolve: {
-    extensions: ['.js', '.ts', '.vue', '.json', '.wasm']  // 添加所需扩展名
-  }
-}
-```
-
-## 官方文档
-
-[Resolve Options: resolve - Vite 官方文档](https://cn.vitejs.dev/config/shared-options.html#resolve-options)
-
-[Module Resolution - Vite 官方文档](https://cn.vitejs.dev/guide/features.html#module-resolution)
+**解决**：官方建议直接写完整扩展名 `import Comp from './Comp.vue'`，这样对 IDE 与类型支持最友好；确实需要省略时再把 `'.vue'` 追加到 `resolve.extensions`。

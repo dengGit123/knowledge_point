@@ -1,19 +1,27 @@
 # optimizeDeps 配置
 
+> 📖 [官方文档：Dep Optimization Options](https://cn.vitejs.dev/config/dep-optimization-options.html)
+>
+> 📖 [官方文档：依赖预构建指南](https://cn.vitejs.dev/guide/dep-pre-bundling.html)
+
 ## 定义
 
-`optimizeDeps` 配置依赖预构建行为，控制 Vite 如何转换和缓存依赖。
+`optimizeDeps` 配置依赖预构建（Dependency Pre-Bundling）行为。Vite 首次启动开发服务器时用 esbuild 对依赖进行预构建，目的有两个：
+
+1. **格式转换**：浏览器只能识别 ESM，预构建把 CommonJS / UMD 格式的依赖转换为 ESM；
+2. **减少请求**：把依赖内部的大量小模块（如 lodash-es 有 600+ 个模块）合并为单文件，避免开发时的瀑布式请求。
 
 **类型**：
 
 ```typescript
 {
-  include?: string[]
-  exclude?: string[]
+  include?: string | string[]
+  exclude?: string | string[]
+  /** @experimental 内部/实验性字段，通常无需手动配置 */
   needsInterop?: string[]
   esbuildOptions?: EsbuildOptions
   force?: boolean
-  /** @deprecated 已弃用 */
+  /** @deprecated Vite 5.1 起弃用 */
   disabled?: boolean | 'build' | 'dev'
   noDiscovery?: boolean
   holdUntilCrawlEnd?: boolean
@@ -21,150 +29,120 @@
 }
 ```
 
-**默认值**：
-
-```javascript
-{
-  include: [],
-  exclude: [],
-  needsInterop: [],
-  esbuildOptions: {},
-  force: false,
-  disabled: 'build',      // 已弃用，勿再使用
-  noDiscovery: false,
-  holdUntilCrawlEnd: true,
-  entries: undefined      // 默认自动从 index.html 扫描
-}
-```
+> ⚠️ **注意：** 官方文档没有给出 `optimizeDeps` 的整体默认值，各子项说明以官方逐项描述为准（见下文）。
 
 ## 子属性详解
 
 ### include
 
-**类型**：`string[]`
+**类型**：`string | string[]`
 
-**默认值**：`[]`
-
-强制预构建的依赖，即使不在自动扫描中发现。
+强制预构建指定的依赖。默认情况下，只有依赖扫描器从入口静态分析出的依赖才会被预构建；不在 `node_modules` 中的 linked 包（Monorepo 场景）无法被扫描发现，必须显式加入 `include`。
 
 ```javascript
-// 指定需要预构建的依赖
-include: ['vue', 'vue-router', 'axios']
+// vite.config.js
+export default {
+  optimizeDeps: {
+    // 冷启动即预构建核心依赖，避免开发中"发现新依赖"引发二次预构建和整页刷新
+    include: ['vue', 'vue-router', 'pinia'],
 
-// Monorepo 中的本地包
-include: ['@my-app/shared', '@my-app/utils']
+    // Monorepo / linked 包（不在 node_modules 中，扫描器发现不了）
+    // include: ['@my-app/shared']
 
-// ❌ 不支持 glob 模式，必须是可解析的导入路径
-// include: ['@my-app/*']  // 错误！
+    // 深层导入路径也可以（官方示例写法）
+    // include: ['my-lib/deep/file']
+  }
+}
+```
 
-// 深层导入也可以
-include: ['my-lib/components/Button.vue']
+```javascript
+// ❌ include 不支持 glob 模式，必须是可解析的导入路径
+include: ['@my-app/*']
 
-// ESM 格式的依赖
-include: ['some-esm-library']
+// ✅ glob 只用于 entries（它指定扫描入口，不是依赖列表）
+entries: ['src/**/*.ts']
 ```
 
 ### exclude
 
-**类型**：`string[]`
+**类型**：`string | string[]`
 
-**默认值**：`[]`
-
-排除预构建的依赖，这些依赖将按原样处理。
+排除预构建的依赖，这些依赖在开发时会按原始形式（不打包）直接被浏览器消费，因此要求本身是 ESM 或能被其他插件正常处理。
 
 ```javascript
-// 排除本地包
-exclude: ['your-local-package']
-
-// 排除不需要预构建的依赖
-exclude: ['big-library']
-
-// 排除调试包
-exclude: ['debug-package']
+// vite.config.js
+export default {
+  optimizeDeps: {
+    // Monorepo 本地包：希望改动即时生效、不走缓存时排除
+    exclude: ['@my-app/local-pkg']
+  }
+}
 ```
 
 ### needsInterop
 
-**类型**：`string[]`
+**类型**：`string[]`（在 Vite 类型定义中标注为 `@experimental`）
 
-**默认值**：`[]`
+**内部 / 实验性字段**，Vite 用它记录预构建过程中哪些依赖需要 CJS 到 ESM 的默认导出互操作。官方配置文档并未把它列为公开配置项，通常**无需手动配置**：
 
-标记需要转换为 CommonJS 兼容格式的 ESM 依赖。
-
-```javascript
-// 需要互操作的 ESM 包
-needsInterop: ['some-esm-package']
-
-// 常见需要互操作的包
-needsInterop: ['lodash-es', 'classnames']
-```
+- 预构建会自动完成 CommonJS 依赖的互操作（给 `module.exports` 形式的包补上 default 导出）；
+- lodash-es 这类纯 ESM 包本身不需要任何互操作，为它配置 `needsInterop` 没有意义；
+- 遇到默认导出相关报错时，正确做法是把依赖加入 `include` 确保它被预构建，而不是设置 `needsInterop`。
 
 ### esbuildOptions
 
 **类型**：`EsbuildOptions`
 
-**默认值**：`{}`
-
-传递给 esbuild 的选项，用于预构建过程。
+传递给 esbuild 的选项，**只作用于依赖扫描与预构建过程，不影响业务源码**。部分选项由 Vite 固定（如 `entryPoints`、`outdir`、`format` 等），修改它们会破坏预构建；`external` 不可用，请改用 `optimizeDeps.exclude`。
 
 ```javascript
-esbuildOptions: {
-  // 目标环境
-  target: 'es2015',
-  target: 'es2020',
-  target: ['chrome58', 'edge16'],
+// vite.config.js
+export default {
+  optimizeDeps: {
+    esbuildOptions: {
+      // 预构建产物的语法目标
+      target: 'es2020',
 
-  // 全局定义
-  define: {
-    global: 'globalThis',
-    'process.env.NODE_ENV': '"development"'
-  },
+      // 全局替换：⚠️ 只影响被预构建的依赖
+      define: {
+        global: 'globalThis'
+      },
 
-  // JSX 配置
-  jsx: 'automatic',    // 自动 JSX
-  jsx: 'preserve',     // 保留 JSX
-  jsxFactory: 'h',     // JSX 工厂函数
-  jsxFrag: 'Fragment', // JSX 片段
+      // Loader 映射：预构建的依赖里含特殊语法时才需要
+      loader: {
+        '.js': 'jsx'
+      },
 
-  // Loader 配置
-  loader: {
-    '.js': 'jsx',
-    '.ts': 'tsx',
-    '.md': 'text'
-  },
-
-  // 插件
-  plugins: [customEsbuildPlugin()],
-
-  // 其他选项
-  keepNames: false,
-  minify: false,
-  minifyIdentifiers: false,
-  minifyWhitespace: false,
-  minifySyntax: false
+      // esbuild 插件：介入预构建过程
+      // plugins: [myEsbuildPlugin()]
+    }
+  }
 }
 ```
+
+> ⚠️ **注意：** `esbuildOptions.define` 只对被预构建的依赖生效。`__VUE_OPTIONS_API__`、`__VUE_PROD_DEVTOOLS__` 这类 Vue 编译期常量必须配置在**顶层的 `define`** 选项中，放在 `esbuildOptions.define` 里不会影响业务代码。
 
 ### force
 
 **类型**：`boolean`
 
-**默认值**：`false`
-
-强制重新预构建所有依赖，忽略缓存。
+强制忽略已缓存的预构建结果，重新执行预构建。等价手段：CLI 加 `--force`，或删除 `node_modules/.vite` 目录。
 
 ```javascript
-force: false  // 使用缓存（默认）
-force: true   // 强制重新构建
+// vite.config.js
+export default {
+  optimizeDeps: {
+    // 每次启动都重新预构建（排查问题时临时使用）
+    force: true
+  }
+}
 ```
 
 ### disabled（已弃用）
 
 **类型**：`boolean | 'build' | 'dev'`
 
-**默认值**：`'build'`
-
-> ⚠️ **已弃用**：Vite 5.1 起移除了构建期间的依赖优化，该选项已冗余，未来版本将删除。如需禁用依赖自动发现，改用 `optimizeDeps.noDiscovery: true` 并将 `include` 留空。
+> ⚠️ **注意：** Vite 5.1 起弃用。构建期间的依赖优化已被移除（生产构建由 Rollup 直接处理依赖），该选项不再有意义，未来版本将删除。若要禁止开发时的自动依赖发现，改用 `noDiscovery: true` 并保持 `include` 为空。
 
 ```javascript
 // ❌ 旧写法（已弃用）
@@ -185,98 +163,83 @@ optimizeDeps: {
 
 **默认值**：`false`
 
-禁用自动依赖发现，仅预构建 `include` 中的依赖。
-
-```javascript
-noDiscovery: false  // 自动扫描（默认）
-noDiscovery: true   // 仅预构建 include 中的依赖
-```
-
-### entries
-
-**类型**：`string[]`
-
-**默认值**：`[]`（自动检测入口文件）
-
-指定用于依赖扫描的入口文件。
-
-```javascript
-// 单入口
-entries: ['src/main.js']
-
-// 多入口（多页面应用）
-entries: ['src/main.js', 'src/renderer.js']
-
-// TypeScript 入口
-entries: ['src/main.ts']
-```
-
-## 可选值与使用方式
-
-### 默认配置
+禁用自动依赖发现，只有 `include` 中列出的依赖会被预构建。
 
 ```javascript
 // vite.config.js
 export default {
   optimizeDeps: {
-    include: [],
-    exclude: [],
-    needsInterop: [],
-    esbuildOptions: {},
-    force: false,
-    noDiscovery: false,
-    holdUntilCrawlEnd: true
+    // 关闭自动扫描，依赖范围完全由 include 控制
+    noDiscovery: true,
+    include: ['vue', 'vue-router']
   }
 }
 ```
 
-### 基础预构建配置
+### holdUntilCrawlEnd
+
+**类型**：`boolean`
+
+**默认值**：`true`（实验性，Vite 5.1 新增）
+
+开启时（默认），冷启动阶段 Vite 会**挂起**初次访问的源码请求，直到入口静态导入的所有依赖都被抓取（crawl）并完成预构建后才放行，从而避免"发现新依赖 → 重新预构建 → 整页刷新"的连锁反应。
+
+设为 `false` 时请求不再被挂起、页面能更早响应，但代价是开发中可能出现多次整页刷新。
 
 ```javascript
+// vite.config.js
 export default {
   optimizeDeps: {
-    // 强制预构建
+    // 允许请求先行，接受可能的整页刷新
+    holdUntilCrawlEnd: false
+  }
+}
+```
+
+### entries
+
+**类型**：`string | string[]`
+
+指定依赖扫描的入口。默认行为：Vite 爬取项目中所有 `.html` 文件来发现入口（忽略 `node_modules`、`build.outDir`、`__tests__`、`coverage`）；若设置了 `build.rollupOptions.input`，则以它为准。两者都不满足需求（如非 HTML 入口的项目）时，才需要显式指定。
+
+值是 glob 模式或模式数组（相对项目根目录），**支持通配符**：
+
+```javascript
+// vite.config.js
+export default {
+  optimizeDeps: {
+    // 单个 glob 模式（官方示例）
+    entries: ['src/**/*.ts'],
+
+    // 多个入口（多页面应用）
+    // entries: ['src/main.js', 'src/renderer.js']
+  }
+}
+```
+
+> 💡 **提示：** `entries` 管"从哪些入口开始扫描"，`include` 管"哪些依赖必须预构建"。`entries` 支持 glob，`include` 不支持。
+
+## 可选值与使用方式
+
+### 默认行为
+
+```javascript
+// 不配置 optimizeDeps 时：Vite 自动扫描入口并预构建发现的依赖，
+// 结果缓存在 node_modules/.vite/deps，
+// 锁文件、vite.config、Vite/Node 版本变化时自动重新预构建
+export default {}
+```
+
+### 基础配置
+
+```javascript
+// vite.config.js
+export default {
+  optimizeDeps: {
+    // 强制预构建（含扫描发现不了或深层导入的依赖）
     include: ['vue', 'element-plus'],
-    // 排除某些依赖
+    // 排除本地 / 特殊依赖
     exclude: ['@monorepo/local-pkg']
-  }
-}
-```
-
-### esbuild 选项配置
-
-```javascript
-export default {
-  optimizeDeps: {
-    esbuildOptions: {
-      target: 'es2020',
-      jsx: 'automatic',
-      loader: {
-        '.js': 'jsx'
-      }
-    }
-  }
-}
-```
-
-### SSR 应用配置
-
-```javascript
-export default {
-  optimizeDeps: {
-    // SSR 场景：构建期依赖优化已在 Vite 5.1 移除，无需配置 disabled
-    // 如需控制 SSR 的依赖预构建，使用 ssr.optimizeDeps
-  }
-}
-```
-
-### 强制重新构建
-
-```javascript
-export default {
-  optimizeDeps: {
-    // 强制重新预构建
-    force: true
   }
 }
 ```
@@ -284,11 +247,11 @@ export default {
 ### 仅预构建指定依赖
 
 ```javascript
+// vite.config.js
 export default {
   optimizeDeps: {
-    // 禁用自动发现
+    // 关闭自动发现，只预构建 include 列出的依赖
     noDiscovery: true,
-    // 仅预构建这些依赖
     include: ['vue', 'vue-router']
   }
 }
@@ -299,219 +262,150 @@ export default {
 ### 预构建前
 
 ```javascript
-// node_modules/vue/dist/vue.runtime.esm.js
-// 多个文件需要单独请求
-import { createApp } from 'vue'
-// → 需要请求 vue.runtime.esm.js
-// → 及其依赖的多个文件
+// lodash-es 内部有 600+ 个小模块
+// 开发时浏览器需要按 import 关系逐个请求
+import { debounce } from 'lodash-es'
 ```
 
 ### 预构建后
 
 ```javascript
-// node_modules/.vite/deps/vue.js
-// 所有依赖打包到一个文件
-import { createApp } from 'vue'
-// → 单次请求 vite/deps/vue.js
+// node_modules/.vite/deps/lodash-es.js
+// 依赖被 esbuild 打成单文件，浏览器只需一次请求
+// 响应带 Cache-Control: max-age=31536000, immutable，
+// 整页刷新直接命中浏览器缓存；新一轮预构建用 ?v=hash 版本查询使旧缓存失效
+import { debounce } from 'lodash-es'
 ```
 
-### needsInterop 生效
+### CommonJS 依赖转换
 
 ```javascript
-// 配置前：某些 ESM 包导入失败
-import pkg from 'some-esm-package'
-// Error: Default export is not available
-
-// 配置后
-optimizeDeps: {
-  needsInterop: ['some-esm-package']
-}
-import pkg from 'some-esm-package'
-// 正常工作
-```
-
-### esbuildOptions.define 生效
-
-```javascript
-// vite.config.js
-optimizeDeps: {
-  esbuildOptions: {
-    define: {
-      global: 'globalThis'
-    }
-  }
-}
-
-// 预构建时
-// global → globalThis
+// 预构建前：some-cjs-lib 用 module.exports 导出，浏览器无法直接消费
+// 预构建时：esbuild 转成 ESM，并自动补上 default 导出（互操作）
+// 预构建后：以下导入正常工作，无需手动配置 needsInterop
+import pkg from 'some-cjs-lib'
 ```
 
 ## 使用场景
 
 ### 1. Monorepo 本地包
 
-**场景**：Monorepo 中的本地包需要预构建
+**场景**：linked 包不在 `node_modules` 中，无法被自动发现和预构建。
 
 ```javascript
 // vite.config.js
 export default {
   optimizeDeps: {
-    // 强制预构建本地包
-    include: [
-      '@my-app/shared',
-      '@my-app/ui-components',
-      '@my-app/utils'
-    ]
+    include: ['@my-app/shared', '@my-app/ui-components']
   }
 }
 ```
 
-### 2. ESM 包互操作
+> 💡 **提示：** 修改 linked 包源码后，用 `vite --force` 重启开发服务器，让改动重新预构建。
 
-**场景**：某些 ESM 包需要 default 导出支持
+### 2. CommonJS 依赖
+
+**场景**：CJS 格式的依赖在浏览器中报"未提供 default 导出"或语法错误。
 
 ```javascript
 // vite.config.js
 export default {
   optimizeDeps: {
-    // 标记需要互操作的包
-    needsInterop: ['lodash-es', 'classnames', 'some-esm-lib']
+    // 确保该依赖被预构建（预构建会自动完成 CJS → ESM 互操作）
+    include: ['some-cjs-lib']
   }
 }
 ```
 
-### 3. SSR 应用
+### 3. SSR / 构建期
 
-**场景**：SSR 构建时禁用预构建
+**场景**：SSR 或生产构建中如何处理依赖优化。
 
 ```javascript
 // vite.config.js
 export default {
-  optimizeDeps: {
-    // 依赖预构建只在开发服务器（vite dev）中运行
-    // 构建期（vite build）由 Rollup 处理依赖，无需（也无法）配置禁用
-  }
+  // Vite 5.1 起构建期不再做依赖优化（由 Rollup 处理依赖），
+  // dev 期的预构建也无法通过已弃用的 disabled 关闭；
+  // SSR 外部化行为请使用 ssr.noExternal / ssr.external 控制
 }
 ```
 
 ### 4. 调试预构建
 
-**场景**：强制重新预构建排查问题
+**场景**：排查缓存相关问题时强制重新预构建。
 
 ```javascript
 // vite.config.js
 export default {
   optimizeDeps: {
-    // 强制重新构建
     force: true
   }
 }
 ```
 
-### 5. 自定义 JSX 处理
+### 5. 深层导入的依赖
 
-**场景**：预构建时需要 JSX 转换
-
-```javascript
-// vite.config.js
-export default {
-  optimizeDeps: {
-    esbuildOptions: {
-      jsx: 'automatic',
-      jsxImportSource: 'vue'
-    }
-  }
-}
-```
-
-### 6. 性能优化
-
-**场景**：仅预构建必要依赖，加快启动
+**场景**：依赖只通过深层路径导入，扫描器识别不到完整包。
 
 ```javascript
 // vite.config.js
 export default {
   optimizeDeps: {
-    // 禁用自动发现
-    noDiscovery: true,
-    // 仅预构建核心依赖
-    include: ['vue', 'vue-router', 'pinia']
+    include: ['my-lib/deep/file']
   }
 }
 ```
 
 ## 注意事项
 
-### 1. 配置修改需要重启
+### 1. 重新预构建的触发条件
 
-```javascript
-// ⚠️ 修改 optimizeDeps 配置后
-// 需要重启开发服务器才能生效
+开发服务器在以下情况会自动重新预构建（无需手动干预）：
 
-// 可以使用 --force 参数
-// vite dev --force
-```
+- 包管理器锁文件变化（`package-lock.json`、`yarn.lock`、`pnpm-lock.yaml`、`bun.lockb`）；
+- patches 目录变化；
+- `vite.config.js/ts` 配置文件变化（Vite 会自动重启）；
+- Vite 版本或 Node 版本变化。
+
+手动触发方式：CLI 加 `--force`，或删除 `node_modules/.vite` 目录。
 
 ### 2. 缓存位置
 
 ```javascript
-// 预构建缓存存储在 cacheDir 中
-// 默认：node_modules/.vite/deps
-
-// 可以通过 cacheDir 修改
+// 预构建缓存存储在 cacheDir 中，默认 node_modules/.vite
+// 预构建产物在 node_modules/.vite/deps，并生成 _metadata.json 记录版本信息
 export default {
-  cacheDir: 'vite-cache'
+  cacheDir: 'node_modules/.vite' // 默认值，可按需修改
 }
 ```
 
-### 3. include 与 exclude
+### 3. include 与 exclude 不要互相冲突
 
 ```javascript
-// ⚠️ 同一个依赖不能同时配置
-// ❌ 错误
+// ❌ 同一依赖同时列入两者，行为不可控
 optimizeDeps: {
   include: ['vue'],
   exclude: ['vue']
 }
 
-// ✅ 正确：二选一
+// ✅ 二选一
 optimizeDeps: {
   include: ['vue']
 }
 ```
 
-### 4. needsInterop 谨慎使用
+### 4. 浏览器端缓存
 
-```javascript
-// ⚠️ needsInterop 会影响打包结果
-// 仅在确实需要时使用
-
-// ✅ 建议：优先尝试不加
-// 遇到 "Default export is not available" 时再加
-optimizeDeps: {
-  needsInterop: ['problematic-package']
-}
-```
-
-### 5. 禁用自动发现（替代旧 disabled 的场景）
-
-```javascript
-// 旧版用 disabled: 'dev' 禁用预构建，现已弃用
-// 现代替代方案：禁用自动发现，仅预构建 include 中的依赖
-
-optimizeDeps: {
-  noDiscovery: true,
-  include: []   // 留空则不做任何预构建
-}
-```
+预构建产物以 `Cache-Control: max-age=31536000, immutable` 下发，整页刷新不再请求开发服务器；重新预构建后产物 URL 携带新的 `?v=hash`，自然绕开旧缓存。
 
 ## 与其他属性的关系
 
 | 属性 | 关系说明 |
 |------|----------|
-| `cacheDir` | 预构建缓存存储位置 |
+| `cacheDir` | 预构建缓存存储位置（默认 `node_modules/.vite`） |
 | `resolve.alias` | 别名影响依赖解析和预构建 |
-| `build.commonjsOptions` | 生产构建的 CJS 处理配置 |
+| `define` | 业务代码的编译期常量（`esbuildOptions.define` 只作用于被预构建的依赖） |
+| `build.commonjsOptions` | 生产构建的 CJS 处理配置（对应预构建期的 `esbuildOptions`） |
 | `server.fs.allow` | 文件系统访问权限影响依赖扫描 |
 
 ## 工作原理
@@ -519,25 +413,19 @@ optimizeDeps: {
 ```
 ┌──────────────────────────────────────────┐
 │  1. 扫描项目中的依赖                     │
-│     → 读取 entries 文件                   │
-│     → 分析 import 语句                     │
-│     → 发现所有使用的依赖                   │
+│     → 从 entries（默认全部 .html）爬取    │
+│     → 用 esbuild 分析 import 语句        │
 ├──────────────────────────────────────────┤
-│  2. 将 CJS 转换为 ESM                    │
-│     → 使用 esbuild 转换                   │
-│     → 处理 needsInterop 标记              │
+│  2. 用 esbuild 打包依赖                  │
+│     → CJS/UMD 转为 ESM（自动互操作）     │
+│     → 合并内部小模块，应用 esbuildOptions │
 ├──────────────────────────────────────────┤
-│  3. 使用 esbuild 打包                     │
-│     → 合并多个文件                         │
-│     → 应用 esbuildOptions                 │
+│  3. 缓存到 node_modules/.vite/deps       │
+│     → 生成 _metadata.json 记录版本与哈希 │
 ├──────────────────────────────────────────┤
-│  4. 缓存到 node_modules/.vite/deps      │
-│     → 生成 _metadata.json                 │
-│     → 记录依赖关系                         │
-├──────────────────────────────────────────┤
-│  5. 后续直接使用缓存                     │
-│     → 跳过扫描和转换                       │
-│     → 快速启动开发服务器                   │
+│  4. 后续启动直接用缓存                   │
+│     → 锁文件/配置/版本未变则跳过预构建    │
+│     → 浏览器端配合 immutable 缓存        │
 └──────────────────────────────────────────┘
 ```
 
@@ -553,28 +441,18 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
 
+  // Vue 编译期常量放在顶层 define（不要放 esbuildOptions.define）
+  define: {
+    __VUE_OPTIONS_API__: JSON.stringify(true),
+    __VUE_PROD_DEVTOOLS__: JSON.stringify(false)
+  },
+
   optimizeDeps: {
-    // 强制预构建 Vue 生态
-    include: [
-      'vue',
-      'vue-router',
-      'pinia',
-      '@vueuse/core'
-    ],
+    // 预构建 Vue 生态核心依赖
+    include: ['vue', 'vue-router', 'pinia', '@vueuse/core'],
 
     // 排除本地包
-    exclude: [
-      '@my-app/local-utils'
-    ],
-
-    // esbuild 配置
-    esbuildOptions: {
-      target: 'es2020',
-      define: {
-        __VUE_OPTIONS_API__: JSON.stringify(true),
-        __VUE_PROD_DEVTOOLS__: JSON.stringify(false)
-      }
-    }
+    exclude: ['@my-app/local-utils']
   }
 })
 ```
@@ -587,63 +465,11 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   optimizeDeps: {
-    // 预构建 workspace 包
-    include: [
-      '@workspace/shared',
-      '@workspace/ui',
-      '@workspace/utils'
-    ],
+    // 预构建 workspace 包（linked 包必须显式列出）
+    include: ['@workspace/shared', '@workspace/ui'],
 
-    // 禁用自动发现（加快启动）
-    noDiscovery: true,
-
-    // esbuild 配置
-    esbuildOptions: {
-      target: 'es2020'
-    }
-  }
-})
-```
-
-### React 应用配置
-
-```javascript
-// vite.config.js
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-
-export default defineConfig({
-  plugins: [react()],
-
-  optimizeDeps: {
-    // React 相关依赖
-    include: [
-      'react',
-      'react-dom',
-      'react-router-dom'
-    ],
-
-    // JSX 处理
-    esbuildOptions: {
-      jsx: 'automatic',
-      loader: {
-        '.js': 'jsx'
-      }
-    }
-  }
-})
-```
-
-### SSR 应用配置
-
-```javascript
-// vite.config.js
-import { defineConfig } from 'vite'
-
-export default defineConfig({
-  optimizeDeps: {
-    // 开发环境强制预构建某些依赖
-    include: ['@ssr/async-component']
+    // 关闭自动发现，依赖范围完全由 include 控制
+    noDiscovery: true
   }
 })
 ```
@@ -654,125 +480,71 @@ export default defineConfig({
 // vite.config.js
 export default {
   optimizeDeps: {
-    // 指定多入口用于依赖扫描
-    entries: [
-      'src/main.js',
-      'src/renderer.js',
-      'src/preload.js'
-    ]
-  }
-})
-```
-
-### 开发调试配置
-
-```javascript
-// vite.config.js
-export default {
-  optimizeDeps: {
-    // 强制重新构建
-    force: true,
-
-    // 启用详细日志
-    esbuildOptions: {
-      logLevel: 'verbose'
-    }
+    // 用 glob 指定扫描入口（类型为 string | string[]）
+    entries: ['src/**/*.ts']
   }
 }
 ```
 
 ## 常见问题
 
-### 问题 1：本地包没有正确预构建
+### 问题 1：Monorepo 本地包没有正确预构建
 
-**原因**：Vite 自动扫描无法发现本地包
-
-**解决**：
+**原因**：linked 包不在 `node_modules` 中，自动扫描发现不了。
 
 ```javascript
-// ✅ 使用 include
+// ✅ 显式加入 include
 optimizeDeps: {
   include: ['@monorepo/shared']
 }
 ```
 
-### 问题 2：ESM 包需要 default 导出
+### 问题 2：导入 CJS 包时报"未提供 default 导出"
 
-**原因**：某些 ESM 包使用了 `module.exports`
-
-**解决**：
+**原因**：该 CJS 依赖没有被预构建，浏览器拿到了未转换的 CommonJS 代码。
 
 ```javascript
-// ✅ 使用 needsInterop
+// ✅ 用 include 确保它被预构建（预构建自动补 default 导出）
 optimizeDeps: {
-  needsInterop: ['some-esm-package']
+  include: ['some-cjs-lib']
 }
 ```
 
-### 问题 3：预构建缓存导致问题
-
-**原因**：缓存过期或损坏
+### 问题 3：预构建缓存损坏或内容过期
 
 **解决**：
 
 ```bash
-# 方法一：删除缓存
+# 方法一：删除缓存目录
 rm -rf node_modules/.vite
 
-# 方法二：使用 --force
-vite dev --force
-
-# 方法三：配置 force
-optimizeDeps: {
-  force: true
-}
+# 方法二：启动时强制重新预构建
+vite --force
 ```
 
-### 问题 4：某些库不支持预构建
+### 问题 4：依赖使用了 Node.js 特性，浏览器无法运行
 
-**原因**：库使用了 Node.js 特性
-
-**解决**：
+**原因**：库依赖 Node 内置模块，转换后仍无法在浏览器执行。
 
 ```javascript
-// ✅ 使用 exclude
+// ✅ 排除预构建，改由其他方式处理（如 polyfill、替换包）
 optimizeDeps: {
   exclude: ['node-only-library']
-}
-```
-
-### 问题 5：JSX 组件预构建失败
-
-**原因**：esbuild 需要 JSX 配置
-
-**解决**：
-
-```javascript
-// ✅ 配置 loader
-optimizeDeps: {
-  esbuildOptions: {
-    loader: {
-      '.js': 'jsx'
-    }
-  }
 }
 ```
 
 ## 命令行用法
 
 ```bash
-# 强制重新预构建
-vite dev --force
+# 强制忽略缓存、重新预构建
+vite --force
 
-# 清除缓存后启动
-vite dev --force
+# 只执行依赖预构建，不启动开发服务器
+vite optimize
 
-# 预览预构建缓存
+# 手动清空缓存目录
+rm -rf node_modules/.vite
+
+# 查看预构建产物
 ls node_modules/.vite/deps
 ```
-
-## 官方文档
-
-[Dep Optimization: optimizeDeps - Vite 官方文档](https://cn.vitejs.dev/config/dep-optimization-options.html)
-
-[Dependency Pre-Bundling - Vite 官方文档](https://cn.vitejs.dev/guide/dep-pre-bundling.html)

@@ -1,105 +1,73 @@
 # cacheDir 配置
 
+> 📖 [官方文档：Shared Options](https://cn.vitejs.dev/config/shared-options.html)
+
 ## 定义
 
-`cacheDir` 指定缓存文件的存储目录，用于存放预构建依赖和转换后的源码缓存，提高 Vite 启动和 HMR 速度。
+`cacheDir` 指定缓存文件的存储目录。此目录下保存 Vite 预打包的依赖以及其他缓存文件，用于提升冷启动和按需加载的速度。需要重新生成缓存时，可以使用 `--force` 命令行选项，或手动删除该目录。
 
 **类型**：`string`
 
-**默认值**：`'node_modules/.vite'`（相对于 `root` 目录）
+**默认值**：`'node_modules/.vite'`（相对于项目根目录；未检测到 `package.json` 时默认为 `.vite`）
 
 ## 可选值与使用方式
 
-### 1. 相对路径
-
 ```javascript
-// 默认值
-export default {
-  cacheDir: 'node_modules/.vite'
-}
+// vite.config.js
+import { defineConfig } from 'vite'
+import path from 'node:path'
 
-// 自定义缓存目录
-export default {
-  cacheDir: '.vite'
-}
+export default defineConfig({
+  // 默认值
+  // cacheDir: 'node_modules/.vite',
 
-// 嵌套目录
-export default {
-  cacheDir: '.cache/vite'
-}
-```
+  // 或自定义相对路径（相对于项目根目录）
+  // cacheDir: '.vite-cache',
 
-### 2. 绝对路径
+  // 或绝对路径，例如 Docker 挂载目录、monorepo 共享目录
+  // cacheDir: path.resolve(__dirname, '../../.vite-cache'),
 
-```javascript
-import path from 'path'
-
-export default {
-  cacheDir: path.resolve(__dirname, './.vite-cache')
-}
-
-// 使用环境变量
-export default {
+  // 或交给环境变量控制
   cacheDir: process.env.VITE_CACHE_DIR || 'node_modules/.vite'
-}
-```
-
-### 3. 不同环境不同缓存目录
-
-```javascript
-export default defineConfig(({ mode }) => {
-  return {
-    cacheDir: mode === 'test' ? '.vite-test' : 'node_modules/.vite'
-  }
 })
 ```
 
 ## 缓存目录结构
 
-```
+```text
 node_modules/.vite/
-├── deps/                    # 预构建依赖缓存
-│   ├── _metadata.json       # 依赖元数据
-│   ├── vue.js               # 预构建的 Vue
-│   ├── vue-router.js        # 预构建的 Vue Router
-│   ├── axios.js              # 预构建的 Axios
-│   └── ...
-├── fs/                      # 文件系统缓存
-│   └── ...
-└── metadata.json            # 缓存元信息
+├── deps/
+│   ├── _metadata.json      ← 预构建元数据（依赖版本、hash、chunk 映射）
+│   ├── vue.js              ← 预打包后的依赖产物
+│   ├── vue-router.js
+│   └── chunk-XXXX.js       ← 被多个依赖共享的公共 chunk
+└── deps_temp_XXXX/         ← 重新预构建时的临时目录，完成后替换 deps/
 ```
 
-### 各目录说明
-
-| 目录 | 内容 | 说明 |
+| 路径 | 内容 | 说明 |
 |------|------|------|
-| `deps/` | 预构建依赖 | CommonJS 转 ESM 后的依赖文件 |
-| `fs/` | 文件系统缓存 | 文件监听和转换结果缓存 |
-| `metadata.json` | 元数据 | 缓存版本和配置信息 |
+| `deps/` | 预构建产物 | CommonJS 等格式转成 ESM 后的依赖文件 |
+| `deps/_metadata.json` | 元数据 | 记录依赖版本与 hash，用于判断缓存是否有效 |
+| `deps_temp_*/` | 临时目录 | 重新预构建过程中使用，成功后替换旧的 `deps/` |
 
 ## 生效后的结果示例
 
-### 默认配置
-
 ```javascript
-// vite.config.js
-export default {
-  // cacheDir: 'node_modules/.vite'  // 默认值
-}
+// vite.config.js —— 不配置 cacheDir 时等价于使用默认值
+export default {}
 ```
 
-```
+```text
 project/
 ├── node_modules/
-│   └── .vite/          ← 缓存目录
-│       ├── deps/
-│       └── metadata.json
+│   └── .vite/              ← 缓存目录（默认位置）
+│       └── deps/
 ├── src/
-├── vite.config.js
-└── package.json
+├── package.json
+└── vite.config.js
 ```
 
-### 自定义缓存目录
+自定义后缓存目录随之移动：
 
 ```javascript
 // vite.config.js
@@ -108,35 +76,19 @@ export default {
 }
 ```
 
-```
+```text
 project/
-├── .vite-cache/         ← 自定义缓存目录
-│   ├── deps/
-│   └── metadata.json
+├── .vite-cache/            ← 自定义缓存目录
+│   └── deps/
 ├── node_modules/
 ├── src/
-├── vite.config.js
-└── package.json
+├── package.json
+└── vite.config.js
 ```
-
-### 项目根目录外缓存
-
-```javascript
-import path from 'path'
-
-// vite.config.js
-export default {
-  cacheDir: path.resolve(__dirname, '../../.vite-cache')
-}
-```
-
-适用于 Monorepo 共享缓存场景。
 
 ## 使用场景
 
-### 1. 避免 node_modules 污染
-
-将缓存从 `node_modules` 分离：
+### 1. 把缓存移出 node_modules
 
 ```javascript
 // vite.config.js
@@ -145,38 +97,27 @@ export default {
 }
 ```
 
-**.gitignore 配置**：
-
 ```text
+# .gitignore 需自行补充
 .vite/
 ```
 
+> 💡 **提示：** 默认放在 `node_modules/.vite` 的好处是 `node_modules` 已被 git 忽略、重装依赖时可一并清理；移出后记得把新目录加入 `.gitignore`。
+
 ### 2. Docker 持久化缓存
 
-Docker 容器中挂载缓存目录：
+容器内缓存目录挂载到宿主机或命名卷，避免每次启动都重新预构建：
 
 ```javascript
 // vite.config.js
 export default {
+  // 使用固定路径便于挂载
   cacheDir: '/cache/.vite'
 }
 ```
 
-**Dockerfile**：
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-# 创建缓存目录
-RUN mkdir -p /cache/.vite
-```
-
-**docker-compose.yml**：
-
 ```yaml
+# docker-compose.yml
 services:
   app:
     build: .
@@ -185,69 +126,42 @@ services:
     command: npm run dev
 ```
 
-### 3. CI/CD 缓存
-
-在 CI/CD 流程中缓存加速构建：
+### 3. CI/CD 缓存加速
 
 ```javascript
 // vite.config.js
 export default {
-  cacheDir: '.vite-ci'
+  cacheDir: process.env.CI ? '.vite-ci' : 'node_modules/.vite'
 }
 ```
 
-**GitHub Actions**：
+完整流水线配置见下文「完整示例」。
 
-```yaml
-- name: Cache Vite
-  uses: actions/cache@v3
-  with:
-    path: .vite-ci
-    key: ${{ runner.os }}-vite-${{ hashFiles('**/package-lock.json') }}
-```
-
-### 4. Monorepo 共享缓存
-
-```javascript
-// 项目结构
-workspace/
-├── packages/
-│   ├── app1/
-│   │   └── vite.config.js
-│   └── app2/
-│       └── vite.config.js
-└── .vite-cache/           ← 共享缓存目录
-
-// packages/app1/vite.config.js
-import path from 'path'
-
-export default {
-  cacheDir: path.resolve(__dirname, '../../.vite-cache')
-}
-```
-
-### 5. 测试环境独立缓存
+### 4. 测试环境独立缓存
 
 ```javascript
 // vite.config.js
+import { defineConfig } from 'vite'
+
 export default defineConfig(({ mode }) => {
   return {
+    // 测试模式使用独立目录，避免污染开发缓存
     cacheDir: mode === 'test' ? '.vite-test' : 'node_modules/.vite'
   }
 })
 ```
 
-### 6. 临时禁用缓存
+### 5. 无法通过配置禁用缓存
 
-> ⚠️ `cacheDir` 不接受 `false`，类型是 `string`。预构建缓存**无法通过配置禁用**。
+> ⚠️ **注意：** `cacheDir` 类型是 `string`，不接受 `false`，预构建缓存无法通过配置关闭。
 
-**替代方案**：强制重新预构建或删除缓存目录
+**替代方案**：强制重新预构建或删除缓存目录。
 
 ```bash
-# 方式一：--force 强制重新预构建（忽略缓存）
+# 方式一：--force 忽略已有缓存，强制重新预构建
 vite --force
 
-# 方式二：删除缓存后运行
+# 方式二：删除缓存目录后启动
 rm -rf node_modules/.vite && vite
 ```
 
@@ -255,18 +169,12 @@ rm -rf node_modules/.vite && vite
 
 ### 1. 缓存失效条件
 
-缓存会在以下情况自动重建：
+出现以下情况时，Vite 会自动丢弃旧缓存并重新预构建：
 
-```javascript
-// 1. 配置文件变化
-// vite.config.js 修改后
-
-// 2. 依赖变化
-// package.json 或 lock 文件变化
-
-// 3. 缓存版本不匹配
-// Vite 版本升级后
-```
+- `package.json` 或 lock 文件中的依赖发生变化
+- Vite 配置文件或插件发生变化
+- Vite 版本升级导致缓存格式不匹配
+- 手动执行 `--force` 或设置了 `optimizeDeps.force: true`
 
 ### 2. 手动清除缓存
 
@@ -276,61 +184,48 @@ rm -rf node_modules/.vite
 
 # 删除自定义缓存目录
 rm -rf .vite-cache
+```
 
-# 使用 npm script
+```json
 {
   "scripts": {
     "clean": "rm -rf node_modules/.vite dist",
-    "dev": "vite",
     "dev:clean": "npm run clean && vite"
   }
 }
 ```
 
-### 3. .gitignore 配置
-
-```text
-# Vite 缓存目录
-.vite/
-.vite-cache/
-node_modules/.vite/
-
-# 或者忽略所有 vite 缓存
-**/.vite/
-```
-
-### 4. 与 root 的关系
+### 3. 与 root 的关系
 
 ```javascript
 // vite.config.js
 export default {
-  root: './app',           // 项目根目录
-  cacheDir: '.vite'        // 相对于 root，即 app/.vite
+  root: './app',    // 项目根目录
+  cacheDir: '.vite' // 相对路径基于 root，实际为 app/.vite
 }
 ```
 
-### 5. 缓存与 optimizeDeps 的关系
+### 4. 与 optimizeDeps 的关系
 
 ```javascript
+// vite.config.js
 export default {
   cacheDir: 'node_modules/.vite',
   optimizeDeps: {
-    // 预构建依赖存放在 cacheDir/deps/
+    // 被预构建的依赖产物统一存放在 cacheDir/deps/
     include: ['vue', 'vue-router']
   }
 }
 ```
 
-### 6. 多项目缓存冲突
+### 5. 多项目不要共用同一缓存目录
 
 ```javascript
-// 避免多个项目使用同一缓存目录
-
-// ❌ 错误：多个项目指向同一缓存
+// ❌ 错误：两个项目指向同一目录，预构建产物与元数据互相覆盖
 // Project A: cacheDir: '/tmp/.vite'
 // Project B: cacheDir: '/tmp/.vite'
 
-// ✅ 正确：使用项目特定的缓存
+// ✅ 正确：Monorepo 共享缓存的前提是依赖集合一致，否则各自独立
 // Project A: cacheDir: '.vite-a'
 // Project B: cacheDir: '.vite-b'
 ```
@@ -339,47 +234,34 @@ export default {
 
 | 属性 | 关系说明 |
 |------|----------|
-| `root` | `cacheDir` 相对路径基于 `root` |
-| `optimizeDeps` | 预构建依赖存放在 `cacheDir/deps/` |
-| `server.force` | 强制重新预构建会重建缓存 |
-| `build.rollupOptions` | 配置变化可能导致缓存失效 |
+| `root` | `cacheDir` 的相对路径基于项目根目录 |
+| `optimizeDeps` | 预构建产物存放在 `cacheDir/deps/` |
+| `optimizeDeps.force` | 设为 `true` 强制忽略缓存、重新预构建 |
+| `--force` 命令行选项 | 效果同 `optimizeDeps.force`，无需改动配置 |
 
 ## 完整示例
 
-### 开发/生产不同缓存
+### Monorepo 共享缓存
 
-```javascript
-// vite.config.js
-import { defineConfig } from 'vite'
-
-export default defineConfig(({ mode }) => {
-  return {
-    // 开发和生产使用不同缓存
-    cacheDir: mode === 'development' ? '.vite-dev' : '.vite-prod'
-  }
-})
-```
-
-### Monorepo 共享缓存配置
-
-```javascript
-// 项目结构
+```text
 workspace/
 ├── apps/
 │   ├── web/
 │   │   └── vite.config.js
 │   └── admin/
 │       └── vite.config.js
-├── .vite-cache/        ← 共享缓存
+├── .vite-cache/        ← 共享缓存目录
 └── package.json
+```
 
+```javascript
 // apps/web/vite.config.js
-import path from 'path'
+import path from 'node:path'
 
 export default {
   cacheDir: path.resolve(__dirname, '../../.vite-cache'),
   optimizeDeps: {
-    // 共享缓存需要确保依赖一致
+    // 共享缓存要求各应用依赖集合一致，显式声明避免差异
     include: ['vue', 'vue-router']
   }
 }
@@ -390,14 +272,13 @@ export default {
 ```javascript
 // vite.config.js
 export default {
-  // 使用固定路径便于 Docker 挂载
   cacheDir: '/app/.vite-cache',
 
   server: {
     host: '0.0.0.0',
     port: 5173,
     watch: {
-      // Docker 环境需要轮询
+      // 容器内文件事件可能无法传播，需要轮询监听
       usePolling: true
     }
   }
@@ -409,23 +290,18 @@ export default {
 FROM node:18-alpine
 WORKDIR /app
 
-# 复制依赖文件
 COPY package*.json ./
 RUN npm ci
 
-# 复制源码
 COPY . .
 
-# 暴露端口
 EXPOSE 5173
 
-# 启动命令
 CMD ["npm", "run", "dev"]
 ```
 
 ```yaml
 # docker-compose.yml
-version: '3.8'
 services:
   vite-app:
     build: .
@@ -433,7 +309,7 @@ services:
       - "5173:5173"
     volumes:
       - .:/app
-      - vite-cache:/app/.vite-cache  # 持久化缓存
+      - vite-cache:/app/.vite-cache
     environment:
       - CHOKIDAR_USEPOLLING=true
 
@@ -442,13 +318,6 @@ volumes:
 ```
 
 ### CI/CD 完整配置
-
-```javascript
-// vite.config.js
-export default {
-  cacheDir: process.env.CI ? '.vite-ci' : 'node_modules/.vite'
-}
-```
 
 ```yaml
 # .github/workflows/build.yml
@@ -487,24 +356,24 @@ jobs:
 
 ### 问题 1：修改配置后未生效
 
-**原因**：缓存未失效
+**原因**：命中了旧缓存。
 
 ```bash
-# 解决：删除缓存
+# 删除缓存后重启开发服务器
 rm -rf node_modules/.vite
 vite
 ```
 
 ### 问题 2：Docker 中文件监听不工作
 
-**原因**：缓存与文件监听配置冲突
+**原因**：容器内的文件系统事件无法传播到 chokidar。
 
 ```javascript
 // vite.config.js
 export default {
   server: {
     watch: {
-      usePolling: true  // Docker 环境需要轮询
+      usePolling: true // 轮询监听
     }
   }
 }
@@ -512,13 +381,11 @@ export default {
 
 ### 问题 3：缓存体积过大
 
-**原因**：缓存积累过多
-
 ```bash
-# 清理方案
 rm -rf node_modules/.vite
+```
 
-# 或使用 npm script
+```json
 {
   "scripts": {
     "clean:cache": "rm -rf node_modules/.vite"
@@ -526,19 +393,19 @@ rm -rf node_modules/.vite
 }
 ```
 
-### 问题 4：依赖更新后缓存未更新
+### 问题 4：依赖更新后仍加载旧代码
 
-**原因**：缓存未失效
+**原因**：缓存未按预期失效（常见于 link 本地包等改动不体现在 lock 文件中的场景）。
+
+**解决**：
 
 ```javascript
-// 强制重新预构建
+// vite.config.js —— 临时开启强制预构建
 export default {
   optimizeDeps: {
-    force: true  // 强制重建
+    force: true
   }
 }
 ```
 
-## 官方文档
-
-[Shared Config: cacheDir - Vite 官方文档](https://cn.vitejs.dev/config/shared-options.html#cachedir)
+或直接执行 `vite --force`，排查完成后移除该配置。

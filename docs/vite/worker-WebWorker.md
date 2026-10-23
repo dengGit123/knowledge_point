@@ -1,15 +1,19 @@
 # worker 配置
 
+> 📖 [官方文档：Worker Options](https://cn.vitejs.dev/config/worker-options.html)
+>
+> 📖 [官方文档：Web Workers](https://cn.vitejs.dev/guide/features.html#web-workers)
+
 ## 定义
 
-`worker` 配置 Web Worker 的打包行为，控制 Worker 脚本的构建方式和输出格式。
+`worker` 配置 Web Worker 的打包行为，控制 Worker 脚本的构建方式和输出格式。通常配合 `?worker` 导入后缀使用（见「注意事项」）。
 
 **类型**：
 
 ```typescript
 {
   format?: 'es' | 'iife'
-  plugins?: () => PluginOption[]
+  plugins?: () => (Plugin | PluginOption)[]
   rollupOptions?: RollupOptions
 }
 ```
@@ -18,9 +22,9 @@
 
 ```javascript
 {
-  format: 'iife',
-  plugins: () => [],
-  rollupOptions: {}
+  format: 'iife',     // 经典脚本（IIFE）格式
+  plugins: () => [],  // 无 Worker 专用插件
+  rollupOptions: {}   // 使用 Vite 内部默认值
 }
 ```
 
@@ -32,39 +36,66 @@
 
 **默认值**：`'iife'`
 
-Worker 输出格式。
+Worker 产物的打包格式。
 
 ```javascript
-format: 'iife',      // 立即执行函数（默认）
-format: 'es',        // ES Module
+// vite.config.js
+export default {
+  worker: {
+    format: 'iife' // 默认：经典脚本，无模块语义
+  }
+}
 ```
+
+```javascript
+// vite.config.js
+export default {
+  worker: {
+    format: 'es' // 模块 Worker：支持 import/export 与内部动态导入
+  }
+}
+```
+
+> 💡 **提示：** `iife` 产物以经典脚本运行，内部不能使用 `import`/`export`；`es` 产物依赖浏览器的模块 Worker 支持（如 Firefox 114+ 才支持）。需要 Worker 内部动态加载代码或拆分共享 chunk 时选择 `'es'`。
 
 ### plugins
 
-**类型**：`() => PluginOption[]`
+**类型**：`() => (Plugin | PluginOption)[]`
 
 **默认值**：`() => []`
 
-Worker 专用插件。注意是**函数形式**：每次 Worker 打包时会调用该函数获取插件实例（因此需要返回全新实例）。
+Worker 专用的 Vite 插件。注意是**函数形式**：Worker 打包是一条独立的构建流程，每次构建都会调用该函数以获取全新的插件实例，避免与主包构建共用同一实例造成状态污染。
 
 ```javascript
-plugins: () => [
-  // 仅在 Worker 构建时使用的插件（每次调用都应返回新实例）
-]
+// vite.config.js
+export default {
+  worker: {
+    // 每次调用返回全新实例
+    plugins: () => [myWorkerPlugin()]
+  }
+}
 ```
+
+> ⚠️ **注意：** 顶层 `plugins` 只在**开发阶段**作用于 Worker 代码；**生产构建**时 Worker 产物只使用 `worker.plugins`。需要影响 Worker 构建产物的插件必须在这里配置。
 
 ### rollupOptions
 
-**类型**：`RollupOptions`（不允许覆盖 `plugins` / `input` / `onwarn` / `preserveEntrySignatures`）
+**类型**：`RollupOptions`
 
 **默认值**：`{}`
 
-Worker 打包的 Rollup 选项。
+Worker 打包的 Rollup 选项。Worker 产物的输出格式由 `worker.format` 决定，插件走 `worker.plugins`，不要在这里覆盖这些由 Vite 控制的选项。
 
 ```javascript
-rollupOptions: {
-  output: {
-    entryFileNames: 'workers/[name]-[hash].js'
+// vite.config.js
+export default {
+  worker: {
+    rollupOptions: {
+      output: {
+        // 自定义 Worker 产物路径与文件名
+        entryFileNames: 'workers/[name]-[hash].js'
+      }
+    }
   }
 }
 ```
@@ -87,9 +118,10 @@ export default {
 ### ES Module 格式
 
 ```javascript
+// vite.config.js
 export default {
   worker: {
-    format: 'es'  // 输出 ES Module
+    format: 'es' // 输出 ES Module 格式的 Worker
   }
 }
 ```
@@ -97,6 +129,7 @@ export default {
 ### 自定义输出路径
 
 ```javascript
+// vite.config.js
 export default {
   worker: {
     rollupOptions: {
@@ -112,15 +145,14 @@ export default {
 ### Worker 专用插件
 
 ```javascript
+// vite.config.js
 import { defineConfig } from 'vite'
 import workerPlugin from './worker-plugin'
 
 export default defineConfig({
   worker: {
-    // 注意：是函数形式，每次调用返回新实例
-    plugins: () => [
-      workerPlugin()  // 仅在 Worker 构建时运行
-    ]
+    // 函数形式：每次调用返回新实例
+    plugins: () => [workerPlugin()]
   }
 })
 ```
@@ -131,29 +163,32 @@ export default defineConfig({
 
 ```javascript
 // src/workers/compute.js
-export default function compute(data) {
-  return data * 2
+// Worker 线程：接收消息并把结果发回主线程
+self.onmessage = (e) => {
+  self.postMessage(e.data * 2)
 }
+```
 
+```javascript
 // src/main.js
+// ?worker 后缀：导入的是 Worker 构造器
 import Worker from './workers/compute.js?worker'
 
 const worker = new Worker()
+worker.onmessage = (e) => console.log(e.data) // 20
 worker.postMessage(10)
-worker.onmessage = (e) => console.log(e.data)
 ```
 
-**构建输出**：
+Worker 与主包产物一样输出到 `build.assetsDir`（默认 `assets/`）目录，文件名带 hash，目录与文件名可通过 `worker.rollupOptions.output` 自定义：
 
 ```
 dist/
-├── assets/
-│   └── index-abc123.js
-└── workers/
-    └── compute-def456.js   # Worker 文件
+└── assets/
+    ├── index-abc123.js       # 主包
+    └── compute-def456.js     # Worker 文件
 ```
 
-### ES Module 格式
+### 使用 format: 'es'
 
 ```javascript
 // vite.config.js
@@ -164,28 +199,7 @@ export default {
 }
 ```
 
-### 自定义输出路径
-
-```javascript
-// vite.config.js
-export default {
-  worker: {
-    rollupOptions: {
-      output: {
-        entryFileNames: 'assets/workers/[name]-[hash].js'
-      }
-    }
-  }
-}
-```
-
-```
-dist/
-└── assets/
-    ├── index-abc123.js
-    └── workers/
-        └── compute-def456.js
-```
+`es` 格式下 Worker 以模块脚本运行；当 Worker 内部有动态 `import()` 时，还能拆出共享 chunk（文件名由 `chunkFileNames` 控制）。
 
 ## 使用场景
 
@@ -193,11 +207,15 @@ dist/
 
 ```javascript
 // src/workers/processor.js
-export function process(data) {
-  // 耗时计算
-  return data.reduce((acc, val) => acc + val, 0)
+// Worker 入口：收到数据后计算并发回结果
+self.onmessage = (e) => {
+  // 耗时计算放在 Worker 中，避免阻塞主线程
+  const result = e.data.reduce((acc, val) => acc + val, 0)
+  self.postMessage(result)
 }
+```
 
+```javascript
 // src/main.js
 import Worker from './workers/processor.js?worker'
 
@@ -212,18 +230,20 @@ worker.postMessage([1, 2, 3, 4, 5])
 
 ```javascript
 // src/workers/data-parser.js
-export function parseData(rawData) {
-  // 大量数据处理
-  return JSON.parse(rawData)
+// 大 JSON 解析放到 Worker，避免阻塞主线程渲染
+self.onmessage = (e) => {
+  self.postMessage(JSON.parse(e.data))
 }
+```
 
+```javascript
 // src/main.js
 import Worker from './workers/data-parser.js?worker'
 
+const jsonString = '{"list": [1, 2, 3]}'
+
 const worker = new Worker()
-worker.onmessage = (e) => {
-  renderData(e.data)
-}
+worker.onmessage = (e) => renderData(e.data) // renderData 为页面自己的渲染函数
 worker.postMessage(jsonString)
 ```
 
@@ -231,15 +251,14 @@ worker.postMessage(jsonString)
 
 ```javascript
 // src/main.js
-const workers = []
-for (let i = 0; i < 4; i++) {
-  const Worker = await import('./workers/compute.js?worker')
-  workers.push(new Worker.default())
-}
+import ComputeWorker from './workers/compute.js?worker'
 
-// 分配任务
-workers.forEach((worker, index) => {
-  worker.postMessage({ data: chunkData[index], index })
+// 创建 4 个 Worker 实例并行处理
+const workers = Array.from({ length: 4 }, () => new ComputeWorker())
+
+// 按索引分发任务
+chunkData.forEach((data, index) => {
+  workers[index].postMessage(data)
 })
 ```
 
@@ -256,24 +275,29 @@ export interface WorkerResponse {
   result: number
   error?: string
 }
+```
 
+```typescript
 // src/workers/compute.ts
 /// <reference lib="webworker" />
 
-type Message = WorkerMessage
-type Response = WorkerResponse
+import type { WorkerMessage, WorkerResponse } from './types'
 
-self.onmessage = (e: MessageEvent<Message>) => {
+self.onmessage = (e: MessageEvent<WorkerMessage>) => {
   const { type, data } = e.data
 
   if (type === 'compute') {
     const result = data.reduce((a, b) => a + b, 0)
-    postMessage({ result })
+    const response: WorkerResponse = { result }
+    postMessage(response)
   }
 }
+```
 
+```typescript
 // src/main.ts
 import Worker from './workers/compute.ts?worker'
+import type { WorkerResponse } from './workers/types'
 
 const worker = new Worker()
 worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
@@ -286,47 +310,43 @@ worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
 ### 1. Worker 导入后缀
 
 ```javascript
-// 必须使用 ?worker 后缀
+// 默认：返回 Worker 构造器
 import Worker from './worker.js?worker'
 
-// 内联 Worker
+// 内联：Worker 代码以 base64 字符串内联进主包，不产生独立产物文件
 import InlineWorker from './worker.js?worker&inline'
 
-// 命名 Worker（生成唯一文件）
-import NamedWorker from './worker.js?worker&file=my-worker'
+// URL：返回 Worker 产物文件的 URL 字符串
+import workerUrl from './worker.js?worker&url'
 ```
 
 ### 2. 内联 Worker
 
 ```javascript
-// ?worker&inline 会内联为 blob URL
+// src/main.js
 import InlineWorker from './worker.js?worker&inline'
 
+// 通过 blob URL 创建，适合体积小、不想多发一次请求的 Worker
 const worker = new InlineWorker()
-// Worker 代码内联为 base64 blob
 ```
 
 ### 3. Worker 文件类型
 
 ```javascript
-// 支持 .js, .ts, .jsx, .tsx 等
-// tsWorker.ts
-import Worker from './tsWorker.ts?worker'
-
-// jsxWorker.jsx
-import Worker from './jsxWorker.jsx?worker'
+// .js / .ts / .jsx / .tsx 等会被 Vite 转换的文件都可作为 Worker 入口
+import Worker from './worker.ts?worker'
 ```
 
 ### 4. 同构 Worker
 
 ```javascript
-// 检测是否在 Worker 环境
+// 同一份代码既能在主线程也能在 Worker 中运行：
+// Worker 环境有 self 但没有 window
 const isWorker = typeof self !== 'undefined' && typeof window === 'undefined'
 
-// 代码可同时在主线程和 Worker 运行
 export function process(data) {
   if (isWorker) {
-    // Worker 特定逻辑
+    // Worker 环境特有逻辑（如计算完成后 postMessage 回主线程）
   }
   return data
 }
@@ -336,9 +356,9 @@ export function process(data) {
 
 | 属性 | 关系说明 |
 |------|----------|
-| `build.rollupOptions` | 主线程打包配置 |
-| `plugins` | Worker 可使用主插件（需确认兼容） |
-| `resolve` | Worker 继承 resolve 配置 |
+| `build.rollupOptions` | 主包（非 Worker）产物的打包配置，与 `worker.rollupOptions` 相互独立 |
+| `plugins` | 顶层插件在开发阶段对 Worker 生效；生产构建需改用 `worker.plugins` |
+| `build.assetsDir` | Worker 产物默认输出的目录 |
 
 ## 完整示例
 
@@ -358,10 +378,9 @@ export default defineConfig({
     }
   },
 
-  // 确保 TypeScript 正确处理
   resolve: {
     alias: {
-      '@': '/src'
+      '@': '/src' // 路径别名，Worker 模块内同样生效
     }
   }
 })
@@ -409,16 +428,16 @@ dist/
 // vite.config.js
 import { defineConfig } from 'vite'
 
-// Worker 专用插件
-function workerTransformPlugin() {
+// Worker 专用插件：只在 Worker 打包流程中执行
+function stripConsolePlugin() {
   return {
-    name: 'worker-transform',
+    name: 'worker-strip-console',
     transform(code, id) {
-      if (id.includes('?worker')) {
-        return {
-          code: code.replace(/console\.log/g, '/* console.log */'),
-          map: null
-        }
+      // 跳过第三方依赖，减少处理量
+      if (id.includes('node_modules')) return null
+      return {
+        code: code.replace(/console\.log\([^)]*\);?/g, ''),
+        map: null
       }
     }
   }
@@ -426,9 +445,8 @@ function workerTransformPlugin() {
 
 export default defineConfig({
   worker: {
-    plugins: () => [
-      workerTransformPlugin()
-    ]
+    // 函数形式：每次调用返回新插件实例
+    plugins: () => [stripConsolePlugin()]
   }
 })
 ```
@@ -438,13 +456,15 @@ export default defineConfig({
 ```javascript
 // src/main.js
 async function loadWorker(name) {
-  const Worker = await import(`./workers/${name}.js?worker`)
-  return new Worker.default()
+  // 动态导入 ?worker 模块：模块的 default 导出才是 Worker 构造器
+  const mod = await import(`./workers/${name}.js?worker`)
+  return new mod.default()
 }
 
 // 使用
-const computeWorker = await loadWorker('compute')
-computeWorker.postMessage(data)
+loadWorker('compute').then((worker) => {
+  worker.postMessage([1, 2, 3])
+})
 ```
 
 ### 类型安全 Worker
@@ -460,7 +480,9 @@ export interface ComputeOutput {
   result: number
   operation: string
 }
+```
 
+```typescript
 // src/workers/compute.worker.ts
 /// <reference lib="webworker" />
 
@@ -482,46 +504,47 @@ self.onmessage = (e: MessageEvent<ComputeInput>) => {
   const output: ComputeOutput = { result, operation }
   postMessage(output)
 }
+```
 
+```typescript
 // src/main.ts
 import Worker from './workers/compute.worker.ts?worker'
-import type { ComputeInput, ComputeOutput } from './workers/message.types'
+import type { ComputeOutput } from './workers/message.types'
 
 const worker = new Worker()
 worker.onmessage = (e: MessageEvent<ComputeOutput>) => {
   console.log(`${e.data.operation}: ${e.data.result}`)
 }
 
-const input: ComputeInput = {
+worker.postMessage({
   numbers: [1, 2, 3, 4, 5],
   operation: 'sum'
-}
-worker.postMessage(input)
+})
 ```
 
 ## 常见问题
 
 ### 问题 1：Worker 加载失败
 
-**原因**：缺少 `?worker` 后缀
+**原因**：直接 `import` Worker 文件，拿到的是模块本身而不是 Worker 构造器。
 
 ```javascript
-// ❌ 错误
+// ❌ 错误：导入的是模块，new Worker() 并没有创建线程
 import Worker from './worker.js'
+```
 
-// ✅ 正确
+```javascript
+// ✅ 正确：加 ?worker 后缀，导入 Worker 构造器
 import Worker from './worker.js?worker'
 ```
 
 ### 问题 2：TypeScript 类型错误
 
-**原因**：缺少类型声明
+**原因**：Worker 文件缺少 WebWorker 环境的类型声明（`self`、`postMessage` 等报错）。
 
-**解决**：
+**解决**：在 `tsconfig.json` 的 `lib` 中加入 `"WebWorker"`：
 
-在 `tsconfig.json` 的 `lib` 中加入 `"WebWorker"`，或为 Worker 文件添加引用：
-
-```json
+```jsonc
 // tsconfig.json
 {
   "compilerOptions": {
@@ -530,36 +553,31 @@ import Worker from './worker.js?worker'
 }
 ```
 
-```typescript
-// src/workers/compute.ts 顶部添加（单独声明文件方式）
-/// <reference lib="webworker" />
+或在 Worker 文件顶部添加三斜线引用：
 
-// 若使用 import Worker from './xxx?worker' 导入构造器，
-// Vite 客户端类型（vite/client）已内置 ?worker 的类型声明
+```typescript
+// src/workers/compute.ts
+/// <reference lib="webworker" />
 ```
 
-### 问题 3：Worker 文件路径错误
+> 💡 **提示：** 若使用 `import Worker from './xxx?worker'` 导入构造器，`vite/client` 类型已内置 `?worker` 的声明（在 `tsconfig.json` 的 `types` 中加入 `"vite/client"`，或创建 `env.d.ts` 引入）。
 
-**原因**：输出路径配置不当
+### 问题 3：Worker 文件路径 404
 
-**解决**：
+**原因**：部署路径与产物 URL 不一致。
+
+**解决**：让 `base` 与线上部署路径保持一致，并按需自定义产物路径：
 
 ```javascript
 // vite.config.js
 export default {
+  base: '/app/', // 部署在子路径时需与线上一致
   worker: {
     rollupOptions: {
       output: {
         entryFileNames: 'assets/workers/[name]-[hash].js'
       }
     }
-  },
-  base: '/app/'  // 确保 base 正确
+  }
 }
 ```
-
-## 官方文档
-
-[Worker Options: worker - Vite 官方文档](https://cn.vitejs.dev/config/worker-options.html)
-
-[Web Workers - Vite 官方文档](https://cn.vitejs.dev/guide/features.html#web-workers)
