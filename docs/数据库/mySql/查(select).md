@@ -237,10 +237,10 @@ SELECT * FROM users LIMIT 10 OFFSET 10;
 
 ```sql
 -- 第 page 页，每页 pageSize 条
--- 偏移量 = (page - 1) * pageSize
-SELECT * FROM users LIMIT (page - 1) * pageSize, pageSize;
+-- 偏移量 = (page - 1) * pageSize（在应用层算好数值，LIMIT 不支持表达式）
+SELECT * FROM users LIMIT 20, 10;
 
--- 例：第 3 页，每页 10 条 → 偏移 20
+-- 例：第 3 页，每页 10 条 → 偏移 (3-1)*10 = 20
 SELECT * FROM users ORDER BY id LIMIT 20, 10;
 ```
 
@@ -561,62 +561,51 @@ SELECT DATEDIFF('2026-07-02', '2026-01-01');  -- 相差天数 182
 
 ---
 
-## 十二、在 Java 中执行查询
+## 十二、在应用层执行查询（Node.js 示例）
 
-### 12.1 JDBC 基本用法
+### 12.1 基本用法（mysql2）
 
-```java
-String sql = "SELECT id, name, age FROM users WHERE city = ? AND age > ?";
+```javascript
+const [rows] = await db.query(
+  'SELECT id, name, age FROM users WHERE city = ? AND age > ?',
+  ['北京', 18]
+);
 
-try (PreparedStatement ps = conn.prepareStatement(sql)) {
-    ps.setString(1, "北京");
-    ps.setInt(2, 18);
-
-    try (ResultSet rs = ps.executeQuery()) {  // 查询用 executeQuery
-        while (rs.next()) {                   // 遍历每一行
-            int id = rs.getInt("id");
-            String name = rs.getString("name");
-            int age = rs.getInt("age");
-            System.out.println(id + " " + name + " " + age);
-        }
-    }
+for (const row of rows) {
+  console.log(row.id, row.name, row.age);
 }
 ```
 
-> ⚠️ **注意：查询用 `executeQuery()`（返回 ResultSet），增删改用 `executeUpdate()`（返回影响行数）。别用错了。**
+> ⚠️ **注意：** 查询条件值同样必须用 `?` 占位符传入，不要拼接字符串，防止 SQL 注入。
 
-### 12.2 MyBatis 查询
+### 12.2 动态条件查询
 
-```xml
-<select id="findByCity" resultType="User">
-    SELECT id, name, age FROM users
-    WHERE city = #{city}
-    <if test="minAge != null">
-        AND age &gt;= #{minAge}   <!-- XML 里 > 要写成 &gt; -->
-    </if>
-    ORDER BY id DESC
-</select>
+```javascript
+// 根据传入参数动态拼接 WHERE 条件，值全部走占位符
+async function search({ city, minAge, name } = {}) {
+  const conds = [];
+  const params = [];
+
+  if (city != null) {
+    conds.push('city = ?');
+    params.push(city);
+  }
+  if (minAge != null) {
+    conds.push('age >= ?');
+    params.push(minAge);
+  }
+  if (name != null) {
+    conds.push('name LIKE CONCAT(\'%\', ?, \'%\')');  // LIKE 用 CONCAT 拼接，防注入
+    params.push(name);
+  }
+
+  const where = conds.length ? ' WHERE ' + conds.join(' AND ') : '';
+  const [rows] = await db.query('SELECT * FROM users' + where + ' ORDER BY id', params);
+  return rows;
+}
 ```
 
-```java
-List<User> users = userMapper.findByCity("北京");
-```
-
-### 12.3 动态条件查询（MyBatis）
-
-```xml
-<select id="search" resultType="User">
-    SELECT * FROM users
-    <where>
-        <if test="city != null">AND city = #{city}</if>
-        <if test="minAge != null">AND age &gt;= #{minAge}</if>
-        <if test="name != null">AND name LIKE CONCAT('%', #{name}, '%')</if>
-    </where>
-    ORDER BY id
-</select>
-```
-
-> 💡 **提示：** `<where>` 标签会自动去掉多余的 `AND`，`LIKE` 拼接用 `CONCAT` 函数，不用字符串拼接（防注入）。
+> 💡 **提示：** 用 ORM（如 Sequelize、Prisma、TypeORM）时，动态条件由其查询构建器处理，不用手拼 SQL，但底层原理一样。
 
 ---
 

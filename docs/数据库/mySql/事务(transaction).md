@@ -392,100 +392,89 @@ COMMIT;
 
 ---
 
-## 十、在 Java 中使用事务
+## 十、在应用层使用事务（Node.js 示例）
 
-### 10.1 JDBC 手动管理事务
+### 10.1 mysql2 手动管理事务
 
-```java
-Connection conn = dataSource.getConnection();
+```javascript
+const conn = await db.getConnection();
 try {
-    conn.setAutoCommit(false);   // 1. 关闭自动提交，开启事务
+  await conn.beginTransaction();   // 1. 开启事务
 
-    // 2. 转账两步
-    PreparedStatement ps1 = conn.prepareStatement(
-        "UPDATE accounts SET balance = balance - ? WHERE name = ?");
-    ps1.setInt(1, 100);
-    ps1.setString(2, "张三");
-    ps1.executeUpdate();
+  // 2. 转账两步
+  await conn.query(
+    'UPDATE accounts SET balance = balance - ? WHERE name = ?',
+    [100, '张三']
+  );
 
-    // 模拟异常
-    if (true) throw new RuntimeException("出错了！");
+  // 模拟异常
+  throw new Error('出错了！');
 
-    PreparedStatement ps2 = conn.prepareStatement(
-        "UPDATE accounts SET balance = balance + ? WHERE name = ?");
-    ps2.setInt(1, 100);
-    ps2.setString(2, "李四");
-    ps2.executeUpdate();
+  await conn.query(
+    'UPDATE accounts SET balance = balance + ? WHERE name = ?',
+    [100, '李四']
+  );
 
-    conn.commit();   // 3. 全部成功 → 提交
-} catch (Exception e) {
-    conn.rollback();  // 4. 出错 → 回滚，恢复原状
-    e.printStackTrace();
+  await conn.commit();   // 3. 全部成功 → 提交
+} catch (e) {
+  await conn.rollback();  // 4. 出错 → 回滚，恢复原状
+  console.error(e);
 } finally {
-    conn.setAutoCommit(true);  // 恢复
-    conn.close();
+  conn.release();   // 归还连接（连接池）
 }
 ```
 
-### 10.2 Spring 声明式事务（推荐）
+### 10.2 封装"自动事务"辅助函数（推荐）
 
-Spring 用 `@Transactional` 注解，**自动管理事务的开启、提交、回滚**，代码最简洁：
+手动 begin/commit/rollback 容易漏掉回滚分支，项目中一般封装成辅助函数，**自动管理事务的开启、提交、回滚**：
 
-```java
-@Service
-public class TransferService {
-
-    @Autowired
-    private AccountMapper accountMapper;
-
-    // 加这个注解，方法就成了一个事务
-    // 方法正常结束 → 自动 COMMIT
-    // 方法抛出运行时异常 → 自动 ROLLBACK
-    @Transactional
-    public void transfer(String from, String to, int amount) {
-        accountMapper.decrease(from, amount);   // 张三 -100
-        // 如果这里抛异常，上面"张三 -100"也会被回滚 ✅
-        accountMapper.increase(to, amount);     // 李四 +100
-    }
+```javascript
+// withTransaction：回调正常结束 → 自动 COMMIT
+// 回调抛出异常   → 自动 ROLLBACK，并把异常继续抛出
+async function withTransaction(fn) {
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    const result = await fn(conn);
+    await conn.commit();
+    return result;
+  } catch (e) {
+    await conn.rollback();
+    throw e;   // 异常向上抛，由调用方决定如何处理
+  } finally {
+    conn.release();
+  }
 }
+
+// 使用：转账逻辑
+await withTransaction(async (conn) => {
+  await conn.query('UPDATE accounts SET balance = balance - 100 WHERE name = ?', ['张三']);
+  // 中途任何一步抛异常，上面已执行的部分也会被回滚 ✅
+  await conn.query('UPDATE accounts SET balance = balance + 100 WHERE name = ?', ['李四']);
+});
 ```
 
-**`@Transactional` 常用配置：**
+> ⚠️ **注意事务"失效"的常见坑（与框架无关，任何语言都适用）：**
+> 1. **必须用同一个连接**——事务里的所有 SQL 要在同一个 `conn` 上执行，走连接池默认查询（`db.query`）可能每次用不同连接，事务不生效
+> 2. **异常被 `try-catch` 吞掉**，事务辅助函数感知不到异常，不会回滚
 
-```java
-@Transactional(
-    rollbackFor = Exception.class,   // 默认只回滚 RuntimeException，加上这个连检查异常也回滚
-    isolation  = Isolation.REPEATABLE_READ,  // 隔离级别
-    propagation = Propagation.REQUIRED,      // 传播行为
-    timeout = 30,    // 超时秒数
-    readOnly = false  // 是否只读
-)
-```
+```javascript
+// ❌ 失效：异常被吞了，withTransaction 看不到异常，不回滚
+await withTransaction(async (conn) => {
+  try {
+    await conn.query('UPDATE accounts SET balance = balance - 100 WHERE name = ?', ['张三']);
+    throw new Error('出错了');
+  } catch (e) {
+    console.error(e);  // 吞掉了，事务不回滚！数据已改！
+  }
+});
 
-> ⚠️ **注意 `@Transactional` 失效的常见坑：**
-> 1. **方法必须是 `public`**（非 public 不生效）
-> 2. **同类内部方法调用不生效**（Spring 基于 AOP 代理，自己调自己绕过代理）
-> 3. **默认只回滚 `RuntimeException`**，普通 `Exception` 不回滚（加 `rollbackFor = Exception.class` 解决）
-> 4. **异常被 `try-catch` 吞掉**，Spring 感知不到异常，不会回滚
-
-```java
-// ❌ 失效：异常被吞了，Spring 看不到异常，不回滚
-@Transactional
-public void transfer(...) {
-    try {
-        accountMapper.decrease(...);
-        int x = 1 / 0;   // 异常
-    } catch (Exception e) {
-        log.error("出错了", e);  // 吞掉了，事务不回滚！数据已改！
-    }
-}
-
-// ✅ 正确：要么抛出，要么手动回滚
-@Transactional(rollbackFor = Exception.class)
-public void transfer(...) throws Exception {
-    accountMapper.decrease(...);
-    // 异常直接抛出，让 Spring 回滚
-}
+// ✅ 正确：要么把异常抛出去，让辅助函数回滚
+await withTransaction(async (conn) => {
+  await conn.query('UPDATE accounts SET balance = balance - 100 WHERE name = ?', ['张三']);
+  // 异常直接抛出，自动回滚
+  await conn.query('UPDATE accounts SET balance = balance + 100 WHERE name = ?', ['李四']);
+});
 ```
 
 ---
@@ -510,25 +499,20 @@ COMMIT;
 
 ### 2. 事务只包数据操作，不包查询
 
-```java
-// ❌ 把查询也包进事务，白白占用连接
-@Transactional
-public void doSomething() {
-    List<User> users = mapper.queryAll();  // 纯查询，不需要事务
-    // 大量业务计算...
-    mapper.update(...);   // 真正需要事务的只有这句
-}
+```javascript
+// ❌ 把查询和大量计算也包进事务，白白占用连接、延长持锁时间
+await withTransaction(async (conn) => {
+  const users = await queryAll();      // 纯查询，不需要事务
+  const result = heavyCompute(users);  // 大量业务计算...
+  await conn.query('UPDATE ...');      // 真正需要事务的只有这句
+});
 
-// ✅ 缩小事务范围
-public void doSomething() {
-    List<User> users = mapper.queryAll();  // 事务外查询
-    this.updateData();   // 只在更新时开事务
-}
-
-@Transactional
-public void updateData() {
-    mapper.update(...);
-}
+// ✅ 缩小事务范围：查询和计算放事务外
+const users = await queryAll();
+const data = heavyCompute(users);
+await withTransaction(async (conn) => {
+  await conn.query('UPDATE ...', data);
+});
 ```
 
 ### 3. 避免大事务
@@ -555,15 +539,13 @@ public void updateData() {
 
 ## 十二、常见问题
 
-### Q1：为什么我的 `@Transactional` 没回滚？
+### Q1：为什么我的事务没有回滚？
 
 ```
 最常见原因：
-  1. 异常被 try-catch 吞了 → 重新抛出或手动回滚
-  2. 方法不是 public → 改成 public
-  3. 抛的是检查异常 → 加 rollbackFor = Exception.class
-  4. 同类内部方法调用 → 拆到另一个 Bean
-  5. 数据库引擎不支持事务 → 检查表是不是 InnoDB（MyISAM 不支持事务！）
+  1. 异常被 try-catch 吞了 → 重新抛出，让事务管理器感知到
+  2. 事务里的 SQL 没走同一个连接（连接池场景很常见）
+  3. 数据库引擎不支持事务 → 检查表是不是 InnoDB（MyISAM 不支持事务！）
 ```
 
 > ⚠️ **注意：** MyISAM 引擎**不支持事务**，只有 **InnoDB** 支持。建表一定要用 InnoDB（MySQL 5.5 后默认就是）。
@@ -631,20 +613,21 @@ ACID：原子 一致 隔离 持久
   当前读（UPDATE/DELETE/FOR UPDATE，读最新并加锁）
 ```
 
-### Java 事务对比
+### 应用层事务对比
 
 | 方式 | 写法 | 适用 |
 |-----|------|------|
-| JDBC 手动 | `setAutoCommit(false)` + `commit/rollback` | 不用框架时 |
-| Spring 注解 | `@Transactional` | **最常用，推荐** |
-| 编程式 | `TransactionTemplate` | 需要精细控制范围时 |
+| 手动管理 | `beginTransaction()` + `commit/rollback` | 简单场景 |
+| 封装辅助函数 | `withTransaction(async fn)` | **最常用，推荐** |
+| ORM 事务 API | Sequelize/Prisma/TypeORM 的 `transaction` 回调 | 已用 ORM 的项目 |
 
 ### 事务自检清单
 
 ```
 □ 表引擎是 InnoDB 吗？（MyISAM 不支持事务）
 □ 事务范围是不是足够小？（别包耗时操作、纯查询）
-□ 异常有没有被吞掉？（@Transactional 才能自动回滚）
+□ 事务里的 SQL 走的是同一个连接吗？
+□ 异常有没有被吞掉？（吞掉就无法自动回滚）
 □ 多表操作顺序一致吗？（避免死锁）
 □ 关键业务真的用事务了吗？（转账、下单等）
 □ 隔离级别选对了吗？（一般用默认即可）

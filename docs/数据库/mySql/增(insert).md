@@ -138,9 +138,9 @@ WHERE age > 18;
 INSERT IGNORE INTO users (name, age, email)
 VALUES ('张三', 20, 'zhangsan@xx.com');  -- 假设这个 email 已存在
 -- 结果：0 行受影响，静默跳过
+```
 
 > ⚠️ **注意：** `INSERT IGNORE` 不只忽略主键/唯一键冲突，还会把其他错误（如 NOT NULL 违规、数据超长被截断）**降级为警告**，可能出现"数据被悄悄处理了，你以为插入成功"的情况。只用于"允许跳过脏数据"的场景。
-```
 
 ### 4.2 INSERT ... ON DUPLICATE KEY UPDATE —— 重复就更新
 
@@ -199,102 +199,58 @@ INSERT INTO users (name, age, email) VALUES ('张三', 20, 'zs@xx.com');
 SELECT LAST_INSERT_ID();  -- 返回刚刚 INSERT 生成的自增 id
 ```
 
-### 5.2 Java JDBC 层面
+### 5.2 应用层获取（如 Node.js）
 
-```java
-// 插入时声明要返回自增主键
-String sql = "INSERT INTO users (name, age, email) VALUES (?, ?, ?)";
-
-try (PreparedStatement ps =
-         conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-    ps.setString(1, "张三");
-    ps.setInt(2, 20);
-    ps.setString(3, "zs@xx.com");
-
-    ps.executeUpdate();  // 执行插入
-
-    // 拿到自增主键
-    try (ResultSet rs = ps.getGeneratedKeys()) {
-        if (rs.next()) {
-            int newId = rs.getInt(1);  // 新插入行的 id
-            System.out.println("新用户 id = " + newId);
-        }
-    }
-}
+```javascript
+// Node.js（mysql2）：insertId 就是刚生成的自增主键
+const [result] = await db.query(
+  'INSERT INTO users (name, age, email) VALUES (?, ?, ?)',
+  ['张三', 20, 'zs@xx.com']
+);
+console.log('新用户 id =', result.insertId);
 ```
 
-### 5.3 MyBatis 配置 useGeneratedKeys
-
-```xml
-<!-- MyBatis 映射：插入后自动把生成的 id 回填到 Java 对象 -->
-<insert id="insertUser" parameterType="User"
-        useGeneratedKeys="true" keyProperty="id">
-    INSERT INTO users (name, age, email)
-    VALUES (#{name}, #{age}, #{email})
-</insert>
-```
-
-```java
-User user = new User();
-user.setName("张三");
-user.setAge(20);
-user.setEmail("zs@xx.com");
-
-userMapper.insertUser(user);
-System.out.println(user.getId());  // 插入后，id 已自动回填 ✅
-```
+> 💡 **提示：** 其他语言同理——连接库在执行 INSERT 后都会提供"取回自增主键"的 API（如 Go 的 `result.LastInsertId()`、Python 的 `cursor.lastrowid`）。
 
 ---
 
-## 六、在 Java 中执行 INSERT（综合示例）
+## 六、在应用层执行 INSERT（综合示例）
 
-### 6.1 原始 JDBC
+### 6.1 Node.js（mysql2）示例
 
-```java
-String sql = "INSERT INTO users (name, age, email) VALUES (?, ?, ?)";
-
-try (PreparedStatement ps = conn.prepareStatement(sql)) {
-    ps.setString(1, "张三");   // 第 1 个问号
-    ps.setInt(2, 20);         // 第 2 个问号
-    ps.setString(3, "zs@xx.com");  // 第 3 个问号
-
-    int rows = ps.executeUpdate();  // 返回受影响行数
-    System.out.println("成功插入 " + rows + " 行");
-}
+```javascript
+// ? 占位符传参，驱动自动转义，防止 SQL 注入
+const [result] = await db.query(
+  'INSERT INTO users (name, age, email) VALUES (?, ?, ?)',
+  ['张三', 20, 'zs@xx.com']
+);
+console.log('成功插入，影响行数 =', result.affectedRows);
 ```
 
-> ⚠️ **注意：永远用 `PreparedStatement` 的 `?` 占位符传参，不要拼接 SQL 字符串**，否则会有 **SQL 注入**风险：
+> ⚠️ **注意：永远用 `?` 占位符传参，不要拼接 SQL 字符串**，否则会有 **SQL 注入**风险：
 >
-> ```java
+> ```javascript
 > // ❌ 危险！字符串拼接会被注入
-> String sql = "INSERT INTO users (name) VALUES ('" + userInput + "')";
+> const sql = `INSERT INTO users (name) VALUES ('${userInput}')`;
 >
 > // ✅ 安全！用占位符
-> String sql = "INSERT INTO users (name) VALUES (?)";
-> ps.setString(1, userInput);
+> await db.query('INSERT INTO users (name) VALUES (?)', [userInput]);
 > ```
 
 ### 6.2 批量插入（提升性能）
 
-```java
-String sql = "INSERT INTO users (name, age, email) VALUES (?, ?, ?)";
-
-try (PreparedStatement ps = conn.prepareStatement(sql)) {
-    // 模拟 1000 条数据
-    for (int i = 0; i < 1000; i++) {
-        ps.setString(1, "用户" + i);
-        ps.setInt(2, 20 + i % 30);
-        ps.setString(3, "user" + i + "@xx.com");
-        ps.addBatch();  // 加入批处理
-
-        // 每 500 条执行一次，避免内存占用过大
-        if (i % 500 == 0) {
-            ps.executeBatch();
-        }
-    }
-    ps.executeBatch();  // 执行剩余的
+```javascript
+// 一次传入多组参数，驱动生成一条多行 INSERT，效率远高于循环单条插入
+const values = [];
+for (let i = 0; i < 1000; i++) {
+  values.push([`用户${i}`, 20 + (i % 30), `user${i}@xx.com`]);
 }
+
+const [result] = await db.query(
+  'INSERT INTO users (name, age, email) VALUES ?',
+  [values]  // 注意：嵌套数组表示多行
+);
+console.log('批量插入', result.affectedRows, '行');
 ```
 
 ---
@@ -349,8 +305,8 @@ CREATE TABLE users (...) DEFAULT CHARSET=utf8mb4;
 -- 2. 连接数据库后设置连接字符集
 SET NAMES utf8mb4;
 
--- 3. JDBC 连接串里指定（注意参数）
--- jdbc:mysql://localhost:3306/db?useUnicode=true&characterEncoding=utf8
+-- 3. 应用连接串里指定库（Node.js mysql2 默认使用 utf8mb4）
+-- mysql://root:密码@localhost:3306/db
 ```
 
 > 💡 **提示：** 永远用 `utf8mb4`（支持 emoji 表情），不要用 `utf8`（MySQL 的 `utf8` 是残缺版，最多 3 字节，存不下 emoji）。
@@ -392,8 +348,8 @@ ON DUPLICATE KEY UPDATE 列 = 值;
 
 ### 插入结果判断
 
-```java
-int rows = ps.executeUpdate();
-// rows > 0  表示插入成功，rows 是受影响行数
-// rows == 0 表示没有插入（比如 INSERT IGNORE 命中重复被跳过）
+```javascript
+const [result] = await db.query(...);
+// result.affectedRows > 0  表示插入成功，值为受影响行数
+// result.affectedRows === 0 表示没有插入（比如 INSERT IGNORE 命中重复被跳过）
 ```

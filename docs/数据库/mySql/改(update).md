@@ -187,24 +187,20 @@ WHERE status IS NULL;
 
 ---
 
-## 七、在 Java 中执行 UPDATE
+## 七、在应用层执行 UPDATE（Node.js 示例）
 
-### 7.1 JDBC 基本用法
+### 7.1 基本用法（mysql2）
 
-```java
-String sql = "UPDATE users SET age = ?, email = ? WHERE id = ?";
+```javascript
+const [result] = await db.query(
+  'UPDATE users SET age = ?, email = ? WHERE id = ?',
+  [21, 'new@xx.com', 1]
+);
 
-try (PreparedStatement ps = conn.prepareStatement(sql)) {
-    ps.setInt(1, 21);              // SET age = ?
-    ps.setString(2, "new@xx.com"); // SET email = ?
-    ps.setInt(3, 1);               // WHERE id = ?
-
-    int rows = ps.executeUpdate();  // 返回更新的行数
-    if (rows > 0) {
-        System.out.println("更新成功，影响 " + rows + " 行");
-    } else {
-        System.out.println("没更新到，可能 id 不存在");
-    }
+if (result.affectedRows > 0) {
+  console.log('更新成功，影响', result.affectedRows, '行');
+} else {
+  console.log('没更新到，可能 id 不存在');
 }
 ```
 
@@ -212,51 +208,32 @@ try (PreparedStatement ps = conn.prepareStatement(sql)) {
 
 实际开发中，表单提交时可能只改了部分字段，需要**动态构造 SET 子句**：
 
-```java
+```javascript
 // ❌ 危险：字符串拼接 SQL，有注入风险
-String sql = "UPDATE users SET name = '" + name + "' WHERE id = " + id;
+const sql = `UPDATE users SET name = '${name}' WHERE id = ${id}`;
 
-// ✅ 安全：动态拼好"哪些列要更新"，值用占位符
-List<String> sets = new ArrayList<>();
-List<Object> params = new ArrayList<>();
+// ✅ 安全：动态拼好"哪些列要更新"，值全部用占位符
+const sets = [];
+const params = [];
 
 if (name != null) {
-    sets.add("name = ?");
-    params.add(name);
+  sets.push('name = ?');
+  params.push(name);
 }
 if (age != null) {
-    sets.add("age = ?");
-    params.add(age);
+  sets.push('age = ?');
+  params.push(age);
 }
 
-if (!sets.isEmpty()) {
-    String sql = "UPDATE users SET " + String.join(", ", sets) + " WHERE id = ?";
-    params.add(id);
+if (sets.length > 0) {
+  const sql = `UPDATE users SET ${sets.join(', ')} WHERE id = ?`;
+  params.push(id);
 
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-        for (int i = 0; i < params.size(); i++) {
-            ps.setObject(i + 1, params.get(i));
-        }
-        ps.executeUpdate();
-    }
+  await db.query(sql, params);
 }
 ```
 
-### 7.3 MyBatis 动态 SQL
-
-```xml
-<update id="updateUser" parameterType="User">
-    UPDATE users
-    <set>
-        <if test="name != null">name = #{name},</if>
-        <if test="age != null">age = #{age},</if>
-        <if test="email != null">email = #{email},</if>
-    </set>
-    WHERE id = #{id}
-</update>
-```
-
-> 💡 **提示：** MyBatis 的 `<set>` 标签会自动处理多余的逗号，非常方便。
+> 💡 **提示：** 只允许"列名"由白名单/硬编码拼接，**值永远走 `?` 占位符**，这样既灵活又防注入。用 ORM（如 Sequelize、Prisma、TypeORM）时它们会自动处理动态 SET。
 
 ---
 

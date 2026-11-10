@@ -182,44 +182,40 @@ SELECT * FROM users WHERE is_deleted = 0;
 
 ---
 
-## 六、在 Java 中执行 DELETE
+## 六、在应用层执行 DELETE（Node.js 示例）
 
-### 6.1 JDBC 基本用法
+### 6.1 基本用法（mysql2）
 
-```java
-String sql = "DELETE FROM users WHERE id = ?";
+```javascript
+const [result] = await db.query(
+  'DELETE FROM users WHERE id = ?',
+  [5]  // 删除 id = 5 的用户
+);
 
-try (PreparedStatement ps = conn.prepareStatement(sql)) {
-    ps.setInt(1, 5);  // 删除 id = 5 的用户
-
-    int rows = ps.executeUpdate();  // 返回删除的行数
-    System.out.println("删除了 " + rows + " 行");
-
-    if (rows == 0) {
-        System.out.println("没删到，可能 id 不存在");
-    }
+console.log('删除了', result.affectedRows, '行');
+if (result.affectedRows === 0) {
+  console.log('没删到，可能 id 不存在');
 }
 ```
 
-### 6.2 MyBatis
+> ⚠️ **注意：** 和 INSERT/UPDATE 一样，条件值必须用 `?` 占位符传入，不要拼接字符串，防止 SQL 注入。
 
-```xml
-<delete id="deleteById" parameterType="int">
-    DELETE FROM users WHERE id = #{id}
-</delete>
-```
+### 6.2 软删除在应用层的封装
 
-```java
-int rows = userMapper.deleteById(5);  // 返回受影响行数
-```
+```javascript
+// 把"软删除"封装成一个函数，所有业务统一调用，避免各写各的
+async function softDeleteUser(id) {
+  await db.query(
+    'UPDATE users SET is_deleted = 1, deleted_at = NOW() WHERE id = ?',
+    [id]
+  );
+}
 
-### 6.3 逻辑删除（MyBatis-Plus 风格）
-
-```java
-// 实体类加 @TableLogic 注解
-// 执行 deleteById 时，框架自动把它转成 UPDATE ... SET deleted=1
-userMapper.deleteById(5);
-// 实际执行：UPDATE users SET deleted = 1 WHERE id = 5
+// 查询时统一带上过滤条件（或封装到默认查询方法里）
+const [rows] = await db.query(
+  'SELECT * FROM users WHERE is_deleted = 0 AND id = ?',
+  [id]
+);
 ```
 
 ---

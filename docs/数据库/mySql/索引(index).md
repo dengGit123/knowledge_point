@@ -132,7 +132,7 @@ CREATE TABLE users (
 ### 3.2 唯一索引（UNIQUE）
 
 ```sql
--- 列值不能重复（允许一个 NULL）
+-- 列值不能重复（NULL 不参与唯一性判断，可以有多行 NULL）
 CREATE TABLE users (
     email VARCHAR(100) UNIQUE   -- 既是约束，也是索引
 );

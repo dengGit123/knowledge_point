@@ -478,11 +478,11 @@ LOAD DATA INFILE 'data.csv' INTO TABLE users;
 | **一致性哈希** | 哈希环 | 扩容只迁移部分数据 | 实现复杂 |
 | **查表路由** | 单独的路由表记录每条数据在哪 | 灵活 | 路由表本身是瓶颈 |
 
-```java
-// 哈希分片示例（ShardingSphere 等中间件帮你做）
-// 用户 id = 12345，分 4 个库
-int dbIndex = 12345 % 4;  // → 1，存到 db1
-int tableIndex = (12345 / 4) % 4;  // 库内分表
+```text
+哈希分片示例（原理，实际由中间件自动完成）：
+用户 id = 12345，分 4 个库
+  库下标 = 12345 % 4        → 1，存到 db1
+  表下标 = (12345 / 4) % 4  → 3086 % 4 → 2，库内第 2 张分表
 ```
 
 ### 6.4 分库分表带来的难题（重点！）
@@ -518,34 +518,20 @@ int tableIndex = (12345 / 4) % 4;  // 库内分表
 
 | 中间件 | 类型 | 特点 |
 |-------|------|------|
-| **ShardingSphere-JDBC** | 客户端 | 轻量，Java 嵌入，性能好（主流） |
-| **ShardingSphere-Proxy** | 代理 | 独立部署，多语言通用 |
+| **ShardingSphere** | 客户端/代理 | Apache 项目，功能全（Java 生态主流） |
 | **MyCat** | 代理 | 老牌，社区不活跃 |
-| **Vitess** | 代理 | YouTube 开源，云原生 |
+| **Vitess** | 代理 | YouTube 开源，云原生（CNCF） |
+| 应用层自行路由 | 客户端 | Node.js 等语言常用：按分片键算出目标库，直连对应实例 |
 
-**ShardingSphere-JDBC 配置示例（Java）：**
+**分片配置的核心要素（以中间件配置为例）：**
 
 ```yaml
-# application.yml
-spring:
-  shardingsphere:
-    datasource:
-      names: db0,db1
-      db0: { ... 主库0配置 ... }
-      db1: { ... 主库1配置 ... }
-    rules:
-      sharding:
-        tables:
-          orders:
-            actual-data-nodes: db${0..1}.orders_${0..3}
-            database-strategy:
-              standard:
-                sharding-column: user_id
-                sharding-algorithm-name: db-mod
-            table-strategy:
-              standard:
-                sharding-column: user_id
-                sharding-algorithm-name: table-mod
+# 核心思路（各中间件写法不同，要素一致）：
+# 1. 数据节点：orders 表分散在 db0~db1 库的 orders_0~orders_3 分表
+actual-data-nodes: db${0..1}.orders_${0..3}
+# 2. 分片键 + 分片算法：按 user_id 取模决定去哪个库/哪张表
+sharding-column: user_id
+algorithm: user_id % 4 → 库下标
 ```
 
 > 💡 **提示：** 应用代码**几乎不用改**，中间件自动做路由。但你要清楚分片键（`user_id`），**不带分片键的查询会广播到所有库**，很慢。
@@ -573,10 +559,11 @@ spring:
 ### 7.1 连接池
 
 ```
-应用层用数据库连接池（HikariCP、Druid），复用连接，
+应用层用数据库连接池，复用连接，
 避免频繁创建/销毁连接的开销。
 
-不要每个请求新建 Connection，那是灾难。
+Node.js：mysql2 的 createPool；其他语言同理（Java 的 HikariCP、Go 的 sql.DB 池等）。
+不要每个请求新建连接，那是灾难。
 ```
 
 ### 7.2 读写分离
@@ -717,7 +704,7 @@ CREATE INDEX idx_city_age ON users(city, age);
 数据量 > 2000 万 / 单机扛不住：考虑分库分表
 
 分片策略：范围 / 哈希 / 一致性哈希
-中间件：ShardingSphere-JDBC（主流）
+中间件：ShardingSphere（主流）
 全局 ID：雪花算法
 代价：跨库 JOIN、分布式事务、全局 ID、跨库分页（要做好心理准备）
 ```
