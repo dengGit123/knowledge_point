@@ -95,7 +95,11 @@
       "WebFetch(domain:cn.vitejs.dev)",
       "Bash(command -v textutil python3)",
       "Bash(python3 -c \"print\\('py ok'\\)\")",
-      "Read(//private/tmp/**)"
+      "Read(//private/tmp/**)",
+      "Read(//Users/dyc/.nvm/versions/node/**)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//Users/dyc/**)",
+      "WebFetch(domain:api.github.com)"
     ],
     "deny": [],
     "ask": [],
