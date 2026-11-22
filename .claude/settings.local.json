@@ -104,7 +104,8 @@
     "deny": [],
     "ask": [],
     "additionalDirectories": [
-      "/Users/dyc/Desktop/学习/knowledge-point/.vitepress/cache"
+      "/Users/dyc/Desktop/学习/knowledge-point/.vitepress/cache",
+      "/tmp"
     ]
   }
 }
